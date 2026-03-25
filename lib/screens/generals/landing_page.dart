@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+// 1. Import the new onboarding screen (we will create it next)
+import 'onboarding_screen.dart';
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
@@ -36,6 +38,8 @@ class _LandingPageState extends State<LandingPage>
   final GlobalKey _textKey = GlobalKey();
   double _textWidth = 0;
   double _textLeft = 0;
+
+  // REMOVED: _showButtons state variable is gone
 
   static const double _carSize = 64.0;
   static const double _gap = 10.0;
@@ -75,7 +79,18 @@ class _LandingPageState extends State<LandingPage>
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _measureText();
-      _mainController.forward();
+      
+      // 2. MODIFIED: The callback no longer shows buttons.
+      // It automatically navigates when the animation finishes.
+      _mainController.forward().then((_) {
+        if (mounted) {
+          // Navigates to the Onboarding Flow and clears the back stack.
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => const OnboardingScreen()),
+          );
+        }
+      });
     });
   }
 
@@ -124,33 +139,20 @@ class _LandingPageState extends State<LandingPage>
               ),
             ),
 
-            // ── Center row ───────────────────────────────────────────────
+            // ── Center row (Your Animation) ──────────────────────────────
             Center(
               child: AnimatedBuilder(
                 animation: _mainController,
                 builder: (context, _) {
                   final double carOffset =
                       _carPositionAnim.value * screenWidth;
-
-                  // Total row width: text + gap + car
                   final double rowWidth = _textWidth + _gap + _carSize;
-
-                  // Row's left edge on screen
                   final double rowLeft = screenWidth / 2 - rowWidth / 2;
-
-                  // Car LEFT edge on screen (before offset it sits at rowLeft + textWidth + gap)
                   final double carLeftOnScreen =
                       rowLeft + _textWidth + _gap + carOffset;
-
-                  // Car RIGHT edge on screen — this is our reveal cursor.
-                  // Text is revealed up to wherever the car's right edge has reached.
                   final double carRightOnScreen = carLeftOnScreen + _carSize;
-
-                  // Pixels of text revealed = how far car's right edge has
-                  // traveled past the text's left edge.
                   final double revealedPx =
                       (carRightOnScreen - _textLeft).clamp(0.0, _textWidth);
-
                   final double widthFactor =
                       _textWidth > 0 ? revealedPx / _textWidth : 0.0;
 
@@ -158,7 +160,6 @@ class _LandingPageState extends State<LandingPage>
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      // ── Brand name: clipped to car's right edge ──
                       ClipRect(
                         child: Align(
                           alignment: Alignment.centerLeft,
@@ -176,10 +177,7 @@ class _LandingPageState extends State<LandingPage>
                           ),
                         ),
                       ),
-
                       const SizedBox(width: _gap),
-
-                      // ── Car ──
                       Transform.translate(
                         offset: Offset(carOffset, 0),
                         child: Stack(
@@ -207,6 +205,8 @@ class _LandingPageState extends State<LandingPage>
                 },
               ),
             ),
+
+            // REMOVED: NEW: Unified Auth Navigation Button block is gone
 
             // ── City footer ──────────────────────────────────────────────
             Positioned(
