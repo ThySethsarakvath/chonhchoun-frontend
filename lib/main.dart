@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:frontend/screens/generals/landing_page.dart';
+
+import 'screens/generals/landing_page.dart'; 
 
 void main() {
   runApp(const MyApp());
@@ -11,13 +12,13 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'ជញ្ជូន',
-      debugShowCheckedModeBanner: false,
+      title: 'Chonh Choun',
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF2C5F8A)),
-        useMaterial3: true,
+        primarySwatch: Colors.blue,
       ),
-      home: const LandingPage(),
+     
+      home: const LandingPage(), 
+      debugShowCheckedModeBanner: false,
     );
   }
 }
