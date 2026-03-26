@@ -96,7 +96,7 @@ class _LoginScreenState extends State<LoginScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // The beautiful header image you love!
+            
             Image.asset(
               'assets/images/openingVehicle.png',
               height: 200,

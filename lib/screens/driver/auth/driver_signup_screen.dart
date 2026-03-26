@@ -62,7 +62,7 @@ class _DriverSignupScreenState extends State<DriverSignupScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // The Combined Vehicle Header Image
+            
             Image.asset(
               'assets/images/openingVehicle.png',
               height: 180,
@@ -121,7 +121,7 @@ class _DriverSignupScreenState extends State<DriverSignupScreen> {
             // Sign Up Button
             ElevatedButton(
               onPressed: () {
-                // TODO: Implement signup logic
+               
                 print('Signing up ${_nameController.text} with a $_selectedVehicle');
               },
               style: ElevatedButton.styleFrom(
@@ -131,7 +131,7 @@ class _DriverSignupScreenState extends State<DriverSignupScreen> {
               child: const Text('Create Account', style: TextStyle(fontSize: 16)),
             ),
 
-            // Navigation to Login
+           
             TextButton(
               onPressed: () {
                 Navigator.pushReplacement(

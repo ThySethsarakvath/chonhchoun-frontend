@@ -68,7 +68,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    // Slide Title and Description at the Top
+                   
                     Text(
                       _onboardingData[index]['title']!,
                       style: const TextStyle(
