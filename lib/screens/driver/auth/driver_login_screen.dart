@@ -1,8 +1,14 @@
 import 'package:flutter/material.dart';
+
+import '../driver_workspace_screen.dart';
+import '../widgets/driver_auth_widgets.dart';
+import '../widgets/driver_button_widgets.dart';
+import '../widgets/driver_colors.dart';
+import '../widgets/driver_shell_widgets.dart';
 import 'driver_signup_screen.dart';
 
 class DriverLoginScreen extends StatefulWidget {
-  const DriverLoginScreen({Key? key}) : super(key: key);
+  const DriverLoginScreen({super.key});
 
   @override
   State<DriverLoginScreen> createState() => _DriverLoginScreenState();
@@ -11,84 +17,176 @@ class DriverLoginScreen extends StatefulWidget {
 class _DriverLoginScreenState extends State<DriverLoginScreen> {
   final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+  bool _obscurePassword = true;
+
+  @override
+  void dispose() {
+    _phoneController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBar(
-        title: const Text('Driver Login', style: TextStyle(color: Colors.black)),
-        backgroundColor: Colors.white,
-        elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.black),
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            
-            Image.asset(
+    return DriverAuthScaffold(
+      heroChild: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          DriverBackChip(onTap: () => Navigator.of(context).maybePop()),
+          const SizedBox(height: 18),
+          const Text(
+            'Driver auth',
+            style: TextStyle(
+              color: Colors.white70,
+              fontSize: 14,
+            ),
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'Welcome back,\nready to deliver?',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 30,
+              fontWeight: FontWeight.w800,
+              height: 1.15,
+            ),
+          ),
+          const SizedBox(height: 14),
+          const Text(
+            'Use the driver flow only. Customer pages stay untouched.',
+            style: TextStyle(
+              color: Colors.white70,
+              fontSize: 15,
+              height: 1.5,
+            ),
+          ),
+          const SizedBox(height: 18),
+          const Wrap(
+            spacing: 10,
+            runSpacing: 10,
+            children: [
+              DriverHeaderChip(
+                icon: Icons.route_rounded,
+                label: 'Live route view',
+              ),
+              DriverHeaderChip(
+                icon: Icons.account_balance_wallet_outlined,
+                label: 'Balance tracking',
+              ),
+            ],
+          ),
+          const SizedBox(height: 18),
+          Align(
+            alignment: Alignment.centerRight,
+            child: Image.asset(
               'assets/images/openingVehicle.png',
-              height: 200,
+              height: 170,
               fit: BoxFit.contain,
             ),
-            const SizedBox(height: 32),
-            
-            const Text(
-              'Welcome Back, Partner!',
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-              textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+      formChild: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Sign in',
+            style: TextStyle(
+              color: DriverColors.text,
+              fontSize: 24,
+              fontWeight: FontWeight.w800,
             ),
-            const SizedBox(height: 24),
-
-            
-            TextField(
-              controller: _phoneController,
-              keyboardType: TextInputType.phone,
-              decoration: InputDecoration(
-                labelText: 'Phone Number',
-                prefixIcon: const Icon(Icons.phone),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-              ),
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'Access requests, map details, and the driver dashboard.',
+            style: TextStyle(
+              color: DriverColors.muted,
+              height: 1.5,
             ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: _passwordController,
-              obscureText: true,
-              decoration: InputDecoration(
-                labelText: 'Password',
-                prefixIcon: const Icon(Icons.lock),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-              ),
-            ),
-            const SizedBox(height: 24),
-
-            
-            ElevatedButton(
+          ),
+          const SizedBox(height: 24),
+          DriverInputField(
+            controller: _phoneController,
+            label: 'Phone Number',
+            icon: Icons.phone_rounded,
+            keyboardType: TextInputType.phone,
+          ),
+          const SizedBox(height: 16),
+          DriverInputField(
+            controller: _passwordController,
+            label: 'Password',
+            icon: Icons.lock_rounded,
+            obscureText: _obscurePassword,
+            suffixIcon: IconButton(
               onPressed: () {
-                
-                print('Logging in with ${_phoneController.text}');
+                setState(() => _obscurePassword = !_obscurePassword);
               },
-              style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              icon: Icon(
+                _obscurePassword
+                    ? Icons.visibility_off_outlined
+                    : Icons.visibility_outlined,
+                color: DriverColors.muted,
               ),
-              child: const Text('Login', style: TextStyle(fontSize: 16)),
             ),
-            
-            // Navigation to Sign Up
-            TextButton(
+          ),
+          const SizedBox(height: 24),
+          SizedBox(
+            width: double.infinity,
+            child: DriverPrimaryButton(
+              label: 'Continue as Driver',
               onPressed: () {
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(builder: (context) => const DriverSignupScreen()),
+                Navigator.of(context).pushReplacement(
+                  MaterialPageRoute(
+                    builder: (_) => const DriverWorkspaceScreen(),
+                  ),
                 );
               },
-              child: const Text("Don't have an account? Sign Up"),
+              padding: const EdgeInsets.symmetric(vertical: 18),
+              borderRadius: 18,
             ),
-          ],
-        ),
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            child: DriverOutlineButton(
+              label: 'Create Driver Account',
+              onPressed: () {
+                Navigator.of(context).pushReplacement(
+                  MaterialPageRoute(
+                    builder: (_) => const DriverSignupScreen(),
+                  ),
+                );
+              },
+            ),
+          ),
+          const SizedBox(height: 18),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Text(
+                "Don't have an account yet?",
+                style: TextStyle(color: DriverColors.muted),
+              ),
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pushReplacement(
+                    MaterialPageRoute(
+                      builder: (_) => const DriverSignupScreen(),
+                    ),
+                  );
+                },
+                child: const Text(
+                  'Sign Up',
+                  style: TextStyle(
+                    color: DriverColors.blue,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }

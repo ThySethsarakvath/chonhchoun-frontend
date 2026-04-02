@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'screens/generals/landing_page.dart'; 
+import 'screens/driver/driver_workspace_screen.dart';
 
 void main() {
   runApp(const MyApp());
@@ -16,8 +16,8 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-     
-      home: const LandingPage(), 
+
+      home: const DriverWorkspaceScreen(),
       debugShowCheckedModeBanner: false,
     );
   }
