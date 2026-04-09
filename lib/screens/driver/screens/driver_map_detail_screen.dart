@@ -64,10 +64,12 @@ class DriverMapDetailScreen extends StatelessWidget {
             Expanded(
               child: Stack(
                 children: [
-                  const DriverLeafletMapCard(
+                  DriverLeafletMapCard(
                     interactive: true,
                     showAttribution: true,
-                    overlay: DriverLiveMapOverlay(),
+                    overlay: const DriverLiveMapOverlay(),
+                    pickupLatLng: request.pickupLatLng,
+                    dropOffLatLng: request.dropOffLatLng,
                   ),
                   Positioned(
                     left: 16,
@@ -97,13 +99,33 @@ class DriverMapDetailScreen extends StatelessWidget {
                               fontWeight: FontWeight.w700,
                             ),
                           ),
+                          const SizedBox(height: 6),
+                          Row(
+                            children: [
+                              const Icon(Icons.location_on_rounded, size: 14, color: DriverColors.danger),
+                              const SizedBox(width: 4),
+                              Expanded(
+                                child: Text(
+                                  request.pickup,
+                                  style: const TextStyle(color: DriverColors.muted, fontSize: 12),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
                           const SizedBox(height: 4),
-                          const Text(
-                            'Simple placeholder map for now.',
-                            style: TextStyle(
-                              color: DriverColors.muted,
-                              fontSize: 12,
-                            ),
+                          Row(
+                            children: [
+                              const Icon(Icons.circle_rounded, size: 14, color: DriverColors.success),
+                              const SizedBox(width: 4),
+                              Expanded(
+                                child: Text(
+                                  request.dropOff,
+                                  style: const TextStyle(color: DriverColors.muted, fontSize: 12),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
                           ),
                         ],
                       ),

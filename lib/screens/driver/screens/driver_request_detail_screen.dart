@@ -50,13 +50,15 @@ class DriverRequestDetailScreen extends StatelessWidget {
                     Center(
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(28),
-                        child: const SizedBox(
+                        child: SizedBox(
                           height: 152,
                           width: 230,
                           child: DriverLeafletMapCard(
                             interactive: false,
                             showAttribution: false,
-                            overlay: DriverPreviewRouteOverlay(),
+                            overlay: const DriverPreviewRouteOverlay(),
+                            pickupLatLng: request.pickupLatLng,
+                            dropOffLatLng: request.dropOffLatLng,
                           ),
                         ),
                       ),

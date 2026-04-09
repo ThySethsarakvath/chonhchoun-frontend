@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:latlong2/latlong.dart';
 
 class DriverRequest {
   const DriverRequest({
@@ -6,6 +7,8 @@ class DriverRequest {
     required this.recipient,
     required this.pickup,
     required this.dropOff,
+    required this.pickupLatLng,
+    required this.dropOffLatLng,
     required this.payment,
     required this.fee,
     required this.phone,
@@ -21,6 +24,8 @@ class DriverRequest {
   final String recipient;
   final String pickup;
   final String dropOff;
+  final LatLng pickupLatLng;
+  final LatLng dropOffLatLng;
   final String payment;
   final String fee;
   final String phone;

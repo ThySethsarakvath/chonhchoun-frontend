@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:latlong2/latlong.dart';
 
 import '../models/driver_request.dart';
 
@@ -14,6 +15,8 @@ const driverRequests = <DriverRequest>[
     recipient: 'Paul Pogba',
     pickup: 'Stueng Mean Chey',
     dropOff: 'Tuek Thla, Sen Sok',
+    pickupLatLng: LatLng(11.5437, 104.9302),
+    dropOffLatLng: LatLng(11.5870, 104.8930),
     payment: 'Card',
     fee: '\$3.50',
     phone: '012321287',
@@ -29,6 +32,8 @@ const driverRequests = <DriverRequest>[
     recipient: 'Sita',
     pickup: 'Toul Kork',
     dropOff: 'Boeung Kak 1',
+    pickupLatLng: LatLng(11.5749, 104.9109),
+    dropOffLatLng: LatLng(11.5791, 104.9103),
     payment: 'Cash',
     fee: '\$2.80',
     phone: '093882210',
@@ -44,6 +49,8 @@ const driverRequests = <DriverRequest>[
     recipient: 'Dara',
     pickup: 'Russian Market',
     dropOff: 'Olympic',
+    pickupLatLng: LatLng(11.5462, 104.9214),
+    dropOffLatLng: LatLng(11.5596, 104.9180),
     payment: 'Card',
     fee: '\$4.10',
     phone: '070552183',
