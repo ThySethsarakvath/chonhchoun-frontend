@@ -37,7 +37,7 @@ class _DriverMapScreenState extends State<DriverMapScreen> {
     },
     {
       'id': 'D003',
-      'name': 'Vong Tat',
+      'name': 'Vong T',
       'latitude': 11.5728,
       'longitude': 104.9022,
       'status': 'IDLE',
