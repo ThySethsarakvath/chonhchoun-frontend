@@ -38,11 +38,15 @@ class DriverLeafletMapCard extends StatelessWidget {
               userAgentPackageName: 'com.chonhchoun.frontend',
             ),
             if (showAttribution)
-              const RichAttributionWidget(
-                showFlutterMapAttribution: false,
-                attributions: [
-                  TextSourceAttribution('OpenStreetMap contributors'),
-                ],
+              const Align(
+                alignment: Alignment.bottomRight,
+                child: Padding(
+                  padding: EdgeInsets.all(4.0),
+                  child: Text(
+                    '© OpenStreetMap contributors',
+                    style: TextStyle(backgroundColor: Colors.white70, fontSize: 10),
+                  ),
+                ),
               ),
           ],
         ),

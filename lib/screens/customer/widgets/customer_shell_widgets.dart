@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import '../../customer/customer_workspace_screen.dart';
-import '../widgets/driver_colors.dart';
+import '../../driver/driver_workspace_screen.dart';
+import 'customer_colors.dart';
 
-class DriverHeroSection extends StatelessWidget {
-  const DriverHeroSection({
+class CustomerHeroSection extends StatelessWidget {
+  const CustomerHeroSection({
     super.key,
     required this.subtitle,
     required this.name,
@@ -23,31 +23,44 @@ class DriverHeroSection extends StatelessWidget {
         gradient: LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: [DriverColors.blueDark, DriverColors.blue],
+          colors: [CustomerColors.blueDark, CustomerColors.blue],
         ),
       ),
       child: Stack(
         children: [
+          // Background Decorative Circles (Matching Driver Style)
           Positioned(
-            left: -40,
-            top: 48,
+            left: -60,
+            top: -40,
             child: Container(
-              height: 130,
-              width: 130,
+              height: 200,
+              width: 200,
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.07),
+                color: Colors.white.withValues(alpha: 0.08),
                 shape: BoxShape.circle,
               ),
             ),
           ),
           Positioned(
-            right: -18,
-            top: 126,
+            right: -80,
+            bottom: -20,
             child: Container(
-              height: 84,
-              width: 84,
+              height: 240,
+              width: 240,
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.06),
+                color: Colors.white.withValues(alpha: 0.05),
+                shape: BoxShape.circle,
+              ),
+            ),
+          ),
+          Positioned(
+            top: 100,
+            left: 100,
+            child: Container(
+              height: 60,
+              width: 60,
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.04),
                 shape: BoxShape.circle,
               ),
             ),
@@ -55,7 +68,7 @@ class DriverHeroSection extends StatelessWidget {
           SafeArea(
             bottom: false,
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 14, 16, 120),
+              padding: const EdgeInsets.fromLTRB(16, 14, 16, 110),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -64,7 +77,7 @@ class DriverHeroSection extends StatelessWidget {
                     children: [
                       if (leading != null) ...[
                         leading!,
-                        const SizedBox(width: 12),
+                        const SizedBox(width: 4),
                       ],
                       Expanded(
                         child: Column(
@@ -103,15 +116,10 @@ class DriverHeroSection extends StatelessWidget {
                       const SizedBox(width: 12),
                       Column(
                         children: [
-                          CircleAvatar(
+                          const CircleAvatar(
                             radius: 20,
                             backgroundColor: Colors.white,
-                            child: ClipOval(
-                              child: Image.asset(
-                                'assets/images/agent.png',
-                                fit: BoxFit.cover,
-                              ),
-                            ),
+                            child: Icon(Icons.person, color: CustomerColors.blue),
                           ),
                           const SizedBox(height: 8),
                           Material(
@@ -120,7 +128,7 @@ class DriverHeroSection extends StatelessWidget {
                             child: InkWell(
                               onTap: () {
                                 Navigator.of(context).pushReplacement(
-                                  MaterialPageRoute(builder: (_) => const CustomerWorkspaceScreen()),
+                                  MaterialPageRoute(builder: (_) => const DriverWorkspaceScreen()),
                                 );
                               },
                               borderRadius: BorderRadius.circular(8),
@@ -140,155 +148,14 @@ class DriverHeroSection extends StatelessWidget {
               ),
             ),
           ),
-          Positioned(
-            left: 0,
-            right: 0,
-            bottom: 0,
-            child: Opacity(
-              opacity: 0.32,
-              child: Image.asset(
-                'assets/images/footer.png',
-                height: 90,
-                fit: BoxFit.cover,
-                alignment: Alignment.bottomCenter,
-              ),
-            ),
-          ),
         ],
       ),
     );
   }
 }
 
-class DriverStatusChip extends StatelessWidget {
-  const DriverStatusChip({
-    super.key,
-    required this.label,
-  });
-
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-      decoration: BoxDecoration(
-        color: DriverColors.success.withValues(alpha: 0.14),
-        borderRadius: BorderRadius.circular(999),
-      ),
-      child: Text(
-        label,
-        style: const TextStyle(
-          color: DriverColors.success,
-          fontWeight: FontWeight.w700,
-        ),
-      ),
-    );
-  }
-}
-
-class DriverSurfaceCard extends StatelessWidget {
-  const DriverSurfaceCard({
-    super.key,
-    required this.child,
-  });
-
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(28),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
-          ),
-        ],
-      ),
-      child: child,
-    );
-  }
-}
-
-class DriverBackChip extends StatelessWidget {
-  const DriverBackChip({
-    super.key,
-    required this.onTap,
-  });
-
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(14),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(14),
-        child: const SizedBox(
-          height: 44,
-          width: 44,
-          child: Icon(
-            Icons.arrow_back_ios_new_rounded,
-            size: 18,
-            color: DriverColors.text,
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class DriverStatLine extends StatelessWidget {
-  const DriverStatLine({
-    super.key,
-    required this.label,
-    required this.value,
-  });
-
-  final String label;
-  final String value;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Text(
-          label,
-          style: const TextStyle(
-            color: DriverColors.text,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        const SizedBox(width: 10),
-        const Expanded(
-          child: Divider(
-            thickness: 1,
-            color: DriverColors.line,
-          ),
-        ),
-        const SizedBox(width: 10),
-        Text(
-          value,
-          style: const TextStyle(
-            color: DriverColors.text,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class DriverBottomBar extends StatelessWidget {
-  const DriverBottomBar({
+class CustomerBottomBar extends StatelessWidget {
+  const CustomerBottomBar({
     super.key,
     required this.selectedIndex,
     required this.onSelected,
@@ -321,7 +188,7 @@ class DriverBottomBar extends StatelessWidget {
           children: [
             SizedBox(
               width: 84,
-              child: _DriverBottomBarItem(
+              child: _CustomerBottomBarItem(
                 icon: Icons.home_filled,
                 label: 'Home',
                 isSelected: selectedIndex == 0,
@@ -330,16 +197,16 @@ class DriverBottomBar extends StatelessWidget {
             ),
             SizedBox(
               width: 84,
-              child: _DriverBottomBarItem(
-                icon: Icons.work_history_rounded,
-                label: 'Deliveries',
+              child: _CustomerBottomBarItem(
+                icon: Icons.history_rounded,
+                label: 'Orders',
                 isSelected: selectedIndex == 1,
                 onTap: () => onSelected(1),
               ),
             ),
             SizedBox(
               width: 84,
-              child: _DriverBottomBarItem(
+              child: _CustomerBottomBarItem(
                 icon: Icons.person_rounded,
                 label: 'Profile',
                 isSelected: selectedIndex == 2,
@@ -353,8 +220,8 @@ class DriverBottomBar extends StatelessWidget {
   }
 }
 
-class _DriverBottomBarItem extends StatelessWidget {
-  const _DriverBottomBarItem({
+class _CustomerBottomBarItem extends StatelessWidget {
+  const _CustomerBottomBarItem({
     required this.icon,
     required this.label,
     required this.isSelected,
@@ -368,7 +235,7 @@ class _DriverBottomBarItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = isSelected ? DriverColors.blue : Colors.grey.shade400;
+    final color = isSelected ? CustomerColors.blue : Colors.grey.shade400;
 
     return InkWell(
       onTap: onTap,

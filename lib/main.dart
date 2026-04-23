@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'screens/customer/customer_workspace_screen.dart';
 import 'screens/driver/driver_workspace_screen.dart';
 
 void main() {
@@ -14,10 +15,10 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Chonh Choun',
       theme: ThemeData(
-        primarySwatch: Colors.blue,
+        useMaterial3: true,
+        primarySwatch: Colors.indigo,
       ),
-
-      home: const DriverWorkspaceScreen(),
+      home: const CustomerWorkspaceScreen(),
       debugShowCheckedModeBanner: false,
     );
   }
