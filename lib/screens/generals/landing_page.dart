@@ -1,23 +1,5 @@
 import 'package:flutter/material.dart';
-// 1. Import the new onboarding screen (we will create it next)
-import 'onboarding_screen.dart';
-
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'ជញ្ជូន',
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF2C5F8A)),
-        useMaterial3: true,
-      ),
-      home: const LandingPage(),
-    );
-  }
-}
+import '../../router/app_router.dart';
 
 class LandingPage extends StatefulWidget {
   const LandingPage({super.key});
@@ -38,8 +20,6 @@ class _LandingPageState extends State<LandingPage>
   final GlobalKey _textKey = GlobalKey();
   double _textWidth = 0;
   double _textLeft = 0;
-
-  // REMOVED: _showButtons state variable is gone
 
   static const double _carSize = 64.0;
   static const double _gap = 10.0;
@@ -79,16 +59,10 @@ class _LandingPageState extends State<LandingPage>
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _measureText();
-      
-      // 2. MODIFIED: The callback no longer shows buttons.
-      // It automatically navigates when the animation finishes.
+      // After splash animation finishes → go to onboarding, clear back stack.
       _mainController.forward().then((_) {
         if (mounted) {
-          // Navigates to the Onboarding Flow and clears the back stack.
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => const OnboardingScreen()),
-          );
+          Navigator.pushReplacementNamed(context, AppRoutes.onboarding);
         }
       });
     });
@@ -139,7 +113,7 @@ class _LandingPageState extends State<LandingPage>
               ),
             ),
 
-            // ── Center row (Your Animation) ──────────────────────────────
+            // ── Animated logo + title row ────────────────────────────────
             Center(
               child: AnimatedBuilder(
                 animation: _mainController,
@@ -205,8 +179,6 @@ class _LandingPageState extends State<LandingPage>
                 },
               ),
             ),
-
-            // REMOVED: NEW: Unified Auth Navigation Button block is gone
 
             // ── City footer ──────────────────────────────────────────────
             Positioned(

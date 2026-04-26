@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-
-import 'screens/customer/customer_workspace_screen.dart';
-import 'screens/driver/driver_workspace_screen.dart';
+import 'router/app_router.dart';
 
 void main() {
   runApp(const MyApp());
@@ -13,13 +11,15 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Chonh Choun',
+      title: 'ជញ្ជូន',
+      debugShowCheckedModeBanner: false,
       theme: ThemeData(
         useMaterial3: true,
-        primarySwatch: Colors.indigo,
+        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF2C5F8A)),
       ),
-      home: const CustomerWorkspaceScreen(),
-      debugShowCheckedModeBanner: false,
+      // ── Router wiring ────────────────────────────────────────────────────
+      initialRoute: AppRoutes.landing,
+      onGenerateRoute: AppRouter.onGenerateRoute,
     );
   }
 }
