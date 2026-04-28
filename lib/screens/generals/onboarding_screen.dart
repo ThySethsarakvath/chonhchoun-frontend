@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../router/app_router.dart';
-import '../../pages/onboarding_page.dart';
+import '../../features/onboarding/pages/onboarding_page.dart';
 
 /// Thin screen wrapper so the router can reference a named screen class,
 /// while the real UI logic stays inside the feature folder.

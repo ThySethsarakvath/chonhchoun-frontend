@@ -3,8 +3,7 @@ import 'package:http/http.dart' as http;
 import '../models/onboarding_model.dart';
 
 class OnboardingService {
-  // ── Replace with your actual base URL ────────────────────────────────────────
-  static const String _baseUrl = 'http://localhost:3000/api/v1';
+  static const String _baseUrl = 'http://192.168.204.194:3000/api/v1';
 
   /// GET /api/v1/onboarding
   /// Returns only active slides, sorted by order.
