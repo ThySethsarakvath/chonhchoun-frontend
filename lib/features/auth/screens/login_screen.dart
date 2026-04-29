@@ -14,7 +14,7 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final _identifierCtrl = TextEditingController();
+  final _emailCtrl = TextEditingController();
   final _passwordCtrl = TextEditingController();
   final _service = AuthService();
 
@@ -23,26 +23,27 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   void dispose() {
-    _identifierCtrl.dispose();
+    _emailCtrl.dispose();
     _passwordCtrl.dispose();
     super.dispose();
   }
 
-  // ── Validation ────────────────────────────────────────────────────────────
+  // ── Helpers ───────────────────────────────────────────────────────────────
 
-  String? _validate() {
-    if (_identifierCtrl.text.trim().isEmpty) {
-      return 'សូមបញ្ចូលអុីម៉ែល ឬ លេខទូរស័ព្ទ';
-    }
+  static final _emailReg = RegExp(r'^[\w\-.]+@([\w\-]+\.)+[\w]{2,}$');
+
+  String? _validateLogin() {
+    if (_emailCtrl.text.trim().isEmpty) return 'សូមបញ្ចូលអុីម៉ែលរបស់អ្នក';
+    if (!_emailReg.hasMatch(_emailCtrl.text.trim())) return 'អុីម៉ែលមិនត្រឹមត្រូវ';
     if (_passwordCtrl.text.isEmpty) return 'សូមបញ្ចូលលេខសម្ងាត់';
     if (_passwordCtrl.text.length < 6) return 'លេខសម្ងាត់ត្រូវតែ 6 តួអក្សរ ឬ ច្រើនជាងនេះ';
     return null;
   }
 
-  // ── Submit ────────────────────────────────────────────────────────────────
+  // ── Login submit ──────────────────────────────────────────────────────────
 
   Future<void> _submit() async {
-    final err = _validate();
+    final err = _validateLogin();
     if (err != null) {
       showErrorDialog(context, err);
       return;
@@ -51,7 +52,7 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => _loading = true);
     try {
       await _service.login(LoginRequest(
-        email: _identifierCtrl.text.trim(),
+        email: _emailCtrl.text.trim(),
         password: _passwordCtrl.text,
       ));
       if (mounted) {
@@ -66,14 +67,44 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  // ── Forgot password flow ──────────────────────────────────────────────────
+  // ── Forgot password ───────────────────────────────────────────────────────
+  // Requires a valid email first, calls /forgot to send OTP,
+  // then navigates with the email so ValidateEmailScreen can display it.
 
-  void _goForgotPassword() {
-    Navigator.pushNamed(
-      context,
-      AppRoutes.validateEmail,
-      arguments: const ValidateEmailArgs(flow: AuthFlow.forgotPassword),
-    );
+  Future<void> _goForgotPassword() async {
+    final email = _emailCtrl.text.trim();
+
+    if (email.isEmpty) {
+      showErrorDialog(context, 'សូមបញ្ចូលអុីម៉ែលរបស់អ្នកជាមុនសិន');
+      return;
+    }
+    if (!_emailReg.hasMatch(email)) {
+      showErrorDialog(context, 'អុីម៉ែលមិនត្រឹមត្រូវ');
+      return;
+    }
+
+    setState(() => _loading = true);
+    try {
+      // Send OTP before leaving this screen
+      await _service.forgotPassword(ForgotPasswordRequest(email: email));
+
+      if (mounted) {
+        Navigator.pushNamed(
+          context,
+          AppRoutes.validateEmail,
+          arguments: ValidateEmailArgs(
+            flow: AuthFlow.forgotPassword,
+            email: email, // ← passed to ValidateEmailScreen to display
+          ),
+        );
+      }
+    } on ApiException catch (e) {
+      if (mounted) showErrorDialog(context, e.message);
+    } catch (_) {
+      if (mounted) showErrorDialog(context, 'មិនអាចភ្ជាប់ទៅម៉ាស៊ីនបម្រើបានទេ');
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
   }
 
   @override
@@ -99,11 +130,11 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
           const SizedBox(height: 28),
 
-          // ── Email / phone ────────────────────────────────────────────────
+          // ── Email ────────────────────────────────────────────────────────
           AuthTextField(
-            label: 'អុីម៉ែល ឬ លេខទូរស័ព្ទ',
-            placeholder: 'បញ្ចូលអុីម៉ែល ឬ លេខទូរស័ព្ទរបស់អ្នក',
-            controller: _identifierCtrl,
+            label: 'អុីម៉ែល',
+            placeholder: 'បញ្ចូលអុីម៉ែលរបស់អ្នក',
+            controller: _emailCtrl,
             keyboardType: TextInputType.emailAddress,
           ),
           const SizedBox(height: 16),
@@ -122,7 +153,7 @@ class _LoginScreenState extends State<LoginScreen> {
           Align(
             alignment: Alignment.centerRight,
             child: TextButton(
-              onPressed: _goForgotPassword,
+              onPressed: _loading ? null : _goForgotPassword,
               style: TextButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 4),
                 tapTargetSize: MaterialTapTargetSize.shrinkWrap,

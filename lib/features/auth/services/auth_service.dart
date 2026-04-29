@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../models/auth_models.dart';
+import '../../../global/base_url.dart';
 
 /// Wraps a server error message extracted from the response body.
 class ApiException implements Exception {
@@ -14,7 +15,7 @@ class ApiException implements Exception {
 }
 
 class AuthService {
-  static const String _base = 'http://192.168.204.194:3000/api/v1';
+  String get _url => baseUrl;
 
   static const _headers = {'Content-Type': 'application/json'};
 
@@ -31,7 +32,7 @@ class AuthService {
 
   Future<Map<String, dynamic>> _post(String path, Map<String, dynamic> payload) async {
     final res = await http.post(
-      Uri.parse('$_base$path'),
+      Uri.parse('$_url$path'),
       headers: _headers,
       body: json.encode(payload),
     );
