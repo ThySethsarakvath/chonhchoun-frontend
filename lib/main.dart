@@ -1,7 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:frontend/screens/generals/landing_page.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'router/app_router.dart';
 
-void main() {
+Future <void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  try{
+    await dotenv.load(fileName: ".env");
+  } catch (e) {
+    debugPrint("Warning: Could not load .env file: $e");
+  }
   runApp(const MyApp());
 }
 
@@ -14,10 +22,12 @@ class MyApp extends StatelessWidget {
       title: 'ជញ្ជូន',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF2C5F8A)),
         useMaterial3: true,
+        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF2C5F8A)),
       ),
-      home: const LandingPage(),
+      // ── Router wiring ────────────────────────────────────────────────────
+      initialRoute: AppRoutes.landing,
+      onGenerateRoute: AppRouter.onGenerateRoute,
     );
   }
 }
