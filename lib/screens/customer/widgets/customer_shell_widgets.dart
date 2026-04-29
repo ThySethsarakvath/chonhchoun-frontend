@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../driver/driver_workspace_screen.dart';
+
 import 'customer_colors.dart';
 
 class CustomerHeroSection extends StatelessWidget {
@@ -122,22 +122,6 @@ class CustomerHeroSection extends StatelessWidget {
                             child: Icon(Icons.person, color: CustomerColors.blue),
                           ),
                           const SizedBox(height: 8),
-                          Material(
-                            color: Colors.white.withValues(alpha: 0.2),
-                            borderRadius: BorderRadius.circular(8),
-                            child: InkWell(
-                              onTap: () {
-                                Navigator.of(context).pushReplacement(
-                                  MaterialPageRoute(builder: (_) => const DriverWorkspaceScreen()),
-                                );
-                              },
-                              borderRadius: BorderRadius.circular(8),
-                              child: const Padding(
-                                padding: EdgeInsets.all(4.0),
-                                child: Icon(Icons.swap_horiz, color: Colors.white, size: 16),
-                              ),
-                            ),
-                          ),
                         ],
                       ),
                     ],

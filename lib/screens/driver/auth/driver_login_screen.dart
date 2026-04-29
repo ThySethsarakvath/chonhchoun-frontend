@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 
-import '../driver_workspace_screen.dart';
+import '../../../features/auth/models/auth_models.dart';
+import '../../../features/auth/services/auth_service.dart';
+import '../../../router/app_router.dart';
 import '../widgets/driver_auth_widgets.dart';
 import '../widgets/driver_button_widgets.dart';
 import '../widgets/driver_colors.dart';
 import '../widgets/driver_shell_widgets.dart';
-import 'driver_signup_screen.dart';
 
 class DriverLoginScreen extends StatefulWidget {
   const DriverLoginScreen({super.key});
@@ -15,15 +16,93 @@ class DriverLoginScreen extends StatefulWidget {
 }
 
 class _DriverLoginScreenState extends State<DriverLoginScreen> {
-  final TextEditingController _phoneController = TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+
+  final AuthService _service = AuthService();
+
   bool _obscurePassword = true;
+  bool _loading = false;
 
   @override
   void dispose() {
-    _phoneController.dispose();
+    _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
+  }
+
+  void _showError(String message) {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Error'),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String? _validateLogin() {
+    if (_emailController.text.trim().isEmpty) {
+      return 'Please enter your email';
+    }
+
+    if (_passwordController.text.isEmpty) {
+      return 'Please enter your password';
+    }
+
+    if (_passwordController.text.length < 6) {
+      return 'Password must be at least 6 characters';
+    }
+
+    return null;
+  }
+
+  Future<void> _submit() async {
+    final error = _validateLogin();
+
+    if (error != null) {
+      _showError(error);
+      return;
+    }
+
+    setState(() => _loading = true);
+
+    try {
+      await _service.login(
+        LoginRequest(
+          email: _emailController.text.trim(),
+          password: _passwordController.text,
+        ),
+      );
+
+      if (mounted) {
+        Navigator.pushReplacementNamed(context, AppRoutes.driver);
+      }
+    } on ApiException catch (e) {
+      if (mounted) {
+        _showError(e.message);
+      }
+    } catch (_) {
+      if (mounted) {
+        _showError('Cannot connect to server');
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _loading = false);
+      }
+    }
+  }
+
+  void _goToSignup() {
+    if (!_loading) {
+      Navigator.pushNamed(context, AppRoutes.driverSignup);
+    }
   }
 
   @override
@@ -32,7 +111,6 @@ class _DriverLoginScreenState extends State<DriverLoginScreen> {
       heroChild: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          DriverBackChip(onTap: () => Navigator.of(context).maybePop()),
           const SizedBox(height: 18),
           const Text(
             'Driver auth',
@@ -53,7 +131,7 @@ class _DriverLoginScreenState extends State<DriverLoginScreen> {
           ),
           const SizedBox(height: 14),
           const Text(
-            'Use the driver flow only. Customer pages stay untouched.',
+            'Use your driver account to access delivery requests, map details, and your dashboard.',
             style: TextStyle(
               color: Colors.white70,
               fontSize: 15,
@@ -90,7 +168,7 @@ class _DriverLoginScreenState extends State<DriverLoginScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
-            'Sign in',
+            'Driver sign in',
             style: TextStyle(
               color: DriverColors.text,
               fontSize: 24,
@@ -99,7 +177,7 @@ class _DriverLoginScreenState extends State<DriverLoginScreen> {
           ),
           const SizedBox(height: 8),
           const Text(
-            'Access requests, map details, and the driver dashboard.',
+            'Enter the same email and password you registered with.',
             style: TextStyle(
               color: DriverColors.muted,
               height: 1.5,
@@ -107,10 +185,10 @@ class _DriverLoginScreenState extends State<DriverLoginScreen> {
           ),
           const SizedBox(height: 24),
           DriverInputField(
-            controller: _phoneController,
-            label: 'Phone Number',
-            icon: Icons.phone_rounded,
-            keyboardType: TextInputType.phone,
+            controller: _emailController,
+            label: 'Email',
+            icon: Icons.email_rounded,
+            keyboardType: TextInputType.emailAddress,
           ),
           const SizedBox(height: 16),
           DriverInputField(
@@ -134,13 +212,11 @@ class _DriverLoginScreenState extends State<DriverLoginScreen> {
           SizedBox(
             width: double.infinity,
             child: DriverPrimaryButton(
-              label: 'Continue as Driver',
+              label: _loading ? 'Loading...' : 'Continue as Driver',
               onPressed: () {
-                Navigator.of(context).pushReplacement(
-                  MaterialPageRoute(
-                    builder: (_) => const DriverWorkspaceScreen(),
-                  ),
-                );
+                if (!_loading) {
+                  _submit();
+                }
               },
               padding: const EdgeInsets.symmetric(vertical: 18),
               borderRadius: 18,
@@ -151,13 +227,7 @@ class _DriverLoginScreenState extends State<DriverLoginScreen> {
             width: double.infinity,
             child: DriverOutlineButton(
               label: 'Create Driver Account',
-              onPressed: () {
-                Navigator.of(context).pushReplacement(
-                  MaterialPageRoute(
-                    builder: (_) => const DriverSignupScreen(),
-                  ),
-                );
-              },
+              onPressed: _goToSignup,
             ),
           ),
           const SizedBox(height: 18),
@@ -169,13 +239,7 @@ class _DriverLoginScreenState extends State<DriverLoginScreen> {
                 style: TextStyle(color: DriverColors.muted),
               ),
               TextButton(
-                onPressed: () {
-                  Navigator.of(context).pushReplacement(
-                    MaterialPageRoute(
-                      builder: (_) => const DriverSignupScreen(),
-                    ),
-                  );
-                },
+                onPressed: _loading ? null : _goToSignup,
                 child: const Text(
                   'Sign Up',
                   style: TextStyle(

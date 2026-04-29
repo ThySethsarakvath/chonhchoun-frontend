@@ -9,16 +9,17 @@ class ValidateEmailScreen extends StatelessWidget {
   const ValidateEmailScreen({super.key, required this.args});
 
   void _next(BuildContext context) {
-    Navigator.pushNamed(
-      context,
-      AppRoutes.otp,
-      arguments: OtpArgs(
-        flow: args.flow,
-        email: args.email ?? '',
-        name: args.name,
-      ),
-    );
-  }
+  Navigator.pushNamed(
+    context,
+    AppRoutes.otp,
+    arguments: OtpArgs(
+      flow: args.flow,
+      email: args.email ?? '',
+      name: args.name,
+      redirectRoute: args.redirectRoute,
+    ),
+  );
+}
 
   @override
   Widget build(BuildContext context) {

@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 
-import '../driver_workspace_screen.dart';
+import '../../../features/auth/models/auth_models.dart';
+import '../../../features/auth/services/auth_service.dart';
+import '../../../router/app_router.dart';
 import '../widgets/driver_auth_widgets.dart';
 import '../widgets/driver_button_widgets.dart';
 import '../widgets/driver_colors.dart';
 import '../widgets/driver_shell_widgets.dart';
-import 'driver_login_screen.dart';
 
 class DriverSignupScreen extends StatefulWidget {
   const DriverSignupScreen({super.key});
@@ -16,21 +17,83 @@ class DriverSignupScreen extends StatefulWidget {
 
 class _DriverSignupScreenState extends State<DriverSignupScreen> {
   final TextEditingController _nameController = TextEditingController();
-  final TextEditingController _phoneController = TextEditingController();
-  final TextEditingController _passwordController = TextEditingController();
-  final TextEditingController _zoneController = TextEditingController(
-    text: 'Phnom Penh',
-  );
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _zoneController =
+      TextEditingController(text: 'Phnom Penh');
+
+  final AuthService _service = AuthService();
+
   String _selectedVehicle = 'Motorbike';
-  bool _obscurePassword = true;
+  bool _loading = false;
 
   @override
   void dispose() {
     _nameController.dispose();
-    _phoneController.dispose();
-    _passwordController.dispose();
+    _emailController.dispose();
     _zoneController.dispose();
     super.dispose();
+  }
+
+  void _showError(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
+  }
+
+  String? _validate() {
+    if (_nameController.text.trim().isEmpty) {
+      return 'Please enter your full name';
+    }
+
+    if (_emailController.text.trim().isEmpty) {
+      return 'Please enter your email';
+    }
+
+    final emailReg = RegExp(r'^[\w\-.]+@([\w\-]+\.)+[\w]{2,}$');
+    if (!emailReg.hasMatch(_emailController.text.trim())) {
+      return 'Please enter a valid email';
+    }
+
+    return null;
+  }
+
+  Future<void> _createAccount() async {
+    final error = _validate();
+
+    if (error != null) {
+      _showError(error);
+      return;
+    }
+
+    setState(() => _loading = true);
+
+    try {
+      await _service.initiateRegister(
+        InitiateRegisterRequest(
+          name: _nameController.text.trim(),
+          email: _emailController.text.trim(),
+        ),
+      );
+
+      if (mounted) {
+        Navigator.pushNamed(
+          context,
+          AppRoutes.validateEmail,
+          arguments: ValidateEmailArgs(
+            flow: AuthFlow.driverRegister,
+            email: _emailController.text.trim(),
+            name: _nameController.text.trim(),
+            redirectRoute: AppRoutes.driver,
+          ),
+        );
+      }
+    } on ApiException catch (e) {
+      if (mounted) _showError(e.message);
+    } catch (_) {
+      if (mounted) _showError('Cannot create driver account');
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
   }
 
   @override
@@ -43,10 +106,7 @@ class _DriverSignupScreenState extends State<DriverSignupScreen> {
           const SizedBox(height: 18),
           const Text(
             'Driver auth',
-            style: TextStyle(
-              color: Colors.white70,
-              fontSize: 14,
-            ),
+            style: TextStyle(color: Colors.white70, fontSize: 14),
           ),
           const SizedBox(height: 8),
           const Text(
@@ -60,7 +120,7 @@ class _DriverSignupScreenState extends State<DriverSignupScreen> {
           ),
           const SizedBox(height: 14),
           const Text(
-            'Set up the vehicle, access request cards, and move into the new driver dashboard flow.',
+            'Set up your vehicle, verify your email, and move into the driver dashboard flow.',
             style: TextStyle(
               color: Colors.white70,
               fontSize: 15,
@@ -74,15 +134,15 @@ class _DriverSignupScreenState extends State<DriverSignupScreen> {
                 child: DriverFeatureTile(
                   icon: Icons.two_wheeler_rounded,
                   title: 'Vehicle Type',
-                  subtitle: 'Motorbike or car',
+                  subtitle: 'Motorbike, car, tuk-tuk',
                 ),
               ),
               SizedBox(width: 12),
               Expanded(
                 child: DriverFeatureTile(
-                  icon: Icons.map_outlined,
-                  title: 'Map Preview',
-                  subtitle: 'Leaflet placeholder',
+                  icon: Icons.verified_user_outlined,
+                  title: 'OTP Verify',
+                  subtitle: 'Email security',
                 ),
               ),
             ],
@@ -110,13 +170,14 @@ class _DriverSignupScreenState extends State<DriverSignupScreen> {
           ),
           const SizedBox(height: 8),
           const Text(
-            'Only the driver side is being redesigned here. Customer flow stays as-is.',
+            'Choose your vehicle type and verify your email before entering the driver workspace.',
             style: TextStyle(
               color: DriverColors.muted,
               height: 1.5,
             ),
           ),
           const SizedBox(height: 24),
+
           const Text(
             'Vehicle type',
             style: TextStyle(
@@ -125,31 +186,54 @@ class _DriverSignupScreenState extends State<DriverSignupScreen> {
             ),
           ),
           const SizedBox(height: 14),
-          Row(
+
+          Column(
             children: [
-              Expanded(
-                child: DriverVehicleOptionCard(
-                  label: 'Motorbike',
-                  icon: Icons.two_wheeler_rounded,
-                  isSelected: _selectedVehicle == 'Motorbike',
-                  onTap: () {
-                    setState(() => _selectedVehicle = 'Motorbike');
-                  },
-                ),
+              Row(
+                children: [
+                  Expanded(
+                    child: DriverVehicleOptionCard(
+                      label: 'Motorbike',
+                      icon: Icons.two_wheeler_rounded,
+                      isSelected: _selectedVehicle == 'Motorbike',
+                      onTap: () {
+                        setState(() => _selectedVehicle = 'Motorbike');
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: DriverVehicleOptionCard(
+                      label: 'Car',
+                      icon: Icons.directions_car_rounded,
+                      isSelected: _selectedVehicle == 'Car',
+                      onTap: () {
+                        setState(() => _selectedVehicle = 'Car');
+                      },
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: DriverVehicleOptionCard(
-                  label: 'Car',
-                  icon: Icons.directions_car_rounded,
-                  isSelected: _selectedVehicle == 'Car',
-                  onTap: () {
-                    setState(() => _selectedVehicle = 'Car');
-                  },
-                ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: DriverVehicleOptionCard(
+                      label: 'TukTuk',
+                      icon: Icons.electric_rickshaw_rounded,
+                      isSelected: _selectedVehicle == 'TukTuk',
+                      onTap: () {
+                        setState(() => _selectedVehicle = 'TukTuk');
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  const Expanded(child: SizedBox()),
+                ],
               ),
             ],
           ),
+
           const SizedBox(height: 20),
           DriverInputField(
             controller: _nameController,
@@ -158,28 +242,10 @@ class _DriverSignupScreenState extends State<DriverSignupScreen> {
           ),
           const SizedBox(height: 16),
           DriverInputField(
-            controller: _phoneController,
-            label: 'Phone Number',
-            icon: Icons.phone_rounded,
-            keyboardType: TextInputType.phone,
-          ),
-          const SizedBox(height: 16),
-          DriverInputField(
-            controller: _passwordController,
-            label: 'Password',
-            icon: Icons.lock_rounded,
-            obscureText: _obscurePassword,
-            suffixIcon: IconButton(
-              onPressed: () {
-                setState(() => _obscurePassword = !_obscurePassword);
-              },
-              icon: Icon(
-                _obscurePassword
-                    ? Icons.visibility_off_outlined
-                    : Icons.visibility_outlined,
-                color: DriverColors.muted,
-              ),
-            ),
+            controller: _emailController,
+            label: 'Email',
+            icon: Icons.email_rounded,
+            keyboardType: TextInputType.emailAddress,
           ),
           const SizedBox(height: 16),
           DriverInputField(
@@ -188,6 +254,7 @@ class _DriverSignupScreenState extends State<DriverSignupScreen> {
             icon: Icons.location_on_rounded,
           ),
           const SizedBox(height: 18),
+
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(16),
@@ -195,15 +262,15 @@ class _DriverSignupScreenState extends State<DriverSignupScreen> {
               color: DriverColors.blue.withValues(alpha: 0.07),
               borderRadius: BorderRadius.circular(20),
             ),
-            child: const Row(
+            child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(Icons.info_outline_rounded, color: DriverColors.blue),
-                SizedBox(width: 12),
+                const Icon(Icons.info_outline_rounded, color: DriverColors.blue),
+                const SizedBox(width: 12),
                 Expanded(
                   child: Text(
-                    'The next screen includes a bottom driver bar, request detail cards, and an OpenStreetMap placeholder map.',
-                    style: TextStyle(
+                    'Selected vehicle: $_selectedVehicle. After email OTP verification, you will set your password and enter the driver workspace.',
+                    style: const TextStyle(
                       color: DriverColors.text,
                       height: 1.5,
                       fontWeight: FontWeight.w500,
@@ -213,17 +280,16 @@ class _DriverSignupScreenState extends State<DriverSignupScreen> {
               ],
             ),
           ),
+
           const SizedBox(height: 24),
           SizedBox(
             width: double.infinity,
             child: DriverPrimaryButton(
-              label: 'Create Account',
+              label: _loading ? 'Loading...' : 'Create Account',
               onPressed: () {
-                Navigator.of(context).pushReplacement(
-                  MaterialPageRoute(
-                    builder: (_) => const DriverWorkspaceScreen(),
-                  ),
-                );
+                if (!_loading) {
+                  _createAccount();
+                }
               },
               padding: const EdgeInsets.symmetric(vertical: 18),
               borderRadius: 18,
@@ -235,11 +301,9 @@ class _DriverSignupScreenState extends State<DriverSignupScreen> {
             child: DriverOutlineButton(
               label: 'Already Have an Account',
               onPressed: () {
-                Navigator.of(context).pushReplacement(
-                  MaterialPageRoute(
-                    builder: (_) => const DriverLoginScreen(),
-                  ),
-                );
+                if (!_loading) {
+                  Navigator.of(context).maybePop();
+                }
               },
             ),
           ),

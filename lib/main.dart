@@ -26,7 +26,7 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF2C5F8A)),
       ),
       // ── Router wiring ────────────────────────────────────────────────────
-      initialRoute: AppRoutes.landing,
+      initialRoute: AppRoutes.driverLogin,
       onGenerateRoute: AppRouter.onGenerateRoute,
     );
   }

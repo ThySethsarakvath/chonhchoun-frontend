@@ -8,8 +8,10 @@ import '../features/auth/screens/register_screen.dart';
 import '../features/auth/screens/validate_email_screen.dart';
 import '../features/auth/screens/otp_screen.dart';
 import '../features/auth/screens/set_password_screen.dart';
-// import '../screens/customer/customer_workspace_screen.dart';
-// import '../screens/driver/driver_workspace_screen.dart';
+import '../screens/customer/customer_workspace_screen.dart';
+import '../screens/driver/driver_workspace_screen.dart';
+import '../screens/driver/auth/driver_login_screen.dart';
+import '../screens/driver/auth/driver_signup_screen.dart';
 
 // ── Route name constants ──────────────────────────────────────────────────────
 
@@ -25,32 +27,54 @@ abstract class AppRoutes {
   static const String setPassword   = '/set-password';
   static const String customer      = '/customer';
   static const String driver        = '/driver';
+  static const String driverLogin = '/driver-login';
+  static const String driverSignup = '/driver-signup';
 }
 
 // ── Typed route arguments ─────────────────────────────────────────────────────
 
-enum AuthFlow { register, forgotPassword }
+enum AuthFlow { register, driverRegister, forgotPassword }
 
 class ValidateEmailArgs {
   final AuthFlow flow;
   final String? email;
   final String? name;
-  const ValidateEmailArgs({required this.flow, this.email, this.name});
-}
+  final String? redirectRoute;
 
+  const ValidateEmailArgs({
+    required this.flow,
+    this.email,
+    this.name,
+    this.redirectRoute,
+  });
+}
 class OtpArgs {
   final AuthFlow flow;
   final String email;
   final String? name;
-  const OtpArgs({required this.flow, required this.email, this.name});
-}
+  final String? redirectRoute;
 
+  const OtpArgs({
+    required this.flow,
+    required this.email,
+    this.name,
+    this.redirectRoute,
+  });
+}
 class SetPasswordArgs {
   final AuthFlow flow;
   final String? setupToken;
   final String? resetToken;
-  const SetPasswordArgs({required this.flow, this.setupToken, this.resetToken});
+  final String? redirectRoute;
+
+  const SetPasswordArgs({
+    required this.flow,
+    this.setupToken,
+    this.resetToken,
+    this.redirectRoute,
+  });
 }
+
 
 // ── Route factory ─────────────────────────────────────────────────────────────
 
@@ -77,9 +101,14 @@ class AppRouter {
         final args = settings.arguments as SetPasswordArgs;
         return _slide(SetPasswordScreen(args: args));
       case AppRoutes.customer:
-        return _fade(_stub('Customer Workspace'));
+        return _fade(const CustomerWorkspaceScreen());
       case AppRoutes.driver:
-        return _fade(_stub('Driver Workspace'));
+        return _fade(const DriverWorkspaceScreen());
+      case AppRoutes.driverLogin:
+         return _slide(const DriverLoginScreen());
+
+      case AppRoutes.driverSignup:
+          return _slide(const DriverSignupScreen());
       default:
         return _fade(_stub('404 — Page not found'));
     }

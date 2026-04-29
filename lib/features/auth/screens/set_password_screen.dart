@@ -53,7 +53,8 @@ class _SetPasswordScreenState extends State<SetPasswordScreen> {
 
     setState(() => _loading = true);
     try {
-      if (widget.args.flow == AuthFlow.register) {
+      if (widget.args.flow == AuthFlow.register ||
+          widget.args.flow == AuthFlow.driverRegister) {
         // Complete registration → logged in
         await _service.completeRegister(CompleteRegisterRequest(
           setupToken: widget.args.setupToken!,
@@ -70,10 +71,11 @@ class _SetPasswordScreenState extends State<SetPasswordScreen> {
       }
 
       if (mounted) {
-        if (widget.args.flow == AuthFlow.register) {
+        if (widget.args.flow == AuthFlow.register ||
+            widget.args.flow == AuthFlow.driverRegister) {
           // Auto-logged-in after register complete
           Navigator.pushNamedAndRemoveUntil(
-              context, AppRoutes.customer, (_) => false);
+              context, widget.args.redirectRoute ?? AppRoutes.customer, (_) => false);
         } else {
           // Forgot password done → back to login
           showSuccessSnack(context, 'ពាក្យសម្ងាត់ត្រូវបានកំណត់ឡើងវិញ');

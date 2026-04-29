@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../../customer/customer_workspace_screen.dart';
 import '../widgets/driver_colors.dart';
 
 class DriverHeroSection extends StatelessWidget {
@@ -101,36 +100,15 @@ class DriverHeroSection extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(width: 12),
-                      Column(
-                        children: [
-                          CircleAvatar(
-                            radius: 20,
-                            backgroundColor: Colors.white,
-                            child: ClipOval(
-                              child: Image.asset(
-                                'assets/images/agent.png',
-                                fit: BoxFit.cover,
-                              ),
-                            ),
+                      CircleAvatar(
+                        radius: 20,
+                        backgroundColor: Colors.white,
+                        child: ClipOval(
+                          child: Image.asset(
+                            'assets/images/agent.png',
+                            fit: BoxFit.cover,
                           ),
-                          const SizedBox(height: 8),
-                          Material(
-                            color: Colors.white.withValues(alpha: 0.2),
-                            borderRadius: BorderRadius.circular(8),
-                            child: InkWell(
-                              onTap: () {
-                                Navigator.of(context).pushReplacement(
-                                  MaterialPageRoute(builder: (_) => const CustomerWorkspaceScreen()),
-                                );
-                              },
-                              borderRadius: BorderRadius.circular(8),
-                              child: const Padding(
-                                padding: EdgeInsets.all(4.0),
-                                child: Icon(Icons.swap_horiz, color: Colors.white, size: 16),
-                              ),
-                            ),
-                          ),
-                        ],
+                        ),
                       ),
                     ],
                   ),

@@ -96,7 +96,8 @@ class _OtpScreenState extends State<OtpScreen> {
 
   Future<void> _resend() async {
     try {
-      if (widget.args.flow == AuthFlow.register) {
+      if (widget.args.flow == AuthFlow.register ||
+      widget.args.flow == AuthFlow.driverRegister) {
         await _service.initiateRegister(InitiateRegisterRequest(
           name: widget.args.name ?? '',
           email: widget.args.email,
@@ -122,7 +123,8 @@ class _OtpScreenState extends State<OtpScreen> {
 
     setState(() => _loading = true);
     try {
-      if (widget.args.flow == AuthFlow.register) {
+      if (widget.args.flow == AuthFlow.register ||
+        widget.args.flow == AuthFlow.driverRegister) {
         final res = await _service.verifyEmail(
             VerifyEmailRequest(email: widget.args.email, otp: _otp));
         if (mounted) {
@@ -132,6 +134,7 @@ class _OtpScreenState extends State<OtpScreen> {
             arguments: SetPasswordArgs(
               flow: widget.args.flow,
               setupToken: res.setupToken,
+              redirectRoute: widget.args.redirectRoute,
             ),
           );
         }
