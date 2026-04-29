@@ -18,10 +18,10 @@ String get baseUrl {
 
   // 3. Android
   if (Platform.isAndroid) {
-    // If you are using a real Android phone (like your Oppo)
+    // If you are using a real Android phone 
     // You would typically check if it's a physical device here.
     // For now, let's use the Real Device IP as the safest fallback.
-    return dotenv.env['API_URL_REAL_DEVICE']!;
+    return dotenv.env['API_ANDROID_EMU']!;
   }
 
   return dotenv.env['API_URL_LOCAL']!;
