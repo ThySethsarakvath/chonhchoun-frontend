@@ -72,6 +72,7 @@ class _DriverSignupScreenState extends State<DriverSignupScreen> {
         InitiateRegisterRequest(
           name: _nameController.text.trim(),
           email: _emailController.text.trim(),
+          role: 'driver',
         ),
       );
 

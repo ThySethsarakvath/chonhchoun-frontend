@@ -4,7 +4,10 @@ class LoginRequest {
   final String email;
   final String password;
 
-  LoginRequest({required this.email, required this.password});
+  LoginRequest({
+    required this.email,
+    required this.password,
+  });
 
   Map<String, dynamic> toJson() => {
         'email': email,
@@ -15,19 +18,34 @@ class LoginRequest {
 class InitiateRegisterRequest {
   final String name;
   final String email;
+  final String role;
 
-  InitiateRegisterRequest({required this.name, required this.email});
+  InitiateRegisterRequest({
+    required this.name,
+    required this.email,
+    required this.role,
+  });
 
-  Map<String, dynamic> toJson() => {'name': name, 'email': email};
+  Map<String, dynamic> toJson() => {
+        'name': name,
+        'email': email,
+        'role': role,
+      };
 }
 
 class VerifyEmailRequest {
   final String email;
   final String otp;
 
-  VerifyEmailRequest({required this.email, required this.otp});
+  VerifyEmailRequest({
+    required this.email,
+    required this.otp,
+  });
 
-  Map<String, dynamic> toJson() => {'email': email, 'otp': otp};
+  Map<String, dynamic> toJson() => {
+        'email': email,
+        'otp': otp,
+      };
 }
 
 class CompleteRegisterRequest {
@@ -51,18 +69,28 @@ class CompleteRegisterRequest {
 class ForgotPasswordRequest {
   final String email;
 
-  ForgotPasswordRequest({required this.email});
+  ForgotPasswordRequest({
+    required this.email,
+  });
 
-  Map<String, dynamic> toJson() => {'email': email};
+  Map<String, dynamic> toJson() => {
+        'email': email,
+      };
 }
 
 class VerifyOtpRequest {
   final String email;
   final String otp;
 
-  VerifyOtpRequest({required this.email, required this.otp});
+  VerifyOtpRequest({
+    required this.email,
+    required this.otp,
+  });
 
-  Map<String, dynamic> toJson() => {'email': email, 'otp': otp};
+  Map<String, dynamic> toJson() => {
+        'email': email,
+        'otp': otp,
+      };
 }
 
 class ResetPasswordRequest {
@@ -85,32 +113,76 @@ class ResetPasswordRequest {
 
 // ── Response models ───────────────────────────────────────────────────────────
 
+class AuthUser {
+  final String id;
+  final String name;
+  final String email;
+  final String role;
+  final bool isActive;
+
+  AuthUser({
+    required this.id,
+    required this.name,
+    required this.email,
+    required this.role,
+    required this.isActive,
+  });
+
+  factory AuthUser.fromJson(Map<String, dynamic> json) {
+    return AuthUser(
+      id: (json['_id'] ?? json['id'] ?? '') as String,
+      name: (json['name'] ?? '') as String,
+      email: (json['email'] ?? '') as String,
+      role: (json['role'] ?? 'customer') as String,
+      isActive: (json['isActive'] ?? true) as bool,
+    );
+  }
+}
+
 class AuthTokens {
   final String accessToken;
   final String refreshToken;
+  final AuthUser user;
 
-  AuthTokens({required this.accessToken, required this.refreshToken});
+  AuthTokens({
+    required this.accessToken,
+    required this.refreshToken,
+    required this.user,
+  });
 
-  factory AuthTokens.fromJson(Map<String, dynamic> json) => AuthTokens(
-        accessToken: json['accessToken'] as String,
-        refreshToken: json['refreshToken'] as String,
-      );
+  factory AuthTokens.fromJson(Map<String, dynamic> json) {
+    return AuthTokens(
+      accessToken: json['accessToken'] as String,
+      refreshToken: json['refreshToken'] as String,
+      user: AuthUser.fromJson(json['user'] as Map<String, dynamic>),
+    );
+  }
 }
 
 class SetupTokenResponse {
   final String setupToken;
 
-  SetupTokenResponse({required this.setupToken});
+  SetupTokenResponse({
+    required this.setupToken,
+  });
 
-  factory SetupTokenResponse.fromJson(Map<String, dynamic> json) =>
-      SetupTokenResponse(setupToken: json['setupToken'] as String);
+  factory SetupTokenResponse.fromJson(Map<String, dynamic> json) {
+    return SetupTokenResponse(
+      setupToken: json['setupToken'] as String,
+    );
+  }
 }
 
 class ResetTokenResponse {
   final String resetToken;
 
-  ResetTokenResponse({required this.resetToken});
+  ResetTokenResponse({
+    required this.resetToken,
+  });
 
-  factory ResetTokenResponse.fromJson(Map<String, dynamic> json) =>
-      ResetTokenResponse(resetToken: json['resetToken'] as String);
+  factory ResetTokenResponse.fromJson(Map<String, dynamic> json) {
+    return ResetTokenResponse(
+      resetToken: json['resetToken'] as String,
+    );
+  }
 }

@@ -60,6 +60,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       await _service.initiateRegister(InitiateRegisterRequest(
         name: _nameCtrl.text.trim(),
         email: _emailCtrl.text.trim(),
+        role: 'customer',
       ));
 
       if (mounted) {

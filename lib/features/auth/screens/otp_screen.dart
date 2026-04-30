@@ -98,10 +98,13 @@ class _OtpScreenState extends State<OtpScreen> {
     try {
       if (widget.args.flow == AuthFlow.register ||
       widget.args.flow == AuthFlow.driverRegister) {
-        await _service.initiateRegister(InitiateRegisterRequest(
-          name: widget.args.name ?? '',
-          email: widget.args.email,
-        ));
+        await _service.initiateRegister(
+          InitiateRegisterRequest(
+            name: widget.args.name ?? '',
+            email: widget.args.email,
+            role: widget.args.flow == AuthFlow.driverRegister ? 'driver' : 'customer',
+          ),
+        );
       } else {
         await _service.forgotPassword(
             ForgotPasswordRequest(email: widget.args.email));

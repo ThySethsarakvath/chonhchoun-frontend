@@ -20,13 +20,17 @@ abstract class AppRoutes {
 
   static const String landing       = '/';
   static const String onboarding    = '/onboarding';
+  // default auth flow
   static const String login         = '/login';
   static const String register      = '/register';
+  // shared auth flow
   static const String validateEmail = '/validate-email';
   static const String otp           = '/otp';
   static const String setPassword   = '/set-password';
+  // wspaces
   static const String customer      = '/customer';
   static const String driver        = '/driver';
+  // driver auth
   static const String driverLogin = '/driver-login';
   static const String driverSignup = '/driver-signup';
 }

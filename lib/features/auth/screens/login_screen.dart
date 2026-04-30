@@ -3,8 +3,8 @@ import '../../../router/app_router.dart';
 import '../services/auth_service.dart';
 import '../models/auth_models.dart';
 import '../widgets/auth_scaffold.dart';
-import '../widgets/auth_header.dart';
 import '../widgets/auth_widgets.dart';
+import '../widgets/auth_header.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -21,6 +21,8 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _obscurePassword = true;
   bool _loading = false;
 
+  static final _emailReg = RegExp(r'^[\w\-.]+@([\w\-]+\.)+[\w]{2,}$');
+
   @override
   void dispose() {
     _emailCtrl.dispose();
@@ -28,19 +30,13 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
-  // ── Helpers ───────────────────────────────────────────────────────────────
-
-  static final _emailReg = RegExp(r'^[\w\-.]+@([\w\-]+\.)+[\w]{2,}$');
-
   String? _validateLogin() {
-    if (_emailCtrl.text.trim().isEmpty) return 'សូមបញ្ចូលអុីម៉ែលរបស់អ្នក';
-    if (!_emailReg.hasMatch(_emailCtrl.text.trim())) return 'អុីម៉ែលមិនត្រឹមត្រូវ';
+    if (_emailCtrl.text.trim().isEmpty) return 'សូមបញ្ចូលអ៊ីម៉ែលរបស់អ្នក';
+    if (!_emailReg.hasMatch(_emailCtrl.text.trim())) return 'អ៊ីម៉ែលមិនត្រឹមត្រូវ';
     if (_passwordCtrl.text.isEmpty) return 'សូមបញ្ចូលលេខសម្ងាត់';
-    if (_passwordCtrl.text.length < 6) return 'លេខសម្ងាត់ត្រូវតែ 6 តួអក្សរ ឬ ច្រើនជាងនេះ';
+    if (_passwordCtrl.text.length < 6) return 'លេខសម្ងាត់ត្រូវតែមានយ៉ាងតិច 6 តួអក្សរ';
     return null;
   }
-
-  // ── Login submit ──────────────────────────────────────────────────────────
 
   Future<void> _submit() async {
     final err = _validateLogin();
@@ -50,42 +46,47 @@ class _LoginScreenState extends State<LoginScreen> {
     }
 
     setState(() => _loading = true);
+
     try {
-      await _service.login(LoginRequest(
-        email: _emailCtrl.text.trim(),
-        password: _passwordCtrl.text,
-      ));
-      if (mounted) {
+      final res = await _service.login(
+        LoginRequest(
+          email: _emailCtrl.text.trim(),
+          password: _passwordCtrl.text,
+        ),
+      );
+
+      if (!mounted) return;
+
+      if (res.user.role == 'driver') {
+        Navigator.pushReplacementNamed(context, AppRoutes.driver);
+      } else {
         Navigator.pushReplacementNamed(context, AppRoutes.customer);
       }
     } on ApiException catch (e) {
       if (mounted) showErrorDialog(context, e.message);
     } catch (_) {
-      if (mounted) showErrorDialog(context, 'មិនអាចភ្ជាប់ទៅម៉ាស៊ីនបម្រើបានទេ');
+      if (mounted) showErrorDialog(context, 'មិនអាចភ្ជាប់ទៅម៉ាស៊ីនមេបានទេ');
     } finally {
       if (mounted) setState(() => _loading = false);
     }
   }
 
-  // ── Forgot password ───────────────────────────────────────────────────────
-  // Requires a valid email first, calls /forgot to send OTP,
-  // then navigates with the email so ValidateEmailScreen can display it.
-
   Future<void> _goForgotPassword() async {
     final email = _emailCtrl.text.trim();
 
     if (email.isEmpty) {
-      showErrorDialog(context, 'សូមបញ្ចូលអុីម៉ែលរបស់អ្នកជាមុនសិន');
+      showErrorDialog(context, 'សូមបញ្ចូលអ៊ីម៉ែលរបស់អ្នកជាមុនសិន');
       return;
     }
+
     if (!_emailReg.hasMatch(email)) {
-      showErrorDialog(context, 'អុីម៉ែលមិនត្រឹមត្រូវ');
+      showErrorDialog(context, 'អ៊ីម៉ែលមិនត្រឹមត្រូវ');
       return;
     }
 
     setState(() => _loading = true);
+
     try {
-      // Send OTP before leaving this screen
       await _service.forgotPassword(ForgotPasswordRequest(email: email));
 
       if (mounted) {
@@ -94,14 +95,14 @@ class _LoginScreenState extends State<LoginScreen> {
           AppRoutes.validateEmail,
           arguments: ValidateEmailArgs(
             flow: AuthFlow.forgotPassword,
-            email: email, // ← passed to ValidateEmailScreen to display
+            email: email,
           ),
         );
       }
     } on ApiException catch (e) {
       if (mounted) showErrorDialog(context, e.message);
     } catch (_) {
-      if (mounted) showErrorDialog(context, 'មិនអាចភ្ជាប់ទៅម៉ាស៊ីនបម្រើបានទេ');
+      if (mounted) showErrorDialog(context, 'មិនអាចភ្ជាប់ទៅម៉ាស៊ីនមេបានទេ');
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -114,7 +115,6 @@ class _LoginScreenState extends State<LoginScreen> {
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // ── Title ───────────────────────────────────────────────────────
           const Text(
             'ចូលគណនី',
             style: TextStyle(
@@ -123,23 +123,25 @@ class _LoginScreenState extends State<LoginScreen> {
               color: Color(0xFF1E2D3D),
             ),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 6),
           const Text(
-            'សូមស្វាគមន៍, អ្នកបានត្រឡប់មកវិញហើយ !!!',
-            style: TextStyle(fontSize: 13, color: Color(0xFF6B7A8D)),
+            'សូមស្វាគមន៍មកកាន់ ChonhChoun។ ចូលគណនីដើម្បីបន្តការដឹកជញ្ជូនរបស់អ្នក។',
+            style: TextStyle(
+              fontSize: 13,
+              color: Color(0xFF6B7A8D),
+              height: 1.5,
+            ),
           ),
           const SizedBox(height: 28),
 
-          // ── Email ────────────────────────────────────────────────────────
           AuthTextField(
-            label: 'អុីម៉ែល',
-            placeholder: 'បញ្ចូលអុីម៉ែលរបស់អ្នក',
+            label: 'អ៊ីម៉ែល',
+            placeholder: 'បញ្ចូលអ៊ីម៉ែលរបស់អ្នក',
             controller: _emailCtrl,
             keyboardType: TextInputType.emailAddress,
           ),
           const SizedBox(height: 16),
 
-          // ── Password ─────────────────────────────────────────────────────
           AuthTextField(
             label: 'លេខសម្ងាត់',
             placeholder: 'បញ្ចូលលេខសម្ងាត់របស់អ្នក',
@@ -149,7 +151,6 @@ class _LoginScreenState extends State<LoginScreen> {
             onToggle: () => setState(() => _obscurePassword = !_obscurePassword),
           ),
 
-          // ── Forgot password link ─────────────────────────────────────────
           Align(
             alignment: Alignment.centerRight,
             child: TextButton(
@@ -170,19 +171,63 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
           const SizedBox(height: 32),
 
-          // ── Login button ─────────────────────────────────────────────────
           AuthButton(
-            label: 'ចូល',
+            label: 'ចូលគណនី',
             onPressed: _submit,
             loading: _loading,
           ),
           const SizedBox(height: 20),
 
-          // ── Register link ────────────────────────────────────────────────
           AuthLinkRow(
-            prefix: 'មិនទាន់មានគណនី​? ',
+            prefix: 'មិនទាន់មានគណនីមែនទេ? ',
             linkText: 'បង្កើតគណនី',
             onTap: () => Navigator.pushNamed(context, AppRoutes.register),
+          ),
+
+          const SizedBox(height: 18),
+
+          GestureDetector(
+            onTap: _loading
+                ? null
+                : () {
+                    Navigator.pushNamed(context, AppRoutes.driverLogin);
+                  },
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: const Color(0xFFEEF3FB),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: const Color(0xFFDDE3EE)),
+              ),
+              child: const Column(
+                children: [
+                  Icon(
+                    Icons.delivery_dining_rounded,
+                    color: Color(0xFF2C5F8A),
+                    size: 28,
+                  ),
+                  SizedBox(height: 8),
+                  Text(
+                    'ចង់ក្លាយជា Driver Agent?',
+                    style: TextStyle(
+                      color: Color(0xFF1E2D3D),
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  SizedBox(height: 4),
+                  Text(
+                    'ចូលទៅកាន់ផ្នែកអ្នកបើកបរ ដើម្បីទទួលការស្នើសុំដឹកជញ្ជូន។',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: Color(0xFF6B7A8D),
+                      fontSize: 12,
+                      height: 1.4,
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
         ],
       ),
