@@ -27,7 +27,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
     super.dispose();
   }
 
-  // ── Validation ────────────────────────────────────────────────────────────
 
   String? _validate() {
     if (_nameCtrl.text.trim().isEmpty) return 'សូមបញ្ចូលឈ្មោះរបស់អ្នក';
@@ -46,7 +45,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
     return null;
   }
 
-  // ── Submit ────────────────────────────────────────────────────────────────
 
   Future<void> _submit() async {
     final err = _validate();

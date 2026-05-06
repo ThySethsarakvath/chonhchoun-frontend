@@ -28,7 +28,6 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
-  // ── Helpers ───────────────────────────────────────────────────────────────
 
   static final _emailReg = RegExp(r'^[\w\-.]+@([\w\-]+\.)+[\w]{2,}$');
 
@@ -40,7 +39,6 @@ class _LoginScreenState extends State<LoginScreen> {
     return null;
   }
 
-  // ── Login submit ──────────────────────────────────────────────────────────
 
   Future<void> _submit() async {
     final err = _validateLogin();

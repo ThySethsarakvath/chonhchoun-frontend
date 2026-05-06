@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-
-// ── Screens ───────────────────────────────────────────────────────────────────
 import '../screens/generals/landing_page.dart';
 import '../screens/generals/onboarding_screen.dart';
 import '../features/auth/screens/login_screen.dart';
@@ -11,7 +9,6 @@ import '../features/auth/screens/set_password_screen.dart';
 // import '../screens/customer/customer_workspace_screen.dart';
 // import '../screens/driver/driver_workspace_screen.dart';
 
-// ── Route name constants ──────────────────────────────────────────────────────
 
 abstract class AppRoutes {
   AppRoutes._();
@@ -27,7 +24,6 @@ abstract class AppRoutes {
   static const String driver        = '/driver';
 }
 
-// ── Typed route arguments ─────────────────────────────────────────────────────
 
 enum AuthFlow { register, forgotPassword }
 
@@ -52,7 +48,6 @@ class SetPasswordArgs {
   const SetPasswordArgs({required this.flow, this.setupToken, this.resetToken});
 }
 
-// ── Route factory ─────────────────────────────────────────────────────────────
 
 class AppRouter {
   AppRouter._();
