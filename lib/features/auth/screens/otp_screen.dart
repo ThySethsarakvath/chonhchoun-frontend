@@ -44,7 +44,6 @@ class _OtpScreenState extends State<OtpScreen> {
     super.dispose();
   }
 
-  // ── Timer ─────────────────────────────────────────────────────────────────
 
   void _startTimer() {
     _timer?.cancel();
@@ -65,7 +64,6 @@ class _OtpScreenState extends State<OtpScreen> {
     return '$m:$s s';
   }
 
-  // ── OTP helpers ───────────────────────────────────────────────────────────
 
   String get _otp => _controllers.map((c) => c.text).join();
 
@@ -92,8 +90,6 @@ class _OtpScreenState extends State<OtpScreen> {
     }
   }
 
-  // ── Resend OTP ────────────────────────────────────────────────────────────
-
   Future<void> _resend() async {
     try {
       if (widget.args.flow == AuthFlow.register ||
@@ -115,8 +111,6 @@ class _OtpScreenState extends State<OtpScreen> {
       if (mounted) showErrorDialog(context, 'មិនអាចផ្ញើលេខកូដបន្ថែមបានទេ');
     }
   }
-
-  // ── Submit OTP ────────────────────────────────────────────────────────────
 
   Future<void> _submit() async {
     if (_otp.length < _pinLength) {

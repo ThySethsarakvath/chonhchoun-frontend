@@ -9,18 +9,12 @@ String get baseUrl {
   }
 
   // 2. iOS Simulator
-  // iOS Simulators can use localhost directly
   if (Platform.isIOS) {
-    // Note: If testing on a PHYSICAL iPhone, you MUST use the Real Device IP
-    // For simplicity, many devs just use the Real Device IP for all mobile testing
     return dotenv.env['API_URL_LOCAL']!;
   }
 
   // 3. Android
   if (Platform.isAndroid) {
-    // If you are using a real Android phone 
-    // You would typically check if it's a physical device here.
-    // For now, let's use the Real Device IP as the safest fallback.
     return dotenv.env['API_URL_ANDROID_EMU']!;
   }
 
