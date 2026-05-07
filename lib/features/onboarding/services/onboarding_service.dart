@@ -1,13 +1,12 @@
 import 'dart:convert';
+import 'package:frontend/core/network/app_api_base_url.dart';
 import 'package:http/http.dart' as http;
 import '../models/onboarding_model.dart';
-import '../../../global/base_url.dart';
+
 
 class OnboardingService {
-  String get _url => baseUrl;
+  String get _url => appApiBaseUrl;
 
-  /// GET /api/v1/onboarding
-  /// Returns only active slides, sorted by order.
   Future<List<OnboardingSlide>> fetchSlides() async {
     final uri = Uri.parse('$_url/onboarding');
     final response = await http.get(uri);

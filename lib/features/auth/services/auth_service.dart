@@ -1,17 +1,23 @@
 import '../../../core/network/api_client.dart';
 import '../../../core/network/api_exception.dart';
 import '../models/auth_models.dart';
+import 'auth_session_service.dart';
 
 export '../../../core/network/api_exception.dart';
 
 class AuthService {
-  AuthService({ApiClient? client}) : _client = client ?? const ApiClient();
+  AuthService({ApiClient? client, AuthSessionService? sessionService})
+      : _client = client ?? const ApiClient(),
+        _sessionService = sessionService ?? AuthSessionService();
 
   final ApiClient _client;
+  final AuthSessionService _sessionService;
 
   Future<AuthTokens> login(LoginRequest req) async {
     final data = await _client.post('/auth/login', req.toJson());
-    return AuthTokens.fromJson(data);
+    final tokens = AuthTokens.fromJson(data);
+    await _sessionService.saveSession(tokens);
+    return tokens;
   }
 
   Future<void> initiateRegister(InitiateRegisterRequest req) async {
@@ -25,7 +31,9 @@ class AuthService {
 
   Future<AuthTokens> completeRegister(CompleteRegisterRequest req) async {
     final data = await _client.post('/auth/register/complete', req.toJson());
-    return AuthTokens.fromJson(data);
+    final tokens = AuthTokens.fromJson(data);
+    await _sessionService.saveSession(tokens);
+    return tokens;
   }
 
   Future<void> forgotPassword(ForgotPasswordRequest req) async {

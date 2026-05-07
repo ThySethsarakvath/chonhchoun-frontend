@@ -1,10 +1,10 @@
 ﻿import 'package:flutter/material.dart';
 import '../../../../app/router/app_router.dart';
-import '../services/auth_service.dart';
-import '../models/auth_models.dart';
-import '../widgets/auth_scaffold.dart';
-import '../widgets/auth_widgets.dart';
-import '../widgets/auth_header.dart';
+import '../../services/auth_service.dart';
+import '../../models/auth_models.dart';
+import '../../widgets/auth_scaffold.dart';
+import '../../widgets/auth_widgets.dart';
+import '../../widgets/auth_header.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});

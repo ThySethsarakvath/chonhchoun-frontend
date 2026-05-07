@@ -119,6 +119,7 @@ class AuthUser {
   final String email;
   final String role;
   final bool isActive;
+  final String? avatarUrl;
 
   AuthUser({
     required this.id,
@@ -126,15 +127,47 @@ class AuthUser {
     required this.email,
     required this.role,
     required this.isActive,
+    this.avatarUrl,
   });
 
   factory AuthUser.fromJson(Map<String, dynamic> json) {
+    final rawAvatar = json['avatarUrl'] as String?;
+
     return AuthUser(
       id: (json['_id'] ?? json['id'] ?? '') as String,
       name: (json['name'] ?? '') as String,
       email: (json['email'] ?? '') as String,
       role: (json['role'] ?? 'customer') as String,
       isActive: (json['isActive'] ?? true) as bool,
+      avatarUrl:
+          rawAvatar == null || rawAvatar.trim().isEmpty ? null : rawAvatar,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'name': name,
+        'email': email,
+        'role': role,
+        'isActive': isActive,
+        'avatarUrl': avatarUrl,
+      };
+
+  AuthUser copyWith({
+    String? id,
+    String? name,
+    String? email,
+    String? role,
+    bool? isActive,
+    String? avatarUrl,
+  }) {
+    return AuthUser(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      email: email ?? this.email,
+      role: role ?? this.role,
+      isActive: isActive ?? this.isActive,
+      avatarUrl: avatarUrl ?? this.avatarUrl,
     );
   }
 }
