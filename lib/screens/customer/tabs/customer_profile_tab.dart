@@ -7,7 +7,8 @@ import '../customer_profile/widgets/customer_profile_info_card.dart';
 import '../models/customer_profile.dart';
 import '../services/customer_profile_service.dart';
 import '../widgets/customer_colors.dart';
-
+import '../../../app/router/app_router.dart';
+import '../../../features/auth/services/auth_session_service.dart';
 class CustomerProfileTab extends StatefulWidget {
   const CustomerProfileTab({super.key});
 
@@ -98,14 +99,18 @@ class _CustomerProfileTabState extends State<CustomerProfileTab> {
     }
   }
 
-  void _showLogoutPlaceholder() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Logout action placeholder. Hook this to your logout flow next.'),
-      ),
-    );
-  }
+  
+  Future<void> _logout() async {
+  await AuthSessionService().clear();
 
+  if (!mounted) return;
+
+  Navigator.pushNamedAndRemoveUntil(
+    context,
+    AppRoutes.login,
+    (route) => false,
+  );
+}
   @override
   Widget build(BuildContext context) {
     final profile = _profile;
@@ -146,7 +151,7 @@ class _CustomerProfileTabState extends State<CustomerProfileTab> {
                               role: profile.role,
                             ),
                             CustomerProfileActionsCard(
-                              onLogoutTap: _showLogoutPlaceholder,
+                               onLogoutTap: _logout,
                             ),
                           ],
                         ),
