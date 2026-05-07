@@ -24,11 +24,12 @@ class _CustomerWorkspaceScreenState extends State<CustomerWorkspaceScreen> {
     });
   }
 
-  void _openBooking() {
+  void _openBooking(DeliveryServiceType serviceType) {
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => CustomerBookingScreen(
           onOrderCreated: _addOrder,
+          serviceType: serviceType,
         ),
       ),
     );

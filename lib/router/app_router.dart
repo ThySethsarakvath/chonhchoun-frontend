@@ -18,7 +18,7 @@ import '../screens/driver/auth/driver_signup_screen.dart';
 abstract class AppRoutes {
   AppRoutes._();
 
-  static const String landing       = '/';
+  static const String landing       = '/landing';
   static const String onboarding    = '/onboarding';
   // default auth flow
   static const String login         = '/login';
@@ -28,7 +28,7 @@ abstract class AppRoutes {
   static const String otp           = '/otp';
   static const String setPassword   = '/set-password';
   // wspaces
-  static const String customer      = '/customer';
+  static const String customer      = '/';
   static const String driver        = '/driver';
   // driver auth
   static const String driverLogin = '/driver-login';

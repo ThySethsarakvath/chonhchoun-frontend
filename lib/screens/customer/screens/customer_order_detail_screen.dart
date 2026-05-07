@@ -32,7 +32,7 @@ class _CustomerOrderDetailScreenState extends State<CustomerOrderDetailScreen> {
     try {
       final start = _currentOrder.pickup;
       final end = _currentOrder.dropoff;
-      final url = 'http://router.project-osrm.org/route/v1/driving/${start.longitude},${start.latitude};${end.longitude},${end.latitude}?overview=full&geometries=geojson';
+      final url = 'https://router.project-osrm.org/route/v1/driving/${start.longitude},${start.latitude};${end.longitude},${end.latitude}?overview=full&geometries=geojson';
       
       final client = HttpClient();
       final request = await client.getUrl(Uri.parse(url));
@@ -109,7 +109,9 @@ class _CustomerOrderDetailScreenState extends State<CustomerOrderDetailScreen> {
               shape: BoxShape.circle,
             ),
             child: Icon(
-              isCanceled ? Icons.cancel_outlined : Icons.delivery_dining,
+              isCanceled 
+                ? Icons.cancel_outlined 
+                : (_currentOrder.serviceType == DeliveryServiceType.warehouse ? Icons.warehouse : Icons.delivery_dining),
               color: isCanceled ? CustomerColors.danger : CustomerColors.blue,
             ),
           ),
@@ -206,13 +208,21 @@ class _CustomerOrderDetailScreenState extends State<CustomerOrderDetailScreen> {
                   point: _currentOrder.pickup,
                   width: 40,
                   height: 40,
-                  child: const Icon(Icons.radio_button_checked, color: CustomerColors.blue, size: 24),
+                  child: Icon(
+                    _currentOrder.serviceType == DeliveryServiceType.warehouse ? Icons.warehouse : Icons.radio_button_checked, 
+                    color: CustomerColors.blue, 
+                    size: 24
+                  ),
                 ),
                 Marker(
                   point: _currentOrder.dropoff,
                   width: 40,
                   height: 40,
-                  child: const Icon(Icons.location_on, color: CustomerColors.danger, size: 30),
+                  child: Icon(
+                    _currentOrder.serviceType == DeliveryServiceType.warehouse ? Icons.warehouse : Icons.location_on, 
+                    color: CustomerColors.danger, 
+                    size: 30
+                  ),
                 ),
               ],
             ),
@@ -315,7 +325,7 @@ class _CustomerOrderDetailScreenState extends State<CustomerOrderDetailScreen> {
           const Divider(height: 24),
           _buildInfoItem("Item Name", _currentOrder.itemName),
           _buildInfoItem("Details", "${_currentOrder.typeText} • Size ${_currentOrder.size.name} • ${_currentOrder.weight}kg"),
-          _buildInfoItem("Service", _currentOrder.vehicleText),
+          _buildInfoItem("Service", _currentOrder.serviceType == DeliveryServiceType.warehouse ? _currentOrder.serviceName : _currentOrder.vehicleText),
           if (_currentOrder.itemHandling)
             _buildInfoItem("Add-ons", "Careful Item Handling"),
         ],
@@ -330,7 +340,12 @@ class _CustomerOrderDetailScreenState extends State<CustomerOrderDetailScreen> {
         children: [
           const Text("Billing Details", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
           const Divider(height: 24),
-          _buildInfoItem("Payment Method", _currentOrder.paymentMethod == PaymentMethod.cash ? "Cash on Delivery" : "Online Payment"),
+          _buildInfoItem(
+            "Payment Method", 
+            _currentOrder.serviceType == DeliveryServiceType.warehouse
+              ? (_currentOrder.paymentMethod == PaymentMethod.cash ? "Sender Pay" : "Receiver Pay")
+              : (_currentOrder.paymentMethod == PaymentMethod.cash ? "Cash on Delivery" : "Online Payment")
+          ),
           const SizedBox(height: 8),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,

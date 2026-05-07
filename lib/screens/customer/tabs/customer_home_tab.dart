@@ -14,7 +14,7 @@ class CustomerHomeTab extends StatelessWidget {
     this.activeOrder,
   });
 
-  final VoidCallback onStartBooking;
+  final Function(DeliveryServiceType) onStartBooking;
   final CustomerOrder? activeOrder;
 
   @override
@@ -25,7 +25,9 @@ class CustomerHomeTab extends StatelessWidget {
         CustomerHeroSection(
           subtitle: 'Welcome Back',
           name: 'រតនៈ',
-          content: activeOrder != null ? _buildTrackingCard(context) : const PromoRotatingBanner(),
+          content: activeOrder != null
+              ? _buildTrackingCard(context)
+              : const PromoRotatingBanner(),
         ),
         Transform.translate(
           offset: const Offset(0, -30),
@@ -39,16 +41,18 @@ class CustomerHomeTab extends StatelessWidget {
                 const SizedBox(height: 12),
                 _buildServiceCard(
                   icon: Icons.electric_bolt_rounded,
-                  title: "Chonh Express",
+                  title: "Chonhchoun Express",
                   subtitle: "Fastest delivery under 2 hours",
                   price: "From \$2.50",
+                  onTap: () => onStartBooking(DeliveryServiceType.express),
                 ),
                 const SizedBox(height: 12),
                 _buildServiceCard(
-                  icon: Icons.local_shipping_rounded,
-                  title: "Chonh Regular",
-                  subtitle: "Scheduled or next day delivery",
-                  price: "From \$1.50",
+                  icon: Icons.warehouse_rounded,
+                  title: "Warehouse-to-Warehouse",
+                  subtitle: "Cheaper, drop at our warehouse",
+                  price: "From \$0.80",
+                  onTap: () => onStartBooking(DeliveryServiceType.warehouse),
                 ),
               ],
             ),
@@ -62,7 +66,9 @@ class CustomerHomeTab extends StatelessWidget {
     return GestureDetector(
       onTap: () {
         Navigator.of(context).push(
-          MaterialPageRoute(builder: (_) => CustomerOrderDetailScreen(order: activeOrder!)),
+          MaterialPageRoute(
+            builder: (_) => CustomerOrderDetailScreen(order: activeOrder!),
+          ),
         );
       },
       child: Container(
@@ -72,7 +78,11 @@ class CustomerHomeTab extends StatelessWidget {
           color: Colors.white,
           borderRadius: BorderRadius.circular(28),
           boxShadow: [
-            BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 20, offset: const Offset(0, 10)),
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.1),
+              blurRadius: 20,
+              offset: const Offset(0, 10),
+            ),
           ],
         ),
         child: Column(
@@ -83,7 +93,11 @@ class CustomerHomeTab extends StatelessWidget {
               children: [
                 const Text(
                   'Direct Tracking',
-                  style: TextStyle(color: CustomerColors.text, fontSize: 14, fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                    color: CustomerColors.text,
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 const AnimatedLiveBadge(),
               ],
@@ -91,18 +105,28 @@ class CustomerHomeTab extends StatelessWidget {
             const SizedBox(height: 12),
             Text(
               activeOrder!.itemName,
-              style: const TextStyle(color: CustomerColors.text, fontSize: 18, fontWeight: FontWeight.w800),
+              style: const TextStyle(
+                color: CustomerColors.text,
+                fontSize: 18,
+                fontWeight: FontWeight.w800,
+              ),
             ),
             const SizedBox(height: 4),
             Text(
               activeOrder!.statusText,
-              style: const TextStyle(color: CustomerColors.blue, fontSize: 13, fontWeight: FontWeight.w600),
+              style: const TextStyle(
+                color: CustomerColors.blue,
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+              ),
             ),
             const SizedBox(height: 16),
             LinearProgressIndicator(
               value: 0.2,
               backgroundColor: CustomerColors.line,
-              valueColor: const AlwaysStoppedAnimation<Color>(CustomerColors.blue),
+              valueColor: const AlwaysStoppedAnimation<Color>(
+                CustomerColors.blue,
+              ),
               borderRadius: BorderRadius.circular(10),
             ),
           ],
@@ -118,27 +142,74 @@ class CustomerHomeTab extends StatelessWidget {
         children: [
           const Text(
             'Where would you like to send your items?',
-            style: TextStyle(color: CustomerColors.text, fontSize: 13, fontWeight: FontWeight.w500),
+            style: TextStyle(
+              color: CustomerColors.text,
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
+            ),
           ),
           const SizedBox(height: 14),
-          InkWell(
-            onTap: onStartBooking,
-            borderRadius: BorderRadius.circular(16),
-            child: Ink(
-              height: 54,
-              decoration: BoxDecoration(color: CustomerColors.surface, borderRadius: BorderRadius.circular(16)),
-              child: const Row(
-                children: [
-                  SizedBox(width: 16),
-                  Icon(Icons.radio_button_checked_rounded, color: CustomerColors.blue, size: 18),
-                  SizedBox(width: 10),
-                  Text('Where to?', style: TextStyle(color: CustomerColors.muted, fontSize: 15)),
-                  Spacer(),
-                  Icon(Icons.chevron_right_rounded, color: CustomerColors.muted),
-                  SizedBox(width: 12),
-                ],
+          Row(
+            children: [
+              Expanded(
+                child: InkWell(
+                  onTap: () => onStartBooking(DeliveryServiceType.express),
+                  borderRadius: BorderRadius.circular(16),
+                  child: Ink(
+                    height: 54,
+                    decoration: BoxDecoration(
+                      color: CustomerColors.surface,
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: const Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.radio_button_checked_rounded,
+                          color: CustomerColors.blue,
+                          size: 18,
+                        ),
+                        SizedBox(width: 8),
+                        Text(
+                          'Express',
+                          style: TextStyle(color: CustomerColors.text, fontSize: 14, fontWeight: FontWeight.bold),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
               ),
-            ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: InkWell(
+                  onTap: () => onStartBooking(DeliveryServiceType.warehouse),
+                  borderRadius: BorderRadius.circular(16),
+                  child: Ink(
+                    height: 54,
+                    decoration: BoxDecoration(
+                      color: CustomerColors.blue.withValues(alpha: 0.05),
+                      border: Border.all(color: CustomerColors.blue.withValues(alpha: 0.2)),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: const Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.warehouse_outlined,
+                          color: CustomerColors.blue,
+                          size: 18,
+                        ),
+                        SizedBox(width: 8),
+                        Text(
+                          'Warehouse',
+                          style: TextStyle(color: CustomerColors.text, fontSize: 14, fontWeight: FontWeight.bold),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -151,12 +222,22 @@ class CustomerHomeTab extends StatelessWidget {
         Expanded(
           child: Text(
             title,
-            style: const TextStyle(color: CustomerColors.text, fontSize: 22, fontWeight: FontWeight.w800),
+            style: const TextStyle(
+              color: CustomerColors.text,
+              fontSize: 22,
+              fontWeight: FontWeight.w800,
+            ),
           ),
         ),
         TextButton(
           onPressed: () {},
-          child: const Text('View all', style: TextStyle(color: CustomerColors.blue, fontWeight: FontWeight.w700)),
+          child: const Text(
+            'View all',
+            style: TextStyle(
+              color: CustomerColors.blue,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
         ),
       ],
     );
@@ -167,33 +248,70 @@ class CustomerHomeTab extends StatelessWidget {
     required String title,
     required String subtitle,
     required String price,
+    required VoidCallback onTap,
   }) {
     return DriverSurfaceCard(
-      child: Row(
-        children: [
-          Container(
-            height: 54,
-            width: 54,
-            decoration: BoxDecoration(color: CustomerColors.blue.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(18)),
-            child: Icon(icon, color: CustomerColors.blue),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(20),
+        child: Padding(
+          padding: const EdgeInsets.all(4.0),
+          child: Row(
+            children: [
+              Container(
+                height: 54,
+                width: 54,
+                decoration: BoxDecoration(
+                  color: CustomerColors.blue.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(18),
+                ),
+                child: Icon(icon, color: CustomerColors.blue),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: const TextStyle(
+                        color: CustomerColors.text,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                    ),
+                    Text(
+                      subtitle,
+                      style: const TextStyle(
+                        color: CustomerColors.muted,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
+                decoration: BoxDecoration(
+                  color: CustomerColors.blue.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  price,
+                  style: const TextStyle(
+                    color: CustomerColors.blue,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 12,
+                  ),
+                ),
+              ),
+            ],
           ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(title, style: const TextStyle(color: CustomerColors.text, fontWeight: FontWeight.bold, fontSize: 16)),
-                Text(subtitle, style: const TextStyle(color: CustomerColors.muted, fontSize: 12)),
-              ],
-            ),
-          ),
-          const SizedBox(width: 8),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-            decoration: BoxDecoration(color: CustomerColors.blue.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12)),
-            child: Text(price, style: const TextStyle(color: CustomerColors.blue, fontWeight: FontWeight.bold, fontSize: 12)),
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -206,14 +324,18 @@ class AnimatedLiveBadge extends StatefulWidget {
   State<AnimatedLiveBadge> createState() => _AnimatedLiveBadgeState();
 }
 
-class _AnimatedLiveBadgeState extends State<AnimatedLiveBadge> with SingleTickerProviderStateMixin {
+class _AnimatedLiveBadgeState extends State<AnimatedLiveBadge>
+    with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _animation;
 
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(vsync: this, duration: const Duration(milliseconds: 1000))..repeat(reverse: true);
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1000),
+    )..repeat(reverse: true);
     _animation = Tween<double>(begin: 0.4, end: 1.0).animate(_controller);
   }
 
@@ -233,7 +355,11 @@ class _AnimatedLiveBadgeState extends State<AnimatedLiveBadge> with SingleTicker
           color: CustomerColors.danger.withValues(alpha: 0.9),
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
-            BoxShadow(color: CustomerColors.danger.withValues(alpha: 0.3), blurRadius: 8, spreadRadius: 1),
+            BoxShadow(
+              color: CustomerColors.danger.withValues(alpha: 0.3),
+              blurRadius: 8,
+              spreadRadius: 1,
+            ),
           ],
         ),
         child: const Row(
@@ -243,7 +369,12 @@ class _AnimatedLiveBadgeState extends State<AnimatedLiveBadge> with SingleTicker
             SizedBox(width: 6),
             Text(
               'LIVE',
-              style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 0.5),
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 10,
+                fontWeight: FontWeight.w900,
+                letterSpacing: 0.5,
+              ),
             ),
           ],
         ),
@@ -357,7 +488,10 @@ class _PromoRotatingBannerState extends State<PromoRotatingBanner> {
                           ),
                           const SizedBox(height: 8),
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
                             decoration: BoxDecoration(
                               color: CustomerColors.blue.withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(8),
@@ -374,7 +508,11 @@ class _PromoRotatingBannerState extends State<PromoRotatingBanner> {
                         ],
                       ),
                     ),
-                    const Icon(Icons.stars_rounded, size: 60, color: CustomerColors.blueDark),
+                    const Icon(
+                      Icons.stars_rounded,
+                      size: 60,
+                      color: CustomerColors.blueDark,
+                    ),
                   ],
                 ),
               );
@@ -390,7 +528,9 @@ class _PromoRotatingBannerState extends State<PromoRotatingBanner> {
                   width: _currentPage == index ? 20 : 6,
                   margin: const EdgeInsets.only(right: 4),
                   decoration: BoxDecoration(
-                    color: _currentPage == index ? CustomerColors.blue : CustomerColors.muted.withValues(alpha: 0.3),
+                    color: _currentPage == index
+                        ? CustomerColors.blue
+                        : CustomerColors.muted.withValues(alpha: 0.3),
                     borderRadius: BorderRadius.circular(10),
                   ),
                 );

@@ -6,15 +6,21 @@ import 'customer_colors.dart';
 class CustomerMapPicker extends StatelessWidget {
   const CustomerMapPicker({
     super.key,
-    required this.onMapTap,
+    this.onMapTap,
     this.pickupLocation,
     this.dropoffLocation,
+    this.routePoints,
+    this.warehouseLocations,
+    this.onWarehouseTap,
     required this.mapController,
   });
 
-  final Function(LatLng) onMapTap;
+  final Function(LatLng)? onMapTap;
   final LatLng? pickupLocation;
   final LatLng? dropoffLocation;
+  final List<LatLng>? routePoints;
+  final List<LatLng>? warehouseLocations;
+  final Function(LatLng)? onWarehouseTap;
   final MapController mapController;
 
   @override
@@ -24,13 +30,23 @@ class CustomerMapPicker extends StatelessWidget {
       options: MapOptions(
         initialCenter: pickupLocation ?? const LatLng(11.5564, 104.9282),
         initialZoom: 14.0,
-        onTap: (tapPosition, point) => onMapTap(point),
+        onTap: onMapTap != null ? (tapPosition, point) => onMapTap!(point) : null,
       ),
       children: [
         TileLayer(
           urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
           userAgentPackageName: 'com.chonhchoun.frontend',
         ),
+        if (routePoints != null && routePoints!.isNotEmpty)
+          PolylineLayer(
+            polylines: [
+              Polyline(
+                points: routePoints!,
+                color: CustomerColors.blue,
+                strokeWidth: 4,
+              ),
+            ],
+          ),
         MarkerLayer(
           markers: [
             if (pickupLocation != null)
@@ -53,6 +69,34 @@ class CustomerMapPicker extends StatelessWidget {
                   Icons.location_on,
                   color: CustomerColors.danger,
                   size: 40,
+                ),
+              ),
+            if (warehouseLocations != null)
+              ...warehouseLocations!.map(
+                (loc) => Marker(
+                  point: loc,
+                  width: 50,
+                  height: 50,
+                  child: GestureDetector(
+                    onTap: () => onWarehouseTap?.call(loc),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.2),
+                            blurRadius: 4,
+                          ),
+                        ],
+                      ),
+                      child: const Icon(
+                        Icons.warehouse,
+                        color: CustomerColors.blueDark,
+                        size: 24,
+                      ),
+                    ),
+                  ),
                 ),
               ),
           ],

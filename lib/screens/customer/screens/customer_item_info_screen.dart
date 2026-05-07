@@ -9,11 +9,17 @@ class CustomerItemInfoScreen extends StatefulWidget {
     super.key,
     required this.pickup,
     required this.dropoff,
+    required this.pickupAddress,
+    required this.dropoffAddress,
+    required this.serviceType,
     required this.onOrderCreated,
   });
 
   final LatLng pickup;
   final LatLng dropoff;
+  final String pickupAddress;
+  final String dropoffAddress;
+  final DeliveryServiceType serviceType;
   final Function(CustomerOrder) onOrderCreated;
 
   @override
@@ -31,7 +37,7 @@ class _CustomerItemInfoScreenState extends State<CustomerItemInfoScreen> {
   final TextEditingController _itemNameController = TextEditingController();
 
   double get _totalPrice {
-    double base = 8200.0;
+    double base = widget.serviceType == DeliveryServiceType.express ? 8200.0 : 3500.0;
     if (_selectedVehicle == VehicleType.tuktuk) {
       base += 2000.0;
     }
@@ -58,8 +64,10 @@ class _CustomerItemInfoScreenState extends State<CustomerItemInfoScreen> {
             _buildRouteCard(),
             const SizedBox(height: 16),
             _buildItemSpecsCard(),
-            const SizedBox(height: 16),
-            _buildVehicleCard(),
+            if (widget.serviceType == DeliveryServiceType.express) ...[
+              const SizedBox(height: 16),
+              _buildVehicleCard(),
+            ],
             const SizedBox(height: 16),
             _buildAddonsCard(),
             const SizedBox(height: 16),
@@ -79,10 +87,10 @@ class _CustomerItemInfoScreenState extends State<CustomerItemInfoScreen> {
         child: Column(
           children: [
             _LocationRow(
-              icon: Icons.circle_outlined,
+              icon: Icons.radio_button_checked,
               color: CustomerColors.blue,
               label: "Pick up point",
-              value: "${widget.pickup.latitude.toStringAsFixed(4)}, ${widget.pickup.longitude.toStringAsFixed(4)}",
+              value: widget.pickupAddress,
             ),
             Padding(
               padding: const EdgeInsets.only(left: 11),
@@ -95,7 +103,7 @@ class _CustomerItemInfoScreenState extends State<CustomerItemInfoScreen> {
               icon: Icons.location_on,
               color: CustomerColors.danger,
               label: "Drop off point",
-              value: "${widget.dropoff.latitude.toStringAsFixed(4)}, ${widget.dropoff.longitude.toStringAsFixed(4)}",
+              value: widget.dropoffAddress,
             ),
           ],
         ),
@@ -280,9 +288,17 @@ class _CustomerItemInfoScreenState extends State<CustomerItemInfoScreen> {
             const SizedBox(height: 12),
             Row(
               children: [
-                _PaymentBtn("Cash", _selectedPayment == PaymentMethod.cash, () => setState(() => _selectedPayment = PaymentMethod.cash)),
+                _PaymentBtn(
+                  widget.serviceType == DeliveryServiceType.express ? "Cash" : "Sender Pay", 
+                  _selectedPayment == PaymentMethod.cash, 
+                  () => setState(() => _selectedPayment = PaymentMethod.cash)
+                ),
                 const SizedBox(width: 8),
-                _PaymentBtn("Online", _selectedPayment == PaymentMethod.online, () => setState(() => _selectedPayment = PaymentMethod.online)),
+                _PaymentBtn(
+                  widget.serviceType == DeliveryServiceType.express ? "Online" : "Receiver Pay", 
+                  _selectedPayment == PaymentMethod.online, 
+                  () => setState(() => _selectedPayment = PaymentMethod.online)
+                ),
               ],
             ),
             const Divider(height: 32),
@@ -350,6 +366,7 @@ class _CustomerItemInfoScreenState extends State<CustomerItemInfoScreen> {
                 itemType: _selectedType,
                 vehicleType: _selectedVehicle,
                 paymentMethod: _selectedPayment,
+                serviceType: widget.serviceType,
                 itemHandling: _itemHandling,
                 status: OrderStatus.searching,
                 createdAt: DateTime.now(),
