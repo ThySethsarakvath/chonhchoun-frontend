@@ -8,6 +8,7 @@ import '../widgets/quick_nav_grid.dart';
 import '../widgets/delivery_card.dart';
 import '../widgets/home_bottom_nav.dart';
 import '../widgets/section_header.dart';
+import '../widgets/app_drawer_wrapper.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -26,9 +27,8 @@ class _HomeScreenState extends State<HomeScreen> {
   List<DeliveryItem> _recent = [];
   List<DeliveryItem> _history = [];
   bool _loading = true;
-
-  static const String _userName = 'កំពេញ';
-  static const String _userLocation = 'ផ្ទះ 175, ទឹកថ្លា, វលិសរូប';
+  static const String _city = 'ភ្នំពេញ';
+  static const String _userLocation = 'ផ្ទះ 175, ទឹកថ្លា, សែនសុខ';
 
   @override
   void initState() {
@@ -82,22 +82,14 @@ class _HomeScreenState extends State<HomeScreen> {
     ),
 
     QuickNavItem(
-      customIcon: Image.asset(
-        'assets/images/truck.png',
-        width: 50,
-        height: 50,
-      ),
+      customIcon: Image.asset('assets/images/truck.png', width: 50, height: 50),
       label: 'តាមដាន',
       onTap: () {
         /* TODO: navigate to tracking screen */
       },
     ),
     QuickNavItem(
-      customIcon: Image.asset(
-        'assets/images/guys.png',
-        width: 50,
-        height: 50,
-      ),
+      customIcon: Image.asset('assets/images/guys.png', width: 50, height: 50),
       label: 'ទម្លាក់ចុះ',
       onTap: () {
         /* TODO: navigate to drop-off screen */
@@ -121,147 +113,149 @@ class _HomeScreenState extends State<HomeScreen> {
     final screenHeight = MediaQuery.of(context).size.height;
     final bluePanelHeight = screenHeight * 0.41;
 
-    return Scaffold(
-      backgroundColor: const Color(0xFFEEF3FB),
-      extendBody: true,
-      bottomNavigationBar: HomeBottomNav(
-        currentIndex: _navIndex,
-        onTap: (i) => setState(() => _navIndex = i),
-      ),
-      body: _loading
-          ? const Center(
-              child: CircularProgressIndicator(color: Color(0xFF2C5F8A)),
-            )
-          : RefreshIndicator(
-              color: const Color(0xFF2C5F8A),
-              onRefresh: _loadData,
-              child: CustomScrollView(
-                slivers: [
-                  SliverToBoxAdapter(
-                    child: Stack(
-                      clipBehavior: Clip.none,
-                      children: [
-                        Container(
-                          height: bluePanelHeight,
-                          decoration: const BoxDecoration(
-                            gradient: LinearGradient(
-                              begin: Alignment.topCenter,
-                              end: Alignment.bottomCenter,
-                              colors: [Color(0xFF1E4D73), Color(0xFF2C6B9E)],
+    return AppDrawerWrapper(
+      city: _city,
+      userAvatar: 'assets/images/avatar.png',
+      child: Scaffold(
+        backgroundColor: const Color(0xFFEEF3FB),
+        extendBody: true,
+        bottomNavigationBar: HomeBottomNav(
+          currentIndex: _navIndex,
+          onTap: (i) => setState(() => _navIndex = i),
+        ),
+        body: _loading
+            ? const Center(
+                child: CircularProgressIndicator(color: Color(0xFF2C5F8A)),
+              )
+            : RefreshIndicator(
+                color: const Color(0xFF2C5F8A),
+                onRefresh: _loadData,
+                child: CustomScrollView(
+                  slivers: [
+                    SliverToBoxAdapter(
+                      child: Stack(
+                        clipBehavior: Clip.none,
+                        children: [
+                          Container(
+                            height: bluePanelHeight,
+                            decoration: const BoxDecoration(
+                              gradient: LinearGradient(
+                                begin: Alignment.topCenter,
+                                end: Alignment.bottomCenter,
+                                colors: [Color(0xFF1E4D73), Color(0xFF2C6B9E)],
+                              ),
                             ),
                           ),
-                        ),
-                        Positioned(
-                          bottom: 0,
-                          left: 0,
-                          right: 0,
-                          child: Image.asset(
-                            'assets/images/footer.png',
-                            fit: BoxFit.fitWidth,
-                            alignment: Alignment.bottomCenter,
-                            errorBuilder: (_, __, ___) =>
-                                const SizedBox(height: 60),
+                          Positioned(
+                            bottom: 0,
+                            left: 0,
+                            right: 0,
+                            child: Image.asset(
+                              'assets/images/footer.png',
+                              fit: BoxFit.fitWidth,
+                              alignment: Alignment.bottomCenter,
+                              errorBuilder: (_, __, ___) =>
+                                  const SizedBox(height: 60),
+                            ),
                           ),
-                        ),
-                        Column(
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              SizedBox(
+                                height: MediaQuery.of(context).padding.top + 8,
+                              ),
+
+                              Builder(
+                                builder: (drawerContext) => HomeAppBar(
+                                  city: _city,
+                                  userLocation: _userLocation,
+                                  onMenuTap: () => AppDrawerController.of(
+                                    drawerContext,
+                                  )?.open(),
+                                  onProfileTap: () {
+                                    /* TODO */
+                                  },
+                                ),
+                              ),
+
+                              const SizedBox(height: 14),
+
+                              // Search bar
+                              _SearchBar(controller: _searchCtrl),
+                              const SizedBox(height: 16),
+
+                              // Promo banners
+                              if (_banners.isNotEmpty)
+                                PromoBannerCarousel(banners: _banners),
+
+                              const SizedBox(height: 16),
+                            ],
+                          ),
+                          Positioned(
+                            bottom: -52,
+                            left: 0,
+                            right: 0,
+                            child: QuickNavGrid(items: _quickNavItems),
+                          ),
+                        ],
+                      ),
+                    ),
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(20, 72, 20, 24),
+                        child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            SizedBox(
-                              height: MediaQuery.of(context).padding.top + 8,
-                            ),
-
-                            // App bar
-                            HomeAppBar(
-                              userName: _userName,
-                              userLocation: _userLocation,
-                              onMenuTap: () {
-                                /* TODO: open drawer */
-                              },
-                              onProfileTap: () {
-                                /* TODO: open profile */
+                            SectionHeader(
+                              title: 'ការដឹកជញ្ជូនថ្មីៗ',
+                              onLinkTap: () {
+                                /* TODO */
                               },
                             ),
-                            const SizedBox(height: 14),
+                            const SizedBox(height: 12),
+                            if (_recent.isEmpty)
+                              _EmptyState(message: 'មិនមានការដឹកជញ្ជូនថ្មីៗទេ')
+                            else
+                              ...(_recent.map(
+                                (item) => DeliveryCard(
+                                  item: item,
+                                  showTracking: true,
+                                  onTap: () {
+                                    /* TODO: navigate to detail */
+                                  },
+                                ),
+                              )),
 
-                            // Search bar
-                            _SearchBar(controller: _searchCtrl),
-                            const SizedBox(height: 16),
-
-                            // Promo banners
-                            if (_banners.isNotEmpty)
-                              PromoBannerCarousel(banners: _banners),
+                            const SizedBox(height: 24),
+                            SectionHeader(
+                              title: 'ការជញ្ជូនកន្លងទៅ',
+                              onLinkTap: () {
+                                /* TODO */
+                              },
+                            ),
+                            const SizedBox(height: 12),
+                            if (_history.isEmpty)
+                              _EmptyState(message: 'មិនមានការជញ្ជូនកន្លងទៅទេ')
+                            else
+                              ...(_history.map(
+                                (item) => DeliveryCard(
+                                  item: item,
+                                  showTracking: false,
+                                  onTap: () {
+                                    /* TODO: navigate to detail */
+                                  },
+                                ),
+                              )),
 
                             const SizedBox(height: 16),
                           ],
                         ),
-
-                        // Quick nav card — overlapping the boundary
-                        Positioned(
-                          bottom: -52,
-                          left: 0,
-                          right: 0,
-                          child: QuickNavGrid(items: _quickNavItems),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  SliverToBoxAdapter(
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(20, 72, 20, 24),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          SectionHeader(
-                            title: 'ការដឹកជញ្ជូនថ្មីៗ',
-                            onLinkTap: () {
-                              /* TODO */
-                            },
-                          ),
-                          const SizedBox(height: 12),
-                          if (_recent.isEmpty)
-                            _EmptyState(message: 'មិនមានការដឹកជញ្ជូនថ្មីៗទេ')
-                          else
-                            ...(_recent.map(
-                              (item) => DeliveryCard(
-                                item: item,
-                                showTracking: true,
-                                onTap: () {
-                                  /* TODO: navigate to detail */
-                                },
-                              ),
-                            )),
-
-                          const SizedBox(height: 24),
-
-                          SectionHeader(
-                            title: 'ការជញ្ជូនកន្លងទៅ',
-                            onLinkTap: () {
-                              /* TODO */
-                            },
-                          ),
-                          const SizedBox(height: 12),
-                          if (_history.isEmpty)
-                            _EmptyState(message: 'មិនមានការជញ្ជូនកន្លងទៅទេ')
-                          else
-                            ...(_history.map(
-                              (item) => DeliveryCard(
-                                item: item,
-                                showTracking: false,
-                                onTap: () {
-                                  /* TODO: navigate to detail */
-                                },
-                              ),
-                            )),
-
-                          const SizedBox(height: 16),
-                        ],
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
+      ),
     );
   }
 }

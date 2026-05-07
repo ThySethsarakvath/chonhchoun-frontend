@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 
 class HomeAppBar extends StatelessWidget {
-  final String userName;
+  final String city;
   final String userLocation;
   final VoidCallback onMenuTap;
   final VoidCallback onProfileTap;
 
   const HomeAppBar({
     super.key,
-    required this.userName,
+    required this.city,
     required this.userLocation,
     required this.onMenuTap,
     required this.onProfileTap,
@@ -43,7 +43,7 @@ class HomeAppBar extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(
-                      userName,
+                      city,
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 14,
