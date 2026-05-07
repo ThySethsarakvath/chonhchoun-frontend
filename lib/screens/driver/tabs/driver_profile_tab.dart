@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 
-import '../data/driver_demo_data.dart';
-import '../models/driver_request.dart';
-import '../widgets/driver_button_widgets.dart';
-import '../widgets/driver_colors.dart';
-import '../widgets/driver_map_widgets.dart';
-import '../widgets/driver_request_widgets.dart';
-import '../widgets/driver_shell_widgets.dart';
+import '../../../shared/data/demo_data.dart';
+import '../../../shared/models/driver_request.dart';
+import '../../../shared/widgets/app_button_widgets.dart';
+import '../../../shared/colors/app_colors.dart';
+import '../../../shared/widgets/app_map_widgets.dart';
+import '../../../shared/widgets/app_request_widgets.dart';
+import '../../../shared/widgets/app_shell_widgets.dart';
 
 class DriverProfileTab extends StatelessWidget {
   const DriverProfileTab({
@@ -26,7 +26,7 @@ class DriverProfileTab extends StatelessWidget {
         DriverHeroSection(
           subtitle: 'Account and readiness',
           name: driverDisplayName,
-          content: const DriverStatusSummary(),
+          content: const AppStatusSummary(),
         ),
         Transform.translate(
           offset: const Offset(0, -30),
@@ -34,14 +34,14 @@ class DriverProfileTab extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 32),
             child: Column(
               children: [
-                DriverSurfaceCard(
+                AppSurfaceCard(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const Text(
                         'Vehicle',
                         style: TextStyle(
-                          color: DriverColors.text,
+                          color: AppColors.text,
                           fontWeight: FontWeight.w800,
                           fontSize: 20,
                         ),
@@ -53,12 +53,12 @@ class DriverProfileTab extends StatelessWidget {
                             height: 58,
                             width: 58,
                             decoration: BoxDecoration(
-                              color: DriverColors.blue.withValues(alpha: 0.08),
+                              color: AppColors.blue.withValues(alpha: 0.08),
                               borderRadius: BorderRadius.circular(18),
                             ),
                             child: const Icon(
                               Icons.two_wheeler_rounded,
-                              color: DriverColors.blue,
+                              color: AppColors.blue,
                             ),
                           ),
                           const SizedBox(width: 16),
@@ -69,7 +69,7 @@ class DriverProfileTab extends StatelessWidget {
                                 Text(
                                   'Motorbike Courier',
                                   style: TextStyle(
-                                    color: DriverColors.text,
+                                    color: AppColors.text,
                                     fontWeight: FontWeight.w700,
                                     fontSize: 17,
                                   ),
@@ -77,7 +77,7 @@ class DriverProfileTab extends StatelessWidget {
                                 SizedBox(height: 4),
                                 Text(
                                   'Fast urban delivery with compact parcels',
-                                  style: TextStyle(color: DriverColors.muted),
+                                  style: TextStyle(color: AppColors.muted),
                                 ),
                               ],
                             ),
@@ -88,14 +88,14 @@ class DriverProfileTab extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 16),
-                DriverSurfaceCard(
+                AppSurfaceCard(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const Text(
                         'Assigned hotspot',
                         style: TextStyle(
-                          color: DriverColors.text,
+                          color: AppColors.text,
                           fontWeight: FontWeight.w800,
                           fontSize: 20,
                         ),
@@ -115,7 +115,7 @@ class DriverProfileTab extends StatelessWidget {
                       const SizedBox(height: 16),
                       SizedBox(
                         width: double.infinity,
-                        child: DriverPrimaryButton(
+                        child: AppPrimaryButton(
                           label: 'Open Live Map',
                           onPressed: onOpenMap,
                         ),
@@ -124,7 +124,7 @@ class DriverProfileTab extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 16),
-                DriverSurfaceCard(
+                AppSurfaceCard(
                   child: Row(
                     children: [
                       CircleAvatar(
@@ -146,19 +146,19 @@ class DriverProfileTab extends StatelessWidget {
                             const Text(
                               'Readiness',
                               style: TextStyle(
-                                color: DriverColors.text,
+                                color: AppColors.text,
                                 fontWeight: FontWeight.w700,
                               ),
                             ),
                             const SizedBox(height: 4),
                             Text(
                               'Next package: ${request.title}',
-                              style: const TextStyle(color: DriverColors.muted),
+                              style: const TextStyle(color: AppColors.muted),
                             ),
                           ],
                         ),
                       ),
-                      const DriverStatusChip(label: 'Online'),
+                      const AppStatusChip(label: 'Online'),
                     ],
                   ),
                 ),

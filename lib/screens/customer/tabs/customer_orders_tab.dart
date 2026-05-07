@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import '../models/customer_order.dart';
-import '../widgets/customer_colors.dart';
-import '../../driver/widgets/driver_shell_widgets.dart';
+import '../../../shared/colors/app_colors.dart';
+import '../../../shared/models/order.dart';
+import '../../../shared/widgets/app_shell_widgets.dart';
 import '../screens/customer_order_detail_screen.dart';
 
 class CustomerOrdersTab extends StatelessWidget {
@@ -12,11 +12,11 @@ class CustomerOrdersTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: CustomerColors.surface,
+      backgroundColor: AppColors.surface,
       appBar: AppBar(
         title: const Text("My Orders", style: TextStyle(fontWeight: FontWeight.bold)),
         backgroundColor: Colors.white,
-        foregroundColor: CustomerColors.text,
+        foregroundColor: AppColors.text,
         elevation: 0,
         centerTitle: true,
       ),
@@ -47,11 +47,11 @@ class CustomerOrdersTab extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.assignment_outlined, size: 80, color: CustomerColors.muted.withValues(alpha: 0.3)),
+          Icon(Icons.assignment_outlined, size: 80, color: AppColors.muted.withValues(alpha: 0.3)),
           const SizedBox(height: 16),
           const Text(
             "No orders yet",
-            style: TextStyle(fontSize: 18, color: CustomerColors.muted, fontWeight: FontWeight.bold),
+            style: TextStyle(fontSize: 18, color: AppColors.muted, fontWeight: FontWeight.bold),
           ),
         ],
       ),
@@ -61,7 +61,7 @@ class CustomerOrdersTab extends StatelessWidget {
   Widget _buildOrderCard(CustomerOrder order) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
-      child: DriverSurfaceCard(
+      child: AppSurfaceCard(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -75,12 +75,12 @@ class CustomerOrdersTab extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    color: CustomerColors.blue.withValues(alpha: 0.1),
+                    color: AppColors.blue.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
                     order.statusText,
-                    style: const TextStyle(color: CustomerColors.blue, fontSize: 12, fontWeight: FontWeight.bold),
+                    style: const TextStyle(color: AppColors.blue, fontSize: 12, fontWeight: FontWeight.bold),
                   ),
                 ),
               ],
@@ -88,18 +88,18 @@ class CustomerOrdersTab extends StatelessWidget {
             const SizedBox(height: 12),
             const Divider(),
             const SizedBox(height: 12),
-            _buildLocationRow(Icons.circle_outlined, CustomerColors.blue, "Pickup Location"),
+            _buildLocationRow(Icons.circle_outlined, AppColors.blue, "Pickup Location"),
             _buildConnector(),
-            _buildLocationRow(Icons.location_on, CustomerColors.danger, "Drop-off Location"),
+            _buildLocationRow(Icons.location_on, AppColors.danger, "Drop-off Location"),
             const SizedBox(height: 16),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
                   "Created on ${order.createdAt.toString().split(' ')[0]}",
-                  style: const TextStyle(color: CustomerColors.muted, fontSize: 12),
+                  style: const TextStyle(color: AppColors.muted, fontSize: 12),
                 ),
-                const Icon(Icons.arrow_forward_ios, size: 14, color: CustomerColors.muted),
+                const Icon(Icons.arrow_forward_ios, size: 14, color: AppColors.muted),
               ],
             ),
           ],
@@ -115,7 +115,7 @@ class CustomerOrdersTab extends StatelessWidget {
         const SizedBox(width: 12),
         Text(
           label,
-          style: const TextStyle(color: CustomerColors.text, fontWeight: FontWeight.w500),
+          style: const TextStyle(color: AppColors.text, fontWeight: FontWeight.w500),
         ),
       ],
     );
@@ -129,7 +129,7 @@ class CustomerOrdersTab extends StatelessWidget {
         child: Container(
           width: 2,
           height: 10,
-          color: CustomerColors.line,
+          color: AppColors.line,
         ),
       ),
     );

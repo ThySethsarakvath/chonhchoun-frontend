@@ -3,9 +3,9 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
-import '../models/customer_order.dart';
-import '../widgets/customer_colors.dart';
-import '../widgets/customer_map_widgets.dart';
+import '../../../shared/models/order.dart';
+import '../../../shared/colors/app_colors.dart';
+import '../../../shared/widgets/app_map_widgets.dart';
 import 'customer_item_info_screen.dart';
 
 class CustomerBookingScreen extends StatefulWidget {
@@ -116,7 +116,7 @@ class _CustomerBookingScreenState extends State<CustomerBookingScreen> {
               style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
-            const Text("Choose one of our Chonhchoun warehouses", style: TextStyle(color: CustomerColors.muted)),
+            const Text("Choose one of our Chonhchoun warehouses", style: TextStyle(color: AppColors.muted)),
             const SizedBox(height: 20),
             Expanded(
               child: ListView.builder(
@@ -125,7 +125,7 @@ class _CustomerBookingScreenState extends State<CustomerBookingScreen> {
                 itemBuilder: (context, index) {
                   final w = _warehouses[index];
                   return ListTile(
-                    leading: const Icon(Icons.warehouse_outlined, color: CustomerColors.blue),
+                    leading: const Icon(Icons.warehouse_outlined, color: AppColors.blue),
                     title: Text(w['name'], style: const TextStyle(fontWeight: FontWeight.bold)),
                     onTap: () {
                       final point = LatLng(w['lat'], w['lng']);
@@ -207,7 +207,7 @@ class _CustomerBookingScreenState extends State<CustomerBookingScreen> {
           child: CircleAvatar(
             backgroundColor: Colors.white,
             child: IconButton(
-              icon: const Icon(Icons.arrow_back, color: CustomerColors.text),
+              icon: const Icon(Icons.arrow_back, color: AppColors.text),
               onPressed: () => Navigator.pop(context),
             ),
           ),
@@ -227,7 +227,7 @@ class _CustomerBookingScreenState extends State<CustomerBookingScreen> {
           child: const Text(
             "Book a Delivery",
             style: TextStyle(
-              color: CustomerColors.text,
+              color: AppColors.text,
               fontSize: 16,
               fontWeight: FontWeight.bold,
             ),
@@ -277,7 +277,7 @@ class _CustomerBookingScreenState extends State<CustomerBookingScreen> {
                       Icon(
                         Icons.location_on,
                         size: 45,
-                        color: _isSelectingPickup ? CustomerColors.blue : CustomerColors.danger,
+                        color: _isSelectingPickup ? AppColors.blue : AppColors.danger,
                       ),
                     ],
                   ),
@@ -316,7 +316,7 @@ class _CustomerBookingScreenState extends State<CustomerBookingScreen> {
                       child: ElevatedButton(
                         onPressed: _confirmCenterLocation,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: _isSelectingPickup ? CustomerColors.blue : CustomerColors.danger,
+                          backgroundColor: _isSelectingPickup ? AppColors.blue : AppColors.danger,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(16),
                           ),
@@ -346,14 +346,14 @@ class _CustomerBookingScreenState extends State<CustomerBookingScreen> {
                     height: 56,
                     decoration: BoxDecoration(
                       gradient: const LinearGradient(
-                        colors: CustomerColors.gradientPrimary,
+                        colors: AppColors.gradientPrimary,
                         begin: Alignment.centerLeft,
                         end: Alignment.centerRight,
                       ),
                       borderRadius: BorderRadius.circular(16),
                       boxShadow: [
                         BoxShadow(
-                          color: CustomerColors.blue.withValues(alpha: 0.3),
+                          color: AppColors.blue.withValues(alpha: 0.3),
                           blurRadius: 12,
                           offset: const Offset(0, 6),
                         ),
@@ -399,7 +399,7 @@ class _CustomerBookingScreenState extends State<CustomerBookingScreen> {
                     }
                   },
                   backgroundColor: Colors.white,
-                  child: const Icon(Icons.my_location, color: CustomerColors.blue),
+                  child: const Icon(Icons.my_location, color: AppColors.blue),
                 ),
               ],
             ),

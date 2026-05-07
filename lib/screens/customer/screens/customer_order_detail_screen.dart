@@ -3,9 +3,9 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
-import '../models/customer_order.dart';
-import '../widgets/customer_colors.dart';
-import '../../driver/widgets/driver_shell_widgets.dart';
+import '../../../shared/models/order.dart';
+import '../../../shared/colors/app_colors.dart';
+import '../../../shared/widgets/app_shell_widgets.dart';
 
 class CustomerOrderDetailScreen extends StatefulWidget {
   const CustomerOrderDetailScreen({super.key, required this.order});
@@ -65,11 +65,11 @@ class _CustomerOrderDetailScreenState extends State<CustomerOrderDetailScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: CustomerColors.surface,
+      backgroundColor: AppColors.surface,
       appBar: AppBar(
         title: const Text("Delivery Summary", style: TextStyle(fontWeight: FontWeight.bold)),
         backgroundColor: Colors.white,
-        foregroundColor: CustomerColors.text,
+        foregroundColor: AppColors.text,
         elevation: 0,
         centerTitle: true,
       ),
@@ -99,20 +99,20 @@ class _CustomerOrderDetailScreenState extends State<CustomerOrderDetailScreen> {
 
   Widget _buildStatusHeader() {
     final bool isCanceled = _currentOrder.status == OrderStatus.canceled;
-    return DriverSurfaceCard(
+    return AppSurfaceCard(
       child: Row(
         children: [
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: (isCanceled ? CustomerColors.danger : CustomerColors.blue).withValues(alpha: 0.1),
+              color: (isCanceled ? AppColors.danger : AppColors.blue).withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
             child: Icon(
               isCanceled 
                 ? Icons.cancel_outlined 
                 : (_currentOrder.serviceType == DeliveryServiceType.warehouse ? Icons.warehouse : Icons.delivery_dining),
-              color: isCanceled ? CustomerColors.danger : CustomerColors.blue,
+              color: isCanceled ? AppColors.danger : AppColors.blue,
             ),
           ),
           const SizedBox(width: 16),
@@ -120,13 +120,13 @@ class _CustomerOrderDetailScreenState extends State<CustomerOrderDetailScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text("Order Status", style: TextStyle(color: CustomerColors.muted, fontSize: 12)),
+                const Text("Order Status", style: TextStyle(color: AppColors.muted, fontSize: 12)),
                 Text(
                   _currentOrder.statusText,
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 16,
-                    color: isCanceled ? CustomerColors.danger : CustomerColors.blue,
+                    color: isCanceled ? AppColors.danger : AppColors.blue,
                   ),
                 ),
               ],
@@ -145,7 +145,7 @@ class _CustomerOrderDetailScreenState extends State<CustomerOrderDetailScreen> {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: CustomerColors.line),
+          border: Border.all(color: AppColors.line),
         ),
         child: const Center(child: CircularProgressIndicator()),
       );
@@ -171,7 +171,7 @@ class _CustomerOrderDetailScreenState extends State<CustomerOrderDetailScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: CustomerColors.line),
+        border: Border.all(color: AppColors.line),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.05),
@@ -197,7 +197,7 @@ class _CustomerOrderDetailScreenState extends State<CustomerOrderDetailScreen> {
               polylines: [
                 Polyline(
                   points: _routePoints,
-                  color: CustomerColors.blue,
+                  color: AppColors.blue,
                   strokeWidth: 4,
                 ),
               ],
@@ -210,7 +210,7 @@ class _CustomerOrderDetailScreenState extends State<CustomerOrderDetailScreen> {
                   height: 40,
                   child: Icon(
                     _currentOrder.serviceType == DeliveryServiceType.warehouse ? Icons.warehouse : Icons.radio_button_checked, 
-                    color: CustomerColors.blue, 
+                    color: AppColors.blue, 
                     size: 24
                   ),
                 ),
@@ -220,7 +220,7 @@ class _CustomerOrderDetailScreenState extends State<CustomerOrderDetailScreen> {
                   height: 40,
                   child: Icon(
                     _currentOrder.serviceType == DeliveryServiceType.warehouse ? Icons.warehouse : Icons.location_on, 
-                    color: CustomerColors.danger, 
+                    color: AppColors.danger, 
                     size: 30
                   ),
                 ),
@@ -237,9 +237,9 @@ class _CustomerOrderDetailScreenState extends State<CustomerOrderDetailScreen> {
       onPressed: _showCancelDialog,
       style: ElevatedButton.styleFrom(
         backgroundColor: Colors.white,
-        foregroundColor: CustomerColors.danger,
+        foregroundColor: AppColors.danger,
         minimumSize: const Size(double.infinity, 56),
-        side: const BorderSide(color: CustomerColors.danger, width: 1.5),
+        side: const BorderSide(color: AppColors.danger, width: 1.5),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         elevation: 0,
       ),
@@ -279,11 +279,11 @@ class _CustomerOrderDetailScreenState extends State<CustomerOrderDetailScreen> {
           children: [
             const Text("Cancel Delivery", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
-            const Text("Please select a reason for cancellation", style: TextStyle(color: CustomerColors.muted)),
+            const Text("Please select a reason for cancellation", style: TextStyle(color: AppColors.muted)),
             const SizedBox(height: 16),
             ...reasons.map((reason) => ListTile(
               title: Text(reason, style: const TextStyle(fontWeight: FontWeight.w500)),
-              leading: const Icon(Icons.radio_button_off, size: 20, color: CustomerColors.muted),
+              leading: const Icon(Icons.radio_button_off, size: 20, color: AppColors.muted),
               onTap: () {
                 setState(() {
                   _currentOrder.status = OrderStatus.canceled;
@@ -302,22 +302,22 @@ class _CustomerOrderDetailScreenState extends State<CustomerOrderDetailScreen> {
   }
 
   Widget _buildLocationCard() {
-    return DriverSurfaceCard(
+    return AppSurfaceCard(
       child: Column(
         children: [
-          _buildDetailRow(Icons.circle, CustomerColors.blue, "Pickup", _currentOrder.pickupAddress),
+          _buildDetailRow(Icons.circle, AppColors.blue, "Pickup", _currentOrder.pickupAddress),
           Padding(
             padding: const EdgeInsets.only(left: 11),
-            child: Align(alignment: Alignment.centerLeft, child: Container(width: 2, height: 20, color: CustomerColors.line)),
+            child: Align(alignment: Alignment.centerLeft, child: Container(width: 2, height: 20, color: AppColors.line)),
           ),
-          _buildDetailRow(Icons.location_on, CustomerColors.danger, "Drop-off", _currentOrder.dropoffAddress),
+          _buildDetailRow(Icons.location_on, AppColors.danger, "Drop-off", _currentOrder.dropoffAddress),
         ],
       ),
     );
   }
 
   Widget _buildPackageDetails() {
-    return DriverSurfaceCard(
+    return AppSurfaceCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -334,7 +334,7 @@ class _CustomerOrderDetailScreenState extends State<CustomerOrderDetailScreen> {
   }
 
   Widget _buildBillingInfo() {
-    return DriverSurfaceCard(
+    return AppSurfaceCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -351,7 +351,7 @@ class _CustomerOrderDetailScreenState extends State<CustomerOrderDetailScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               const Text("Total Amount", style: TextStyle(fontWeight: FontWeight.bold)),
-              Text("${_currentOrder.price.toInt()}៛", style: const TextStyle(fontWeight: FontWeight.w900, color: CustomerColors.blue, fontSize: 20)),
+              Text("${_currentOrder.price.toInt()}៛", style: const TextStyle(fontWeight: FontWeight.w900, color: AppColors.blue, fontSize: 20)),
             ],
           ),
         ],
@@ -367,7 +367,7 @@ class _CustomerOrderDetailScreenState extends State<CustomerOrderDetailScreen> {
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(label, style: const TextStyle(color: CustomerColors.muted, fontSize: 11)),
+            Text(label, style: const TextStyle(color: AppColors.muted, fontSize: 11)),
             Text(value, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
           ],
         ),
@@ -380,7 +380,7 @@ class _CustomerOrderDetailScreenState extends State<CustomerOrderDetailScreen> {
       padding: const EdgeInsets.only(bottom: 12),
       child: Row(
         children: [
-          Text(label, style: const TextStyle(color: CustomerColors.muted)),
+          Text(label, style: const TextStyle(color: AppColors.muted)),
           const Spacer(),
           Text(value, style: const TextStyle(fontWeight: FontWeight.w600)),
         ],

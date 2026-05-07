@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 
-import '../data/driver_demo_data.dart';
-import '../models/driver_request.dart';
-import '../widgets/driver_button_widgets.dart';
-import '../widgets/driver_colors.dart';
-import '../widgets/driver_request_widgets.dart';
-import '../widgets/driver_shell_widgets.dart';
+import '../../../shared/data/demo_data.dart';
+import '../../../shared/models/driver_request.dart';
+import '../../../shared/widgets/app_button_widgets.dart';
+import '../../../shared/colors/app_colors.dart';
+import '../../../shared/widgets/app_request_widgets.dart';
+import '../../../shared/widgets/app_shell_widgets.dart';
 
 class DriverDeliveriesTab extends StatelessWidget {
   const DriverDeliveriesTab({
@@ -27,7 +27,7 @@ class DriverDeliveriesTab extends StatelessWidget {
         DriverHeroSection(
           subtitle: 'Weekly Overview',
           name: driverDisplayName,
-          content: const DriverBalanceCard(amount: driverAvailableBalance),
+          content: const AppBalanceCard(amount: driverAvailableBalance),
         ),
         Transform.translate(
           offset: const Offset(0, -30),
@@ -35,7 +35,7 @@ class DriverDeliveriesTab extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 32),
             child: Column(
               children: [
-                DriverSurfaceCard(
+                AppSurfaceCard(
                   child: Column(
                     children: [
                       const Row(
@@ -43,14 +43,14 @@ class DriverDeliveriesTab extends StatelessWidget {
                           Icon(
                             Icons.arrow_back_ios_new_rounded,
                             size: 18,
-                            color: DriverColors.blue,
+                            color: AppColors.blue,
                           ),
                           Expanded(
                             child: Center(
                               child: Text(
                                 driverOverviewRange,
                                 style: TextStyle(
-                                  color: DriverColors.text,
+                                  color: AppColors.text,
                                   fontWeight: FontWeight.w700,
                                   fontSize: 18,
                                 ),
@@ -60,24 +60,24 @@ class DriverDeliveriesTab extends StatelessWidget {
                           Icon(
                             Icons.arrow_forward_ios_rounded,
                             size: 18,
-                            color: DriverColors.blue,
+                            color: AppColors.blue,
                           ),
                         ],
                       ),
                       const SizedBox(height: 26),
-                      const DriverStatLine(
+                      const AppStatLine(
                         label: 'Time',
                         value: driverTotalTime,
                       ),
                       const SizedBox(height: 18),
-                      const DriverStatLine(
+                      const AppStatLine(
                         label: 'Deliveries',
                         value: driverTotalDeliveries,
                       ),
                       const SizedBox(height: 28),
                       SizedBox(
                         width: double.infinity,
-                        child: DriverPrimaryButton(
+                        child: AppPrimaryButton(
                           label: 'See Details',
                           onPressed: onOpenDetail,
                         ),
@@ -86,20 +86,20 @@ class DriverDeliveriesTab extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 16),
-                DriverSurfaceCard(
+                AppSurfaceCard(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const Text(
                         'Current request',
                         style: TextStyle(
-                          color: DriverColors.text,
+                          color: AppColors.text,
                           fontWeight: FontWeight.w800,
                           fontSize: 20,
                         ),
                       ),
                       const SizedBox(height: 14),
-                      DriverHomeRequestPreview(
+                      AppHomeRequestPreview(
                         request: request,
                         onTap: onOpenDetail,
                         showButtons: false,
@@ -112,7 +112,7 @@ class DriverDeliveriesTab extends StatelessWidget {
                           child: const Text(
                             'Open request queue',
                             style: TextStyle(
-                              color: DriverColors.blue,
+                              color: AppColors.blue,
                               fontWeight: FontWeight.w700,
                             ),
                           ),

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:latlong2/latlong.dart' hide Path;
-import '../models/customer_order.dart';
-import '../widgets/customer_colors.dart';
-import '../../driver/widgets/driver_shell_widgets.dart';
+import '../../../shared/colors/app_colors.dart';
+import '../../../shared/models/order.dart';
+import '../../../shared/widgets/app_shell_widgets.dart';
 
 class CustomerItemInfoScreen extends StatefulWidget {
   const CustomerItemInfoScreen({
@@ -50,11 +50,11 @@ class _CustomerItemInfoScreenState extends State<CustomerItemInfoScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: CustomerColors.surface,
+      backgroundColor: AppColors.surface,
       appBar: AppBar(
         title: const Text("Complete Booking", style: TextStyle(fontWeight: FontWeight.bold)),
         backgroundColor: Colors.white,
-        foregroundColor: CustomerColors.text,
+        foregroundColor: AppColors.text,
         elevation: 0,
         centerTitle: true,
       ),
@@ -83,12 +83,12 @@ class _CustomerItemInfoScreenState extends State<CustomerItemInfoScreen> {
   Widget _buildRouteCard() {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-      child: DriverSurfaceCard(
+      child: AppSurfaceCard(
         child: Column(
           children: [
             _LocationRow(
               icon: Icons.radio_button_checked,
-              color: CustomerColors.blue,
+              color: AppColors.blue,
               label: "Pick up point",
               value: widget.pickupAddress,
             ),
@@ -96,12 +96,12 @@ class _CustomerItemInfoScreenState extends State<CustomerItemInfoScreen> {
               padding: const EdgeInsets.only(left: 11),
               child: Align(
                 alignment: Alignment.centerLeft,
-                child: Container(width: 2, height: 16, color: CustomerColors.line),
+                child: Container(width: 2, height: 16, color: AppColors.line),
               ),
             ),
             _LocationRow(
               icon: Icons.location_on,
-              color: CustomerColors.danger,
+              color: AppColors.danger,
               label: "Drop off point",
               value: widget.dropoffAddress,
             ),
@@ -114,7 +114,7 @@ class _CustomerItemInfoScreenState extends State<CustomerItemInfoScreen> {
   Widget _buildItemSpecsCard() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: DriverSurfaceCard(
+      child: AppSurfaceCard(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -191,9 +191,9 @@ class _CustomerItemInfoScreenState extends State<CustomerItemInfoScreen> {
                 child: const Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(Icons.camera_alt_outlined, size: 20, color: CustomerColors.blue),
+                    Icon(Icons.camera_alt_outlined, size: 20, color: AppColors.blue),
                     SizedBox(width: 12),
-                    Text("Add photo (optional)", style: TextStyle(color: CustomerColors.muted, fontWeight: FontWeight.w500)),
+                    Text("Add photo (optional)", style: TextStyle(color: AppColors.muted, fontWeight: FontWeight.w500)),
                   ],
                 ),
               ),
@@ -207,7 +207,7 @@ class _CustomerItemInfoScreenState extends State<CustomerItemInfoScreen> {
   Widget _buildVehicleCard() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: DriverSurfaceCard(
+      child: AppSurfaceCard(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -237,7 +237,7 @@ class _CustomerItemInfoScreenState extends State<CustomerItemInfoScreen> {
   Widget _buildAddonsCard() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: DriverSurfaceCard(
+      child: AppSurfaceCard(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -251,8 +251,8 @@ class _CustomerItemInfoScreenState extends State<CustomerItemInfoScreen> {
                     height: 24,
                     width: 24,
                     decoration: BoxDecoration(
-                      color: _itemHandling ? CustomerColors.blue : Colors.transparent,
-                      border: Border.all(color: _itemHandling ? CustomerColors.blue : CustomerColors.line),
+                      color: _itemHandling ? AppColors.blue : Colors.transparent,
+                      border: Border.all(color: _itemHandling ? AppColors.blue : AppColors.line),
                       borderRadius: BorderRadius.circular(6),
                     ),
                     child: _itemHandling ? const Icon(Icons.check, size: 16, color: Colors.white) : null,
@@ -263,11 +263,11 @@ class _CustomerItemInfoScreenState extends State<CustomerItemInfoScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text("Extra Item Handling", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                        Text("Careful handling for fragile items", style: TextStyle(color: CustomerColors.muted, fontSize: 12)),
+                        Text("Careful handling for fragile items", style: TextStyle(color: AppColors.muted, fontSize: 12)),
                       ],
                     ),
                   ),
-                  const Text("+2,000៛", style: TextStyle(fontWeight: FontWeight.bold, color: CustomerColors.blue)),
+                  const Text("+2,000៛", style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.blue)),
                 ],
               ),
             ),
@@ -280,7 +280,7 @@ class _CustomerItemInfoScreenState extends State<CustomerItemInfoScreen> {
   Widget _buildPaymentCard() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: DriverSurfaceCard(
+      child: AppSurfaceCard(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -310,7 +310,7 @@ class _CustomerItemInfoScreenState extends State<CustomerItemInfoScreen> {
                   SizedBox(width: 12),
                   Text("Apply Promo Code", style: TextStyle(fontWeight: FontWeight.w500)),
                   Spacer(),
-                  Icon(Icons.chevron_right, color: CustomerColors.muted),
+                  Icon(Icons.chevron_right, color: AppColors.muted),
                 ],
               ),
             ),
@@ -347,8 +347,8 @@ class _CustomerItemInfoScreenState extends State<CustomerItemInfoScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text("Total Payable", style: TextStyle(fontSize: 16, color: CustomerColors.muted)),
-              Text("${_totalPrice.toInt()}៛", style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: CustomerColors.blueDark)),
+              const Text("Total Payable", style: TextStyle(fontSize: 16, color: AppColors.muted)),
+              Text("${_totalPrice.toInt()}៛", style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.blueDark)),
             ],
           ),
           const SizedBox(height: 12),
@@ -376,7 +376,7 @@ class _CustomerItemInfoScreenState extends State<CustomerItemInfoScreen> {
               Navigator.of(context).popUntil((route) => route.isFirst);
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: CustomerColors.blue,
+              backgroundColor: AppColors.blue,
               minimumSize: const Size(double.infinity, 54),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
               elevation: 0,
@@ -403,7 +403,7 @@ class _LocationRow extends StatelessWidget {
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(label, style: const TextStyle(color: CustomerColors.muted, fontSize: 11)),
+            Text(label, style: const TextStyle(color: AppColors.muted, fontSize: 11)),
             Text(value, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
           ],
         ),
@@ -424,12 +424,12 @@ class _SizeChip extends StatelessWidget {
       child: Container(
         height: 36, width: 36,
         decoration: BoxDecoration(
-          color: isSelected ? CustomerColors.blue : Colors.white,
-          border: Border.all(color: isSelected ? CustomerColors.blue : CustomerColors.line),
+          color: isSelected ? AppColors.blue : Colors.white,
+          border: Border.all(color: isSelected ? AppColors.blue : AppColors.line),
           shape: BoxShape.circle,
         ),
         child: Center(
-          child: Text(label, style: TextStyle(color: isSelected ? Colors.white : CustomerColors.text, fontWeight: FontWeight.bold)),
+          child: Text(label, style: TextStyle(color: isSelected ? Colors.white : AppColors.text, fontWeight: FontWeight.bold)),
         ),
       ),
     );
@@ -445,11 +445,11 @@ class _TypeChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ChoiceChip(
-      label: Text(label, style: TextStyle(color: isSelected ? Colors.white : CustomerColors.text, fontSize: 12)),
+      label: Text(label, style: TextStyle(color: isSelected ? Colors.white : AppColors.text, fontSize: 12)),
       selected: isSelected,
       onSelected: (v) => onTap(),
-      avatar: Icon(icon, size: 14, color: isSelected ? Colors.white : CustomerColors.blue),
-      selectedColor: CustomerColors.blue,
+      avatar: Icon(icon, size: 14, color: isSelected ? Colors.white : AppColors.blue),
+      selectedColor: AppColors.blue,
       backgroundColor: Colors.white,
       padding: EdgeInsets.zero,
     );
@@ -469,13 +469,13 @@ class _VehicleTile extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: isSelected ? CustomerColors.blue.withValues(alpha: 0.05) : Colors.white,
-          border: Border.all(color: isSelected ? CustomerColors.blue : CustomerColors.line),
+          color: isSelected ? AppColors.blue.withValues(alpha: 0.05) : Colors.white,
+          border: Border.all(color: isSelected ? AppColors.blue : AppColors.line),
           borderRadius: BorderRadius.circular(12),
         ),
         child: Row(
           children: [
-            Icon(icon, color: isSelected ? CustomerColors.blue : CustomerColors.muted),
+            Icon(icon, color: isSelected ? AppColors.blue : AppColors.muted),
             const SizedBox(width: 12),
             Text(title, style: TextStyle(fontWeight: isSelected ? FontWeight.bold : FontWeight.normal)),
             const Spacer(),
@@ -498,10 +498,10 @@ class _PaymentBtn extends StatelessWidget {
       child: ElevatedButton(
         onPressed: onTap,
         style: ElevatedButton.styleFrom(
-          backgroundColor: isSelected ? CustomerColors.blue : Colors.white,
-          foregroundColor: isSelected ? Colors.white : CustomerColors.text,
+          backgroundColor: isSelected ? AppColors.blue : Colors.white,
+          foregroundColor: isSelected ? Colors.white : AppColors.text,
           elevation: 0,
-          side: BorderSide(color: isSelected ? CustomerColors.blue : CustomerColors.line),
+          side: BorderSide(color: isSelected ? AppColors.blue : AppColors.line),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         ),
         child: Text(label),
@@ -514,7 +514,7 @@ class _DottedPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = CustomerColors.line
+      ..color = AppColors.line
       ..strokeWidth = 1.5
       ..style = PaintingStyle.stroke;
     final path = Path()

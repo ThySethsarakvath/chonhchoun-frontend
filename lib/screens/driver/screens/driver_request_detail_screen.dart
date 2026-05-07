@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 
-import '../models/driver_request.dart';
-import '../widgets/driver_button_widgets.dart';
-import '../widgets/driver_colors.dart';
-import '../widgets/driver_map_widgets.dart';
-import '../widgets/driver_request_widgets.dart';
-import '../widgets/driver_shell_widgets.dart';
+import '../../../shared/models/driver_request.dart';
+import '../../../shared/widgets/app_button_widgets.dart';
+import '../../../shared/colors/app_colors.dart';
+import '../../../shared/widgets/app_map_widgets.dart';
+import '../../../shared/widgets/app_request_widgets.dart';
+import '../../../shared/widgets/app_shell_widgets.dart';
 
 class DriverRequestDetailScreen extends StatelessWidget {
   const DriverRequestDetailScreen({
@@ -20,8 +20,8 @@ class DriverRequestDetailScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: DriverColors.surface,
-      bottomNavigationBar: DriverDecisionBar(
+      backgroundColor: AppColors.surface,
+      bottomNavigationBar: AppDecisionBar(
         primaryLabel: 'Accept',
         secondaryLabel: 'Reject',
         onPrimaryPressed: onOpenMap,
@@ -35,7 +35,7 @@ class DriverRequestDetailScreen extends StatelessWidget {
               gradient: LinearGradient(
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
-                colors: [DriverColors.blueDark, DriverColors.blue],
+                colors: [AppColors.blueDark, AppColors.blue],
               ),
             ),
             child: SafeArea(
@@ -45,7 +45,7 @@ class DriverRequestDetailScreen extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    DriverBackChip(onTap: () => Navigator.of(context).pop()),
+                    AppBackChip(onTap: () => Navigator.of(context).pop()),
                     const SizedBox(height: 18),
                     Center(
                       child: ClipRRect(
@@ -70,7 +70,7 @@ class DriverRequestDetailScreen extends StatelessWidget {
             offset: const Offset(0, -82),
             child: Padding(
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
-              child: DriverSurfaceCard(
+              child: AppSurfaceCard(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -96,7 +96,7 @@ class DriverRequestDetailScreen extends StatelessWidget {
                               Text(
                                 request.recipient,
                                 style: const TextStyle(
-                                  color: DriverColors.text,
+                                  color: AppColors.text,
                                   fontWeight: FontWeight.w700,
                                   fontSize: 22,
                                 ),
@@ -104,7 +104,7 @@ class DriverRequestDetailScreen extends StatelessWidget {
                               const SizedBox(height: 4),
                               Text(
                                 '${request.deliveries} Deliveries',
-                                style: const TextStyle(color: DriverColors.muted),
+                                style: const TextStyle(color: AppColors.muted),
                               ),
                               const SizedBox(height: 6),
                               Row(
@@ -118,7 +118,7 @@ class DriverRequestDetailScreen extends StatelessWidget {
                                   Text(
                                     request.rating.toStringAsFixed(1),
                                     style: const TextStyle(
-                                      color: DriverColors.text,
+                                      color: AppColors.text,
                                       fontWeight: FontWeight.w600,
                                     ),
                                   ),
@@ -131,33 +131,33 @@ class DriverRequestDetailScreen extends StatelessWidget {
                           height: 42,
                           width: 42,
                           decoration: BoxDecoration(
-                            color: DriverColors.surface,
+                            color: AppColors.surface,
                             borderRadius: BorderRadius.circular(14),
                           ),
                           child: const Icon(
                             Icons.two_wheeler_rounded,
-                            color: DriverColors.blue,
+                            color: AppColors.blue,
                           ),
                         ),
                       ],
                     ),
                     const SizedBox(height: 28),
-                    DriverRoutePoint(
+                    AppRoutePoint(
                       icon: Icons.location_on_rounded,
-                      iconColor: DriverColors.danger,
+                      iconColor: AppColors.danger,
                       label: 'Pickup Location',
                       value: request.pickup,
                     ),
-                    const DriverRoutePoint(
+                    const AppRoutePoint(
                       icon: Icons.more_vert_rounded,
-                      iconColor: DriverColors.line,
+                      iconColor: AppColors.line,
                       label: '',
                       value: '',
                       compact: true,
                     ),
-                    DriverRoutePoint(
+                    AppRoutePoint(
                       icon: Icons.circle_rounded,
-                      iconColor: DriverColors.success,
+                      iconColor: AppColors.success,
                       label: 'Delivery Location',
                       value: request.dropOff,
                     ),
@@ -165,13 +165,13 @@ class DriverRequestDetailScreen extends StatelessWidget {
                     Row(
                       children: [
                         Expanded(
-                          child: DriverInfoBlock(
+                          child: AppInfoBlock(
                             label: 'What you are sending',
                             value: request.itemSummary,
                           ),
                         ),
                         Expanded(
-                          child: DriverInfoBlock(
+                          child: AppInfoBlock(
                             label: 'Recipient',
                             value: request.recipient,
                           ),
@@ -182,13 +182,13 @@ class DriverRequestDetailScreen extends StatelessWidget {
                     Row(
                       children: [
                         Expanded(
-                          child: DriverInfoBlock(
+                          child: AppInfoBlock(
                             label: 'Recipient contact number',
                             value: request.phone,
                           ),
                         ),
                         Expanded(
-                          child: DriverInfoBlock(
+                          child: AppInfoBlock(
                             label: 'Payment',
                             value: request.payment,
                           ),
@@ -199,13 +199,13 @@ class DriverRequestDetailScreen extends StatelessWidget {
                     Row(
                       children: [
                         Expanded(
-                          child: DriverInfoBlock(
+                          child: AppInfoBlock(
                             label: 'Pickup ETA',
                             value: request.eta,
                           ),
                         ),
                         Expanded(
-                          child: DriverInfoBlock(
+                          child: AppInfoBlock(
                             label: 'Fee',
                             value: request.fee,
                             emphasize: true,
@@ -217,7 +217,7 @@ class DriverRequestDetailScreen extends StatelessWidget {
                     const Text(
                       'Pickup image(s)',
                       style: TextStyle(
-                        color: DriverColors.muted,
+                        color: AppColors.muted,
                         fontSize: 13,
                         fontWeight: FontWeight.w500,
                       ),
@@ -225,12 +225,12 @@ class DriverRequestDetailScreen extends StatelessWidget {
                     const SizedBox(height: 12),
                     const Row(
                       children: [
-                        DriverPickupThumbnail(
+                        AppPickupThumbnail(
                           icon: Icons.cake_rounded,
                           color: Color(0xFFF9B36A),
                         ),
                         SizedBox(width: 12),
-                        DriverPickupThumbnail(
+                        AppPickupThumbnail(
                           icon: Icons.local_grocery_store_rounded,
                           color: Color(0xFFE57373),
                         ),

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
-import '../widgets/driver_colors.dart';
+import '../colors/app_colors.dart';
+
+// ── Hero Sections ─────────────────────────────────────────────────────────────
 
 class DriverHeroSection extends StatelessWidget {
   const DriverHeroSection({
@@ -22,7 +24,7 @@ class DriverHeroSection extends StatelessWidget {
         gradient: LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: [DriverColors.blueDark, DriverColors.blue],
+          colors: [AppColors.blueDark, AppColors.blue],
         ),
       ),
       child: Stack(
@@ -138,35 +140,146 @@ class DriverHeroSection extends StatelessWidget {
   }
 }
 
-class DriverStatusChip extends StatelessWidget {
-  const DriverStatusChip({
+class CustomerHeroSection extends StatelessWidget {
+  const CustomerHeroSection({
     super.key,
-    required this.label,
+    required this.subtitle,
+    required this.name,
+    required this.content,
+    this.leading,
   });
 
-  final String label;
+  final String subtitle;
+  final String name;
+  final Widget content;
+  final Widget? leading;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-      decoration: BoxDecoration(
-        color: DriverColors.success.withValues(alpha: 0.14),
-        borderRadius: BorderRadius.circular(999),
-      ),
-      child: Text(
-        label,
-        style: const TextStyle(
-          color: DriverColors.success,
-          fontWeight: FontWeight.w700,
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [AppColors.blueDark, AppColors.blue],
         ),
+      ),
+      child: Stack(
+        children: [
+          // Background Decorative Circles (Matching Driver Style)
+          Positioned(
+            left: -60,
+            top: -40,
+            child: Container(
+              height: 200,
+              width: 200,
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.08),
+                shape: BoxShape.circle,
+              ),
+            ),
+          ),
+          Positioned(
+            right: -80,
+            bottom: -20,
+            child: Container(
+              height: 240,
+              width: 240,
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.05),
+                shape: BoxShape.circle,
+              ),
+            ),
+          ),
+          Positioned(
+            top: 100,
+            left: 100,
+            child: Container(
+              height: 60,
+              width: 60,
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.04),
+                shape: BoxShape.circle,
+              ),
+            ),
+          ),
+          SafeArea(
+            bottom: false,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 14, 16, 110),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (leading != null) ...[
+                        leading!,
+                        const SizedBox(width: 4),
+                      ],
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            FittedBox(
+                              fit: BoxFit.scaleDown,
+                              alignment: Alignment.centerLeft,
+                              child: Text(
+                                name,
+                                maxLines: 1,
+                                softWrap: false,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 28,
+                                  fontWeight: FontWeight.w800,
+                                  height: 1,
+                                ),
+                              ),
+                            ),
+                            if (subtitle.isNotEmpty) ...[
+                              const SizedBox(height: 8),
+                              Text(
+                                subtitle,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  color: Colors.white70,
+                                  fontSize: 15,
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Column(
+                        children: [
+                          const CircleAvatar(
+                            radius: 20,
+                            backgroundColor: Colors.white,
+                            child: Icon(Icons.person, color: AppColors.blue),
+                          ),
+                          const SizedBox(height: 8),
+                        ],
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 22),
+                  content,
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
 }
 
-class DriverSurfaceCard extends StatelessWidget {
-  const DriverSurfaceCard({
+// ── Surface Card ──────────────────────────────────────────────────────────────
+
+class AppSurfaceCard extends StatelessWidget {
+  const AppSurfaceCard({
     super.key,
     required this.child,
   });
@@ -194,8 +307,39 @@ class DriverSurfaceCard extends StatelessWidget {
   }
 }
 
-class DriverBackChip extends StatelessWidget {
-  const DriverBackChip({
+// ── Status Chip ───────────────────────────────────────────────────────────────
+
+class AppStatusChip extends StatelessWidget {
+  const AppStatusChip({
+    super.key,
+    required this.label,
+  });
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+      decoration: BoxDecoration(
+        color: AppColors.success.withValues(alpha: 0.14),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Text(
+        label,
+        style: const TextStyle(
+          color: AppColors.success,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
+    );
+  }
+}
+
+// ── Back Chip ─────────────────────────────────────────────────────────────────
+
+class AppBackChip extends StatelessWidget {
+  const AppBackChip({
     super.key,
     required this.onTap,
   });
@@ -216,7 +360,7 @@ class DriverBackChip extends StatelessWidget {
           child: Icon(
             Icons.arrow_back_ios_new_rounded,
             size: 18,
-            color: DriverColors.text,
+            color: AppColors.text,
           ),
         ),
       ),
@@ -224,8 +368,10 @@ class DriverBackChip extends StatelessWidget {
   }
 }
 
-class DriverStatLine extends StatelessWidget {
-  const DriverStatLine({
+// ── Stat Line ─────────────────────────────────────────────────────────────────
+
+class AppStatLine extends StatelessWidget {
+  const AppStatLine({
     super.key,
     required this.label,
     required this.value,
@@ -241,7 +387,7 @@ class DriverStatLine extends StatelessWidget {
         Text(
           label,
           style: const TextStyle(
-            color: DriverColors.text,
+            color: AppColors.text,
             fontWeight: FontWeight.w600,
           ),
         ),
@@ -249,14 +395,14 @@ class DriverStatLine extends StatelessWidget {
         const Expanded(
           child: Divider(
             thickness: 1,
-            color: DriverColors.line,
+            color: AppColors.line,
           ),
         ),
         const SizedBox(width: 10),
         Text(
           value,
           style: const TextStyle(
-            color: DriverColors.text,
+            color: AppColors.text,
             fontWeight: FontWeight.w600,
           ),
         ),
@@ -264,6 +410,8 @@ class DriverStatLine extends StatelessWidget {
     );
   }
 }
+
+// ── Bottom Bars ───────────────────────────────────────────────────────────────
 
 class DriverBottomBar extends StatelessWidget {
   const DriverBottomBar({
@@ -299,7 +447,7 @@ class DriverBottomBar extends StatelessWidget {
           children: [
             SizedBox(
               width: 84,
-              child: _DriverBottomBarItem(
+              child: _BottomBarItem(
                 icon: Icons.home_filled,
                 label: 'Home',
                 isSelected: selectedIndex == 0,
@@ -308,7 +456,7 @@ class DriverBottomBar extends StatelessWidget {
             ),
             SizedBox(
               width: 84,
-              child: _DriverBottomBarItem(
+              child: _BottomBarItem(
                 icon: Icons.work_history_rounded,
                 label: 'Deliveries',
                 isSelected: selectedIndex == 1,
@@ -317,7 +465,7 @@ class DriverBottomBar extends StatelessWidget {
             ),
             SizedBox(
               width: 84,
-              child: _DriverBottomBarItem(
+              child: _BottomBarItem(
                 icon: Icons.person_rounded,
                 label: 'Profile',
                 isSelected: selectedIndex == 2,
@@ -331,8 +479,74 @@ class DriverBottomBar extends StatelessWidget {
   }
 }
 
-class _DriverBottomBarItem extends StatelessWidget {
-  const _DriverBottomBarItem({
+class CustomerBottomBar extends StatelessWidget {
+  const CustomerBottomBar({
+    super.key,
+    required this.selectedIndex,
+    required this.onSelected,
+  });
+
+  final int selectedIndex;
+  final ValueChanged<int> onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    final bottomInset = MediaQuery.paddingOf(context).bottom;
+
+    return SafeArea(
+      top: false,
+      child: Container(
+        padding: EdgeInsets.fromLTRB(18, 8, 18, bottomInset > 0 ? 10 : 8),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.10),
+              blurRadius: 24,
+              offset: const Offset(0, -4),
+            ),
+          ],
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: [
+            SizedBox(
+              width: 84,
+              child: _BottomBarItem(
+                icon: Icons.home_filled,
+                label: 'Home',
+                isSelected: selectedIndex == 0,
+                onTap: () => onSelected(0),
+              ),
+            ),
+            SizedBox(
+              width: 84,
+              child: _BottomBarItem(
+                icon: Icons.history_rounded,
+                label: 'Orders',
+                isSelected: selectedIndex == 1,
+                onTap: () => onSelected(1),
+              ),
+            ),
+            SizedBox(
+              width: 84,
+              child: _BottomBarItem(
+                icon: Icons.person_rounded,
+                label: 'Profile',
+                isSelected: selectedIndex == 2,
+                onTap: () => onSelected(2),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _BottomBarItem extends StatelessWidget {
+  const _BottomBarItem({
     required this.icon,
     required this.label,
     required this.isSelected,
@@ -346,7 +560,7 @@ class _DriverBottomBarItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = isSelected ? DriverColors.blue : Colors.grey.shade400;
+    final color = isSelected ? AppColors.blue : Colors.grey.shade400;
 
     return InkWell(
       onTap: onTap,

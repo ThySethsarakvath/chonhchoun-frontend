@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../widgets/customer_colors.dart';
-import '../../driver/widgets/driver_shell_widgets.dart';
+import '../../../shared/colors/app_colors.dart';
+import '../../../shared/widgets/app_shell_widgets.dart';
 
 class CustomerProfileTab extends StatelessWidget {
   const CustomerProfileTab({super.key});
@@ -8,7 +8,7 @@ class CustomerProfileTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: CustomerColors.surface,
+      backgroundColor: AppColors.surface,
       body: CustomScrollView(
         slivers: [
           _buildAppBar(),
@@ -24,7 +24,7 @@ class CustomerProfileTab extends StatelessWidget {
     return const SliverAppBar(
       expandedHeight: 60,
       pinned: true,
-      backgroundColor: CustomerColors.blueDark,
+      backgroundColor: AppColors.blueDark,
       title: Text("Profile", style: TextStyle(fontWeight: FontWeight.bold)),
       centerTitle: true,
     );
@@ -34,7 +34,7 @@ class CustomerProfileTab extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: const BoxDecoration(
-        color: CustomerColors.blueDark,
+        color: AppColors.blueDark,
         borderRadius: BorderRadius.only(
           bottomLeft: Radius.circular(32),
           bottomRight: Radius.circular(32),
@@ -45,7 +45,7 @@ class CustomerProfileTab extends StatelessWidget {
           const CircleAvatar(
             radius: 40,
             backgroundColor: Colors.white,
-            child: Icon(Icons.person, size: 40, color: CustomerColors.blue),
+            child: Icon(Icons.person, size: 40, color: AppColors.blue),
           ),
           const SizedBox(width: 20),
           Column(
@@ -87,10 +87,10 @@ class CustomerProfileTab extends StatelessWidget {
 
   Widget _buildStatCard(String label, String value, IconData icon) {
     return Expanded(
-      child: DriverSurfaceCard(
+      child: AppSurfaceCard(
         child: Column(
           children: [
-            Icon(icon, color: CustomerColors.blue),
+            Icon(icon, color: AppColors.blue),
             const SizedBox(height: 8),
             Text(
               value,
@@ -98,7 +98,7 @@ class CustomerProfileTab extends StatelessWidget {
             ),
             Text(
               label,
-              style: const TextStyle(color: CustomerColors.muted, fontSize: 12),
+              style: const TextStyle(color: AppColors.muted, fontSize: 12),
             ),
           ],
         ),
@@ -109,7 +109,7 @@ class CustomerProfileTab extends StatelessWidget {
   Widget _buildActionList() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: DriverSurfaceCard(
+      child: AppSurfaceCard(
         child: Column(
           children: [
             _buildActionItem(Icons.person_outline, "Update Information"),
@@ -133,12 +133,12 @@ class CustomerProfileTab extends StatelessWidget {
     return ListTile(
       leading: Icon(
         icon,
-        color: isDanger ? CustomerColors.danger : CustomerColors.blue,
+        color: isDanger ? AppColors.danger : AppColors.blue,
       ),
       title: Text(
         label,
         style: TextStyle(
-          color: isDanger ? CustomerColors.danger : CustomerColors.text,
+          color: isDanger ? AppColors.danger : AppColors.text,
           fontWeight: FontWeight.w500,
         ),
       ),

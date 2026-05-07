@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 
-import '../models/driver_request.dart';
-import '../widgets/driver_button_widgets.dart';
-import '../widgets/driver_colors.dart';
-import '../widgets/driver_map_widgets.dart';
-import '../widgets/driver_shell_widgets.dart';
+import '../../../shared/models/driver_request.dart';
+import '../../../shared/widgets/app_button_widgets.dart';
+import '../../../shared/colors/app_colors.dart';
+import '../../../shared/widgets/app_map_widgets.dart';
+import '../../../shared/widgets/app_shell_widgets.dart';
 
 class DriverMapDetailScreen extends StatelessWidget {
   const DriverMapDetailScreen({
@@ -17,8 +17,8 @@ class DriverMapDetailScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: DriverColors.surface,
-      bottomNavigationBar: DriverDecisionBar(
+      backgroundColor: AppColors.surface,
+      bottomNavigationBar: AppDecisionBar(
         primaryLabel: 'Accept',
         secondaryLabel: 'Reject',
         onPrimaryPressed: () => Navigator.of(context).pop(),
@@ -34,14 +34,14 @@ class DriverMapDetailScreen extends StatelessWidget {
                 gradient: LinearGradient(
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
-                  colors: [DriverColors.blueDark, DriverColors.blue],
+                  colors: [AppColors.blueDark, AppColors.blue],
                 ),
               ),
               child: Column(
                 children: [
                   Row(
                     children: [
-                      DriverBackChip(onTap: () => Navigator.of(context).pop()),
+                      AppBackChip(onTap: () => Navigator.of(context).pop()),
                       const Expanded(
                         child: Center(
                           child: Text(
@@ -93,7 +93,7 @@ class DriverMapDetailScreen extends StatelessWidget {
                           Text(
                             request.title,
                             style: const TextStyle(
-                              color: DriverColors.text,
+                              color: AppColors.text,
                               fontWeight: FontWeight.w700,
                             ),
                           ),
@@ -101,7 +101,7 @@ class DriverMapDetailScreen extends StatelessWidget {
                           const Text(
                             'Simple placeholder map for now.',
                             style: TextStyle(
-                              color: DriverColors.muted,
+                              color: AppColors.muted,
                               fontSize: 12,
                             ),
                           ),

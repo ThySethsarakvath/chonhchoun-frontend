@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../../../router/app_router.dart';
-import '../widgets/auth_scaffold.dart';
 import '../widgets/auth_widgets.dart';
 
 class ValidateEmailScreen extends StatelessWidget {

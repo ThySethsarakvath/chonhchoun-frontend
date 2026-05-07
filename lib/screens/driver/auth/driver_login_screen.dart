@@ -3,10 +3,9 @@ import 'package:flutter/material.dart';
 import '../../../features/auth/models/auth_models.dart';
 import '../../../features/auth/services/auth_service.dart';
 import '../../../router/app_router.dart';
-import '../widgets/driver_auth_widgets.dart';
-import '../widgets/driver_button_widgets.dart';
-import '../widgets/driver_colors.dart';
-import '../widgets/driver_shell_widgets.dart';
+import '../../../shared/widgets/app_input_widgets.dart';
+import '../../../shared/widgets/app_button_widgets.dart';
+import '../../../shared/colors/app_colors.dart';
 
 class DriverLoginScreen extends StatefulWidget {
   const DriverLoginScreen({super.key});
@@ -170,7 +169,7 @@ class _DriverLoginScreenState extends State<DriverLoginScreen> {
           const Text(
             'Driver sign in',
             style: TextStyle(
-              color: DriverColors.text,
+              color: AppColors.text,
               fontSize: 24,
               fontWeight: FontWeight.w800,
             ),
@@ -179,7 +178,7 @@ class _DriverLoginScreenState extends State<DriverLoginScreen> {
           const Text(
             'Enter the same email and password you registered with.',
             style: TextStyle(
-              color: DriverColors.muted,
+              color: AppColors.muted,
               height: 1.5,
             ),
           ),
@@ -204,14 +203,14 @@ class _DriverLoginScreenState extends State<DriverLoginScreen> {
                 _obscurePassword
                     ? Icons.visibility_off_outlined
                     : Icons.visibility_outlined,
-                color: DriverColors.muted,
+                color: AppColors.muted,
               ),
             ),
           ),
           const SizedBox(height: 24),
           SizedBox(
             width: double.infinity,
-            child: DriverPrimaryButton(
+            child: AppPrimaryButton(
               label: _loading ? 'Loading...' : 'Continue as Driver',
               onPressed: () {
                 if (!_loading) {
@@ -225,7 +224,7 @@ class _DriverLoginScreenState extends State<DriverLoginScreen> {
           const SizedBox(height: 12),
           SizedBox(
             width: double.infinity,
-            child: DriverOutlineButton(
+            child: AppOutlineButton(
               label: 'Create Driver Account',
               onPressed: _goToSignup,
             ),
@@ -236,14 +235,14 @@ class _DriverLoginScreenState extends State<DriverLoginScreen> {
             children: [
               const Text(
                 "Don't have an account yet?",
-                style: TextStyle(color: DriverColors.muted),
+                style: TextStyle(color: AppColors.muted),
               ),
               TextButton(
                 onPressed: _loading ? null : _goToSignup,
                 child: const Text(
                   'Sign Up',
                   style: TextStyle(
-                    color: DriverColors.blue,
+                    color: AppColors.blue,
                     fontWeight: FontWeight.w700,
                   ),
                 ),

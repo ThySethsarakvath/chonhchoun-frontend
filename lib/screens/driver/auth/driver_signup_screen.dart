@@ -3,10 +3,10 @@ import 'package:flutter/material.dart';
 import '../../../features/auth/models/auth_models.dart';
 import '../../../features/auth/services/auth_service.dart';
 import '../../../router/app_router.dart';
-import '../widgets/driver_auth_widgets.dart';
-import '../widgets/driver_button_widgets.dart';
-import '../widgets/driver_colors.dart';
-import '../widgets/driver_shell_widgets.dart';
+import '../../../shared/widgets/app_input_widgets.dart';
+import '../../../shared/widgets/app_button_widgets.dart';
+import '../../../shared/colors/app_colors.dart';
+import '../../../shared/widgets/app_shell_widgets.dart';
 
 class DriverSignupScreen extends StatefulWidget {
   const DriverSignupScreen({super.key});
@@ -103,7 +103,7 @@ class _DriverSignupScreenState extends State<DriverSignupScreen> {
       heroChild: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          DriverBackChip(onTap: () => Navigator.of(context).maybePop()),
+          AppBackChip(onTap: () => Navigator.of(context).maybePop()),
           const SizedBox(height: 18),
           const Text(
             'Driver auth',
@@ -164,7 +164,7 @@ class _DriverSignupScreenState extends State<DriverSignupScreen> {
           const Text(
             'Create driver account',
             style: TextStyle(
-              color: DriverColors.text,
+              color: AppColors.text,
               fontSize: 24,
               fontWeight: FontWeight.w800,
             ),
@@ -173,7 +173,7 @@ class _DriverSignupScreenState extends State<DriverSignupScreen> {
           const Text(
             'Choose your vehicle type and verify your email before entering the driver workspace.',
             style: TextStyle(
-              color: DriverColors.muted,
+              color: AppColors.muted,
               height: 1.5,
             ),
           ),
@@ -182,7 +182,7 @@ class _DriverSignupScreenState extends State<DriverSignupScreen> {
           const Text(
             'Vehicle type',
             style: TextStyle(
-              color: DriverColors.text,
+              color: AppColors.text,
               fontWeight: FontWeight.w700,
             ),
           ),
@@ -260,19 +260,19 @@ class _DriverSignupScreenState extends State<DriverSignupScreen> {
             width: double.infinity,
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: DriverColors.blue.withValues(alpha: 0.07),
+              color: AppColors.blue.withValues(alpha: 0.07),
               borderRadius: BorderRadius.circular(20),
             ),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Icon(Icons.info_outline_rounded, color: DriverColors.blue),
+                const Icon(Icons.info_outline_rounded, color: AppColors.blue),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
                     'Selected vehicle: $_selectedVehicle. After email OTP verification, you will set your password and enter the driver workspace.',
                     style: const TextStyle(
-                      color: DriverColors.text,
+                      color: AppColors.text,
                       height: 1.5,
                       fontWeight: FontWeight.w500,
                     ),
@@ -285,7 +285,7 @@ class _DriverSignupScreenState extends State<DriverSignupScreen> {
           const SizedBox(height: 24),
           SizedBox(
             width: double.infinity,
-            child: DriverPrimaryButton(
+            child: AppPrimaryButton(
               label: _loading ? 'Loading...' : 'Create Account',
               onPressed: () {
                 if (!_loading) {
@@ -299,7 +299,7 @@ class _DriverSignupScreenState extends State<DriverSignupScreen> {
           const SizedBox(height: 12),
           SizedBox(
             width: double.infinity,
-            child: DriverOutlineButton(
+            child: AppOutlineButton(
               label: 'Already Have an Account',
               onPressed: () {
                 if (!_loading) {

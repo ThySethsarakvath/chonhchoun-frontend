@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import 'models/customer_order.dart';
+import '../../shared/colors/app_colors.dart';
+import '../../shared/models/order.dart';
+import '../../shared/widgets/app_shell_widgets.dart';
 import 'screens/customer_booking_screen.dart';
 import 'tabs/customer_home_tab.dart';
 import 'tabs/customer_orders_tab.dart';
 import 'tabs/customer_profile_tab.dart';
-import 'widgets/customer_colors.dart';
-import 'widgets/customer_shell_widgets.dart';
 
 class CustomerWorkspaceScreen extends StatefulWidget {
   const CustomerWorkspaceScreen({super.key});
@@ -38,7 +38,7 @@ class _CustomerWorkspaceScreenState extends State<CustomerWorkspaceScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: CustomerColors.surface,
+      backgroundColor: AppColors.surface,
       body: IndexedStack(
         index: _selectedIndex,
         children: [

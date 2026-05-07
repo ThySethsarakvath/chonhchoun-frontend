@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 
-import 'driver_colors.dart';
+import '../colors/app_colors.dart';
 
-class DriverPrimaryButton extends StatelessWidget {
-  const DriverPrimaryButton({
+// ── Primary Button ────────────────────────────────────────────────────────────
+
+class AppPrimaryButton extends StatelessWidget {
+  const AppPrimaryButton({
     super.key,
     required this.label,
     required this.onPressed,
@@ -22,7 +24,7 @@ class DriverPrimaryButton extends StatelessWidget {
       onPressed: onPressed,
       style: ElevatedButton.styleFrom(
         elevation: 0,
-        backgroundColor: DriverColors.blue,
+        backgroundColor: AppColors.blue,
         foregroundColor: Colors.white,
         padding: padding,
         shape: RoundedRectangleBorder(
@@ -37,8 +39,10 @@ class DriverPrimaryButton extends StatelessWidget {
   }
 }
 
-class DriverSoftButton extends StatelessWidget {
-  const DriverSoftButton({
+// ── Soft Button ───────────────────────────────────────────────────────────────
+
+class AppSoftButton extends StatelessWidget {
+  const AppSoftButton({
     super.key,
     required this.label,
     required this.onPressed,
@@ -57,8 +61,8 @@ class DriverSoftButton extends StatelessWidget {
       onPressed: onPressed,
       style: ElevatedButton.styleFrom(
         elevation: 0,
-        backgroundColor: DriverColors.softBlue.withValues(alpha: 0.42),
-        foregroundColor: DriverColors.blue,
+        backgroundColor: AppColors.softBlue.withValues(alpha: 0.42),
+        foregroundColor: AppColors.blue,
         padding: padding,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(borderRadius),
@@ -72,8 +76,10 @@ class DriverSoftButton extends StatelessWidget {
   }
 }
 
-class DriverOutlineButton extends StatelessWidget {
-  const DriverOutlineButton({
+// ── Outline Button ────────────────────────────────────────────────────────────
+
+class AppOutlineButton extends StatelessWidget {
+  const AppOutlineButton({
     super.key,
     required this.label,
     required this.onPressed,
@@ -91,8 +97,8 @@ class DriverOutlineButton extends StatelessWidget {
     return OutlinedButton(
       onPressed: onPressed,
       style: OutlinedButton.styleFrom(
-        foregroundColor: DriverColors.blue,
-        side: BorderSide(color: DriverColors.blue.withValues(alpha: 0.25)),
+        foregroundColor: AppColors.blue,
+        side: BorderSide(color: AppColors.blue.withValues(alpha: 0.25)),
         padding: padding,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(borderRadius),
@@ -106,8 +112,10 @@ class DriverOutlineButton extends StatelessWidget {
   }
 }
 
-class DriverDecisionBar extends StatelessWidget {
-  const DriverDecisionBar({
+// ── Decision Bar ──────────────────────────────────────────────────────────────
+
+class AppDecisionBar extends StatelessWidget {
+  const AppDecisionBar({
     super.key,
     required this.primaryLabel,
     required this.secondaryLabel,
@@ -133,14 +141,14 @@ class DriverDecisionBar extends StatelessWidget {
         child: Row(
           children: [
             Expanded(
-              child: DriverSoftButton(
+              child: AppSoftButton(
                 label: secondaryLabel,
                 onPressed: onSecondaryPressed,
               ),
             ),
             const SizedBox(width: 14),
             Expanded(
-              child: DriverPrimaryButton(
+              child: AppPrimaryButton(
                 label: primaryLabel,
                 onPressed: onPrimaryPressed,
               ),

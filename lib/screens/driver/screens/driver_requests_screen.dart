@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 
-import '../data/driver_demo_data.dart';
-import '../models/driver_request.dart';
-import '../widgets/driver_colors.dart';
-import '../widgets/driver_request_widgets.dart';
-import '../widgets/driver_shell_widgets.dart';
+import '../../../shared/data/demo_data.dart';
+import '../../../shared/models/driver_request.dart';
+import '../../../shared/colors/app_colors.dart';
+import '../../../shared/widgets/app_request_widgets.dart';
+import '../../../shared/widgets/app_shell_widgets.dart';
 
 class DriverRequestsScreen extends StatelessWidget {
   const DriverRequestsScreen({
@@ -19,15 +19,15 @@ class DriverRequestsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: DriverColors.surface,
+      backgroundColor: AppColors.surface,
       body: ListView(
         padding: EdgeInsets.zero,
         children: [
           DriverHeroSection(
             subtitle: 'Welcome Back',
             name: driverDisplayName,
-            leading: DriverBackChip(onTap: () => Navigator.of(context).pop()),
-            content: const DriverBalanceCard(amount: driverAvailableBalance),
+            leading: AppBackChip(onTap: () => Navigator.of(context).pop()),
+            content: const AppBalanceCard(amount: driverAvailableBalance),
           ),
           Transform.translate(
             offset: const Offset(0, -28),
@@ -35,14 +35,14 @@ class DriverRequestsScreen extends StatelessWidget {
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 32),
               child: Column(
                 children: [
-                  DriverSurfaceCard(
+                  AppSurfaceCard(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         const Text(
                           'Would you like to specify direction for deliveries?',
                           style: TextStyle(
-                            color: DriverColors.text,
+                            color: AppColors.text,
                             fontSize: 13,
                             fontWeight: FontWeight.w500,
                           ),
@@ -51,7 +51,7 @@ class DriverRequestsScreen extends StatelessWidget {
                         Container(
                           height: 52,
                           decoration: BoxDecoration(
-                            color: DriverColors.surface,
+                            color: AppColors.surface,
                             borderRadius: BorderRadius.circular(16),
                           ),
                           child: const Row(
@@ -59,14 +59,14 @@ class DriverRequestsScreen extends StatelessWidget {
                               SizedBox(width: 16),
                               Icon(
                                 Icons.radio_button_checked_rounded,
-                                color: DriverColors.blue,
+                                color: AppColors.blue,
                                 size: 18,
                               ),
                               SizedBox(width: 10),
                               Text(
                                 'Where to?',
                                 style: TextStyle(
-                                  color: DriverColors.muted,
+                                  color: AppColors.muted,
                                   fontSize: 15,
                                 ),
                               ),
@@ -83,7 +83,7 @@ class DriverRequestsScreen extends StatelessWidget {
                         child: Text(
                           'Available Requests',
                           style: TextStyle(
-                            color: DriverColors.text,
+                            color: AppColors.text,
                             fontSize: 21,
                             fontWeight: FontWeight.w800,
                           ),
@@ -94,7 +94,7 @@ class DriverRequestsScreen extends StatelessWidget {
                         child: const Text(
                           'Back',
                           style: TextStyle(
-                            color: DriverColors.blue,
+                            color: AppColors.blue,
                             fontWeight: FontWeight.w700,
                           ),
                         ),
@@ -105,7 +105,7 @@ class DriverRequestsScreen extends StatelessWidget {
                   ...requests.map(
                     (request) => Padding(
                       padding: const EdgeInsets.only(bottom: 16),
-                      child: DriverRequestCard(
+                      child: AppRequestCard(
                         request: request,
                         onOpenDetail: () => onOpenDetail(request),
                       ),

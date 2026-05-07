@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 
-import 'data/driver_demo_data.dart';
-import 'models/driver_request.dart';
+import '../../shared/data/demo_data.dart';
+import '../../shared/models/driver_request.dart';
 import 'screens/driver_map_detail_screen.dart';
 import 'screens/driver_request_detail_screen.dart';
 import 'screens/driver_requests_screen.dart';
 import 'tabs/driver_deliveries_tab.dart';
 import 'tabs/driver_home_tab.dart';
 import 'tabs/driver_profile_tab.dart';
-import 'widgets/driver_colors.dart';
-import 'widgets/driver_shell_widgets.dart';
+import '../../shared/colors/app_colors.dart';
+import '../../shared/widgets/app_shell_widgets.dart';
 
 class DriverWorkspaceScreen extends StatefulWidget {
   const DriverWorkspaceScreen({super.key});
@@ -56,7 +56,7 @@ class _DriverWorkspaceScreenState extends State<DriverWorkspaceScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: DriverColors.surface,
+      backgroundColor: AppColors.surface,
       bottomNavigationBar: DriverBottomBar(
         selectedIndex: _selectedIndex,
         onSelected: (index) => setState(() => _selectedIndex = index),
