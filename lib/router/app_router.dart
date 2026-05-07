@@ -1,13 +1,12 @@
 import 'package:flutter/material.dart';
-import '../screens/generals/landing_page.dart';
-import '../screens/generals/onboarding_screen.dart';
+import '../screens/landing_page.dart';
+import '../screens/onboarding_screen.dart';
 import '../features/auth/screens/login_screen.dart';
 import '../features/auth/screens/register_screen.dart';
 import '../features/auth/screens/validate_email_screen.dart';
 import '../features/auth/screens/otp_screen.dart';
 import '../features/auth/screens/set_password_screen.dart';
-// import '../screens/customer/customer_workspace_screen.dart';
-// import '../screens/driver/driver_workspace_screen.dart';
+import '../features/home/pages/home_screen.dart';
 
 
 abstract class AppRoutes {
@@ -72,7 +71,7 @@ class AppRouter {
         final args = settings.arguments as SetPasswordArgs;
         return _slide(SetPasswordScreen(args: args));
       case AppRoutes.customer:
-        return _fade(_stub('Customer Workspace'));
+        return _fade(const HomeScreen());
       case AppRoutes.driver:
         return _fade(_stub('Driver Workspace'));
       default:
