@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-
-// ── Text field ────────────────────────────────────────────────────────────────
+import 'package:flutter/services.dart';
 
 class AuthTextField extends StatelessWidget {
   final String label;
@@ -11,6 +10,7 @@ class AuthTextField extends StatelessWidget {
   final VoidCallback? onToggle;
   final TextInputType keyboardType;
   final String? errorText;
+  final List<TextInputFormatter>? inputFormatters;
 
   const AuthTextField({
     super.key,
@@ -22,6 +22,7 @@ class AuthTextField extends StatelessWidget {
     this.onToggle,
     this.keyboardType = TextInputType.text,
     this.errorText,
+    this.inputFormatters,
   });
 
   @override
@@ -41,6 +42,7 @@ class AuthTextField extends StatelessWidget {
         TextField(
           controller: controller,
           obscureText: obscure,
+          inputFormatters: inputFormatters,
           keyboardType: keyboardType,
           style: const TextStyle(fontSize: 14, color: Color(0xFF2D3A4E)),
           decoration: InputDecoration(
@@ -86,8 +88,6 @@ class AuthTextField extends StatelessWidget {
     );
   }
 }
-
-// ── Primary button ────────────────────────────────────────────────────────────
 
 class AuthButton extends StatelessWidget {
   final String label;
@@ -138,8 +138,6 @@ class AuthButton extends StatelessWidget {
   }
 }
 
-// ── Header with back arrow (used by ValidateEmail, OTP, SetPassword) ─────────
-
 class AuthHeaderWithBack extends StatelessWidget {
   final VoidCallback onBack;
 
@@ -156,7 +154,6 @@ class AuthHeaderWithBack extends StatelessWidget {
       height: panelHeight + logoOverlap,
       child: Stack(
         children: [
-          // Blue gradient panel
           Positioned(
             top: 0, left: 0, right: 0,
             height: panelHeight,
@@ -170,7 +167,6 @@ class AuthHeaderWithBack extends StatelessWidget {
               ),
             ),
           ),
-          // City silhouette
           Positioned(
             bottom: logoOverlap, left: 0, right: 0,
             child: Image.asset(
@@ -179,7 +175,6 @@ class AuthHeaderWithBack extends StatelessWidget {
               alignment: Alignment.bottomCenter,
             ),
           ),
-          // Back button
           Positioned(
             top: MediaQuery.of(context).padding.top + 8,
             left: 12,
@@ -197,7 +192,6 @@ class AuthHeaderWithBack extends StatelessWidget {
               ),
             ),
           ),
-          // Center logo overlapping boundary
           Positioned(
             bottom: 0, left: 0, right: 0,
             child: Center(
@@ -225,8 +219,6 @@ class AuthHeaderWithBack extends StatelessWidget {
     );
   }
 }
-
-// ── Rich hyperlink row ────────────────────────────────────────────────────────
 
 class AuthLinkRow extends StatelessWidget {
   final String prefix;

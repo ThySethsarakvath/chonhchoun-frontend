@@ -9,6 +9,9 @@ import '../widgets/delivery_card.dart';
 import '../widgets/home_bottom_nav.dart';
 import '../widgets/section_header.dart';
 import '../widgets/app_drawer_wrapper.dart';
+import '../../auth/services/user_service.dart';
+import '../../auth/models/user_model.dart';
+import '../../auth/tokens/token_storage.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -19,6 +22,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   final _service = HomeService();
+  final _userService = UserService();
   final _searchCtrl = TextEditingController();
 
   int _navIndex = 0;
@@ -26,6 +30,7 @@ class _HomeScreenState extends State<HomeScreen> {
   List<PromoBanner> _banners = [];
   List<DeliveryItem> _recent = [];
   List<DeliveryItem> _history = [];
+  UserProfile? _userProfile;
   bool _loading = true;
   static const String _city = 'ភ្នំពេញ';
   static const String _userLocation = 'ផ្ទះ 175, ទឹកថ្លា, សែនសុខ';
@@ -50,16 +55,28 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _loadData() async {
     try {
+      final accessToken = await TokenStorage.getAccessToken();
+      
+      if (accessToken == null || accessToken.isEmpty) {
+        if (mounted) {
+          setState(() => _loading = false);
+        }
+        return;
+      }
+
       final results = await Future.wait([
         _service.fetchBanners(),
         _service.fetchRecentDeliveries(),
         _service.fetchDeliveryHistory(),
+        _userService.getMe(accessToken: accessToken).catchError((_) => null),
       ]);
+      
       if (mounted) {
         setState(() {
           _banners = results[0] as List<PromoBanner>;
           _recent = results[1] as List<DeliveryItem>;
           _history = results[2] as List<DeliveryItem>;
+          _userProfile = results[3] as UserProfile?;
           _loading = false;
         });
       }
@@ -112,10 +129,13 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     final screenHeight = MediaQuery.of(context).size.height;
     final bluePanelHeight = screenHeight * 0.41;
+    
+    // Use avatar URL from user profile if available, otherwise use static path
+    final avatarUrl = _userProfile?.avatarUrl ?? 'assets/images/avatar.png';
 
     return AppDrawerWrapper(
       city: _city,
-      userAvatar: 'assets/images/avatar.png',
+      avatarUrl: avatarUrl,
       child: Scaffold(
         backgroundColor: const Color(0xFFEEF3FB),
         extendBody: true,
@@ -174,7 +194,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                   )?.open(),
                                   onProfileTap: () {
                                     /* TODO */
-                                  },
+                                  }, avatarUrl: avatarUrl,
                                 ),
                               ),
 

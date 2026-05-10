@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 
-// ── Drawer nav item model ─────────────────────────────────────────────────────
-
 class _DrawerItem {
   final IconData icon;
   final String label;
@@ -14,16 +12,9 @@ class _DrawerItem {
   });
 }
 
-// ── App drawer ────────────────────────────────────────────────────────────────
-
-/// A custom animated sidebar drawer that slides in from the left.
-/// Wrap your screen with [AppDrawerWrapper] to use it.
-///
-/// The drawer covers ~78 % of screen width — matching the reference image
-/// where the home content is still partially visible on the right.
 class AppDrawer extends StatelessWidget {
   final String city;
-  final String userAvatar; // asset path
+  final String? avatarUrl; // asset path
   final int selectedIndex;
   final ValueChanged<int> onItemSelected;
   final VoidCallback onClose;
@@ -31,49 +22,49 @@ class AppDrawer extends StatelessWidget {
   const AppDrawer({
     super.key,
     required this.city,
-    required this.userAvatar,
+    required this.avatarUrl,
     required this.selectedIndex,
     required this.onItemSelected,
     required this.onClose,
   });
 
   static List<_DrawerItem> _buildItems(ValueChanged<int> onItemSelected) => [
-        _DrawerItem(
-          icon: Icons.my_location_outlined,
-          label: 'តាមដាន',
-          onTap: () => onItemSelected(0),
-        ),
-        _DrawerItem(
-          icon: Icons.notifications_outlined,
-          label: 'ការជូនដំណឹង',
-          onTap: () => onItemSelected(1),
-        ),
-        _DrawerItem(
-          icon: Icons.bar_chart_rounded,
-          label: 'វិភាគ',
-          onTap: () => onItemSelected(2),
-        ),
-        _DrawerItem(
-          icon: Icons.local_shipping_outlined,
-          label: 'ការដឹកជញ្ជូន',
-          onTap: () => onItemSelected(3),
-        ),
-        _DrawerItem(
-          icon: Icons.person_outline_rounded,
-          label: 'គណនី',
-          onTap: () => onItemSelected(4),
-        ),
-        _DrawerItem(
-          icon: Icons.settings_outlined,
-          label: 'ការកំណត់',
-          onTap: () => onItemSelected(5),
-        ),
-        _DrawerItem(
-          icon: Icons.help_outline_rounded,
-          label: 'ជំនួយការ',
-          onTap: () => onItemSelected(6),
-        ),
-      ];
+    _DrawerItem(
+      icon: Icons.my_location_outlined,
+      label: 'តាមដាន',
+      onTap: () => onItemSelected(0),
+    ),
+    _DrawerItem(
+      icon: Icons.notifications_outlined,
+      label: 'ការជូនដំណឹង',
+      onTap: () => onItemSelected(1),
+    ),
+    _DrawerItem(
+      icon: Icons.bar_chart_rounded,
+      label: 'វិភាគ',
+      onTap: () => onItemSelected(2),
+    ),
+    _DrawerItem(
+      icon: Icons.local_shipping_outlined,
+      label: 'ការដឹកជញ្ជូន',
+      onTap: () => onItemSelected(3),
+    ),
+    _DrawerItem(
+      icon: Icons.person_outline_rounded,
+      label: 'គណនី',
+      onTap: () => onItemSelected(4),
+    ),
+    _DrawerItem(
+      icon: Icons.settings_outlined,
+      label: 'ការកំណត់',
+      onTap: () => onItemSelected(5),
+    ),
+    _DrawerItem(
+      icon: Icons.help_outline_rounded,
+      label: 'ជំនួយការ',
+      onTap: () => onItemSelected(6),
+    ),
+  ];
 
   @override
   Widget build(BuildContext context) {
@@ -90,11 +81,7 @@ class AppDrawer extends StatelessWidget {
             gradient: LinearGradient(
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
-              colors: [
-                Color(0xFF1E4D73),
-                Color(0xFF2C6B9E),
-                Color(0xFF2060A0),
-              ],
+              colors: [Color(0xFF1E4D73), Color(0xFF2C6B9E), Color(0xFF2060A0)],
               stops: [0.0, 0.55, 1.0],
             ),
             borderRadius: BorderRadius.only(
@@ -107,8 +94,6 @@ class AppDrawer extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const SizedBox(height: 20),
-
-                // ── Logo + close ─────────────────────────────────────────
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 24),
                   child: Row(
@@ -163,10 +148,7 @@ class AppDrawer extends StatelessWidget {
                     ],
                   ),
                 ),
-
                 const SizedBox(height: 36),
-
-                // ── Nav items ────────────────────────────────────────────
                 Expanded(
                   child: ListView.builder(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -186,8 +168,6 @@ class AppDrawer extends StatelessWidget {
                     },
                   ),
                 ),
-
-                // ── User profile row at bottom ───────────────────────────
                 Padding(
                   padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
                   child: Row(
@@ -197,20 +177,29 @@ class AppDrawer extends StatelessWidget {
                         height: 40,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          border:
-                              Border.all(color: Colors.white54, width: 1.5),
+                          border: Border.all(color: Colors.white54, width: 1.5),
                           color: const Color(0xFF4A8DDB),
                         ),
                         child: ClipOval(
-                          child: Image.asset(
-                            userAvatar,
-                            fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) => const Icon(
-                              Icons.person_rounded,
-                              color: Colors.white,
-                              size: 22,
-                            ),
-                          ),
+                          child: avatarUrl != null && avatarUrl!.isNotEmpty
+                              ? Image.network(
+                                  avatarUrl!,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (_, __, ___) => const Icon(
+                                    Icons.person_rounded,
+                                    color: Colors.white,
+                                    size: 22,
+                                  ),
+                                )
+                              : Image.asset(
+                                  'assets/images/avatar.png',
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (_, __, ___) => const Icon(
+                                    Icons.person_rounded,
+                                    color: Colors.white,
+                                    size: 22,
+                                  ),
+                                ),
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -242,8 +231,6 @@ class AppDrawer extends StatelessWidget {
   }
 }
 
-// ── Single drawer tile ────────────────────────────────────────────────────────
-
 class _DrawerTile extends StatelessWidget {
   final _DrawerItem item;
   final bool selected;
@@ -264,9 +251,7 @@ class _DrawerTile extends StatelessWidget {
         margin: const EdgeInsets.only(bottom: 4),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         decoration: BoxDecoration(
-          color: selected
-              ? Colors.white.withOpacity(0.18)
-              : Colors.transparent,
+          color: selected ? Colors.white.withOpacity(0.18) : Colors.transparent,
           borderRadius: BorderRadius.circular(14),
         ),
         child: Row(
@@ -282,8 +267,7 @@ class _DrawerTile extends StatelessWidget {
               style: TextStyle(
                 color: selected ? Colors.white : Colors.white70,
                 fontSize: 15,
-                fontWeight:
-                    selected ? FontWeight.w700 : FontWeight.w400,
+                fontWeight: selected ? FontWeight.w700 : FontWeight.w400,
               ),
             ),
             if (selected) ...[

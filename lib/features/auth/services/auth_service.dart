@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../models/auth_models.dart';
 import '../../../global/base_url.dart';
+import '../tokens/token_storage.dart';
 
 /// Wraps a server error message extracted from the response body.
 class ApiException implements Exception {
@@ -44,7 +45,13 @@ class AuthService {
   /// POST /auth/login → { accessToken, refreshToken }
   Future<AuthTokens> login(LoginRequest req) async {
     final data = await _post('/auth/login', req.toJson());
-    return AuthTokens.fromJson(data);
+    final tokens = AuthTokens.fromJson(data);
+    // Save tokens to local storage
+    await TokenStorage.saveTokens(
+      accessToken: tokens.accessToken,
+      refreshToken: tokens.refreshToken,
+    );
+    return tokens;
   }
 
   // ── Registration ─────────────────────────────────────────────────────────
@@ -63,7 +70,13 @@ class AuthService {
   /// POST /auth/register/complete → { accessToken, refreshToken }
   Future<AuthTokens> completeRegister(CompleteRegisterRequest req) async {
     final data = await _post('/auth/register/complete', req.toJson());
-    return AuthTokens.fromJson(data);
+    final tokens = AuthTokens.fromJson(data);
+    // Save tokens to local storage
+    await TokenStorage.saveTokens(
+      accessToken: tokens.accessToken,
+      refreshToken: tokens.refreshToken,
+    );
+    return tokens;
   }
 
   // ── Password reset ────────────────────────────────────────────────────────

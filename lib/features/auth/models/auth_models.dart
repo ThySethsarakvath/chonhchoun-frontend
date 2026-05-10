@@ -1,5 +1,3 @@
-// ── Request models ────────────────────────────────────────────────────────────
-
 class LoginRequest {
   final String email;
   final String password;
@@ -15,10 +13,11 @@ class LoginRequest {
 class InitiateRegisterRequest {
   final String name;
   final String email;
+  final String phone;
 
-  InitiateRegisterRequest({required this.name, required this.email});
+  InitiateRegisterRequest({required this.name, required this.email, required this.phone});
 
-  Map<String, dynamic> toJson() => {'name': name, 'email': email};
+  Map<String, dynamic> toJson() => {'name': name, 'email': email, 'phone': phone};
 }
 
 class VerifyEmailRequest {
@@ -83,7 +82,6 @@ class ResetPasswordRequest {
       };
 }
 
-// ── Response models ───────────────────────────────────────────────────────────
 
 class AuthTokens {
   final String accessToken;

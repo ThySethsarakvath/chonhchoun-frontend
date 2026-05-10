@@ -30,8 +30,6 @@ class _SetPasswordScreenState extends State<SetPasswordScreen> {
     super.dispose();
   }
 
-  // ── Validation ────────────────────────────────────────────────────────────
-
   String? _validate() {
     if (_passwordCtrl.text.isEmpty) return 'សូមបញ្ចូលពាក្យសម្ងាត់';
     if (_passwordCtrl.text.length < 8) return 'ពាក្យសម្ងាត់ត្រូវតែ 8 តួអក្សរ ឬ ច្រើនជាងនេះ';
@@ -42,8 +40,6 @@ class _SetPasswordScreenState extends State<SetPasswordScreen> {
     return null;
   }
 
-  // ── Submit ────────────────────────────────────────────────────────────────
-
   Future<void> _submit() async {
     final err = _validate();
     if (err != null) {
@@ -53,15 +49,14 @@ class _SetPasswordScreenState extends State<SetPasswordScreen> {
 
     setState(() => _loading = true);
     try {
+      AuthTokens? registerTokens;
       if (widget.args.flow == AuthFlow.register) {
-        // Complete registration → logged in
-        await _service.completeRegister(CompleteRegisterRequest(
+        registerTokens = await _service.completeRegister(CompleteRegisterRequest(
           setupToken: widget.args.setupToken!,
           password: _passwordCtrl.text,
           confirmPassword: _confirmCtrl.text,
         ));
       } else {
-        // Reset password → back to login
         await _service.resetPassword(ResetPasswordRequest(
           resetToken: widget.args.resetToken!,
           newPassword: _passwordCtrl.text,
@@ -71,11 +66,16 @@ class _SetPasswordScreenState extends State<SetPasswordScreen> {
 
       if (mounted) {
         if (widget.args.flow == AuthFlow.register) {
-          // Auto-logged-in after register complete
           Navigator.pushNamedAndRemoveUntil(
-              context, AppRoutes.customer, (_) => false);
+            context,
+            AppRoutes.avatarUpload,
+            (_) => false,
+            arguments: AvatarUploadArgs(
+              userName: widget.args.userName ?? '',
+              accessToken: registerTokens?.accessToken ?? '',
+            ),
+          );
         } else {
-          // Forgot password done → back to login
           showSuccessSnack(context, 'ពាក្យសម្ងាត់ត្រូវបានកំណត់ឡើងវិញ');
           Navigator.pushNamedAndRemoveUntil(
               context, AppRoutes.login, (_) => false);
@@ -107,8 +107,6 @@ class _SetPasswordScreenState extends State<SetPasswordScreen> {
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   const SizedBox(height: 24),
-
-                  // ── Title ─────────────────────────────────────────────
                   const Text(
                     'កំណត់ពាក្យសម្ងាត់',
                     style: TextStyle(
@@ -124,7 +122,6 @@ class _SetPasswordScreenState extends State<SetPasswordScreen> {
                   ),
                   const SizedBox(height: 28),
 
-                  // ── Password ───────────────────────────────────────────
                   AuthTextField(
                     label: 'ពាក្យសម្ងាត់',
                     placeholder: 'សូមបញ្ចូល ពាក្យសម្ងាត់',
@@ -135,8 +132,6 @@ class _SetPasswordScreenState extends State<SetPasswordScreen> {
                         setState(() => _obscurePassword = !_obscurePassword),
                   ),
                   const SizedBox(height: 16),
-
-                  // ── Confirm password ───────────────────────────────────
                   AuthTextField(
                     label: 'បញ្ចូលពាក្យសម្ងាត់ម្តងទៀត',
                     placeholder: 'សូមបញ្ចូល  ពាក្យសម្ងាត់ ម្តងទៀត',
@@ -147,8 +142,6 @@ class _SetPasswordScreenState extends State<SetPasswordScreen> {
                         setState(() => _obscureConfirm = !_obscureConfirm),
                   ),
                   const SizedBox(height: 40),
-
-                  // ── Submit button ──────────────────────────────────────
                   AuthButton(
                     label: _buttonLabel,
                     onPressed: _submit,

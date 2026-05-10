@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 class HomeAppBar extends StatelessWidget {
+  final String? avatarUrl;
   final String city;
   final String userLocation;
   final VoidCallback onMenuTap;
@@ -8,6 +9,7 @@ class HomeAppBar extends StatelessWidget {
 
   const HomeAppBar({
     super.key,
+    required this.avatarUrl,
     required this.city,
     required this.userLocation,
     required this.onMenuTap,
@@ -82,15 +84,25 @@ class HomeAppBar extends StatelessWidget {
                 color: const Color(0xFF4A8DDB),
               ),
               child: ClipOval(
-                child: Image.asset(
-                  'assets/images/avatar.jpg',
-                  fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => const Icon(
-                    Icons.person_rounded,
-                    color: Colors.white,
-                    size: 22,
-                  ),
-                ),
+                child: avatarUrl != null && avatarUrl!.isNotEmpty
+                    ? Image.network(
+                        avatarUrl!,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => const Icon(
+                          Icons.person_rounded,
+                          color: Colors.white,
+                          size: 22,
+                        ),
+                      )
+                    : Image.asset(
+                        'assets/images/avatar.png',
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => const Icon(
+                          Icons.person_rounded,
+                          color: Colors.white,
+                          size: 22,
+                        ),
+                      ),
               ),
             ),
           ),

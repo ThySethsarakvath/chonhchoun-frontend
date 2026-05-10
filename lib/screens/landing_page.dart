@@ -217,7 +217,7 @@ class _LandingPageState extends State<LandingPage>
       width: width,
       height: 2.5,
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.75),
+        color: Colors.white.withAlpha(192),
         borderRadius: BorderRadius.circular(2),
       ),
     );

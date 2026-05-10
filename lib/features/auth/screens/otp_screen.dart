@@ -44,7 +44,6 @@ class _OtpScreenState extends State<OtpScreen> {
     super.dispose();
   }
 
-
   void _startTimer() {
     _timer?.cancel();
     setState(() => _secondsLeft = _timerSeconds);
@@ -63,7 +62,6 @@ class _OtpScreenState extends State<OtpScreen> {
     final s = (_secondsLeft % 60).toString().padLeft(2, '0');
     return '$m:$s s';
   }
-
 
   String get _otp => _controllers.map((c) => c.text).join();
 
@@ -95,7 +93,7 @@ class _OtpScreenState extends State<OtpScreen> {
       if (widget.args.flow == AuthFlow.register) {
         await _service.initiateRegister(InitiateRegisterRequest(
           name: widget.args.name ?? '',
-          email: widget.args.email,
+          email: widget.args.email, phone: '',
         ));
       } else {
         await _service.forgotPassword(
@@ -126,11 +124,11 @@ class _OtpScreenState extends State<OtpScreen> {
             arguments: SetPasswordArgs(
               flow: widget.args.flow,
               setupToken: res.setupToken,
+              userName: widget.args.name,
             ),
           );
         }
       } else {
-        // Forgot password flow
         final res = await _service.verifyOtp(
             VerifyOtpRequest(email: widget.args.email, otp: _otp));
         if (mounted) {
@@ -167,8 +165,6 @@ class _OtpScreenState extends State<OtpScreen> {
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   const SizedBox(height: 24),
-
-                  // ── Title ─────────────────────────────────────────────
                   const Text(
                     'ផ្ទៀងផ្ទាត់គណនី',
                     style: TextStyle(
@@ -183,8 +179,6 @@ class _OtpScreenState extends State<OtpScreen> {
                     style: TextStyle(fontSize: 13, color: Color(0xFF6B7A8D)),
                   ),
                   const SizedBox(height: 20),
-
-                  // ── Description ────────────────────────────────────────
                   const Text(
                     'សូមពិនិត្យមើលប្រអប់សាររបស់លោកអ្នក, រួចធ្វើការបញ្ចូលលេខសម្ងាត់ នៅខាងក្រោម:',
                     textAlign: TextAlign.center,
@@ -195,8 +189,6 @@ class _OtpScreenState extends State<OtpScreen> {
                     ),
                   ),
                   const SizedBox(height: 28),
-
-                  // ── 6-box PIN input ────────────────────────────────────
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: List.generate(_pinLength, (i) {
@@ -248,8 +240,6 @@ class _OtpScreenState extends State<OtpScreen> {
                     }),
                   ),
                   const SizedBox(height: 20),
-
-                  // ── Timer / Resend ─────────────────────────────────────
                   _secondsLeft > 0
                       ? RichText(
                           text: TextSpan(
@@ -281,8 +271,6 @@ class _OtpScreenState extends State<OtpScreen> {
                           ),
                         ),
                   const SizedBox(height: 40),
-
-                  // ── Submit button ──────────────────────────────────────
                   AuthButton(
                     label: 'បញ្ជូន',
                     onPressed: _submit,

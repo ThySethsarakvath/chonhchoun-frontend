@@ -24,13 +24,13 @@ class AppDrawerController extends InheritedWidget {
 
 class AppDrawerWrapper extends StatefulWidget {
   final String city;
-  final String userAvatar;
+  final String avatarUrl;
   final Widget child;
 
   const AppDrawerWrapper({
     super.key,
     required this.city,
-    required this.userAvatar,
+    required this.avatarUrl,
     required this.child,
   });
 
@@ -110,7 +110,7 @@ class _AppDrawerWrapperState extends State<AppDrawerWrapper>
                 ),
                 child: AppDrawer(
                   city: widget.city,
-                  userAvatar: widget.userAvatar,
+                  avatarUrl: widget.avatarUrl,
                   selectedIndex: _selectedDrawerIndex,
                   onItemSelected: (i) {
                     setState(() => _selectedDrawerIndex = i);

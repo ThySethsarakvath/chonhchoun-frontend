@@ -7,8 +7,8 @@ import '../features/auth/screens/validate_email_screen.dart';
 import '../features/auth/screens/otp_screen.dart';
 import '../features/auth/screens/set_password_screen.dart';
 import '../features/home/pages/home_screen.dart';
-
-
+import '../screens/avatar_upload_screen.dart';
+// import '../screens/driver/driver_workspace_screen.dart';
 abstract class AppRoutes {
   AppRoutes._();
 
@@ -19,10 +19,10 @@ abstract class AppRoutes {
   static const String validateEmail = '/validate-email';
   static const String otp           = '/otp';
   static const String setPassword   = '/set-password';
+  static const String avatarUpload   = '/avatar-upload';
   static const String customer      = '/customer';
   static const String driver        = '/driver';
 }
-
 
 enum AuthFlow { register, forgotPassword }
 
@@ -44,9 +44,20 @@ class SetPasswordArgs {
   final AuthFlow flow;
   final String? setupToken;
   final String? resetToken;
-  const SetPasswordArgs({required this.flow, this.setupToken, this.resetToken});
+  final String? userName;
+  const SetPasswordArgs({
+    required this.flow,
+    this.setupToken,
+    this.resetToken,
+    this.userName,
+  });
 }
 
+class AvatarUploadArgs {
+  final String userName;
+  final String accessToken;
+  const AvatarUploadArgs({required this.userName, required this.accessToken});
+}
 
 class AppRouter {
   AppRouter._();
@@ -70,6 +81,9 @@ class AppRouter {
       case AppRoutes.setPassword:
         final args = settings.arguments as SetPasswordArgs;
         return _slide(SetPasswordScreen(args: args));
+      case AppRoutes.avatarUpload:
+        final args = settings.arguments as AvatarUploadArgs;
+        return _slide(AvatarUploadScreen(args: args));
       case AppRoutes.customer:
         return _fade(const HomeScreen());
       case AppRoutes.driver:

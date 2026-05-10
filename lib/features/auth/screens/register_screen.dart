@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../../../router/app_router.dart';
 import '../services/auth_service.dart';
 import '../models/auth_models.dart';
@@ -14,9 +15,10 @@ class RegisterScreen extends StatefulWidget {
 }
 
 class _RegisterScreenState extends State<RegisterScreen> {
-  final _nameCtrl = TextEditingController();
+  final _nameCtrl  = TextEditingController();
   final _emailCtrl = TextEditingController();
-  final _service = AuthService();
+  final _phoneCtrl = TextEditingController();
+  final _service   = AuthService();
 
   bool _loading = false;
 
@@ -24,27 +26,32 @@ class _RegisterScreenState extends State<RegisterScreen> {
   void dispose() {
     _nameCtrl.dispose();
     _emailCtrl.dispose();
+    _phoneCtrl.dispose();
     super.dispose();
   }
 
 
+  static final _emailReg = RegExp(r'^[\w\-.]+@([\w\-]+\.)+[\w]{2,}$');
+  static final _phoneReg = RegExp(r'^(\+?855|0)[0-9]{8,9}$');
+
   String? _validate() {
-    if (_nameCtrl.text.trim().isEmpty) return 'សូមបញ្ចូលឈ្មោះរបស់អ្នក';
-    if (_nameCtrl.text.trim().length < 2) return 'ឈ្មោះត្រូវតែ 2 តួអក្សរ ឬ ច្រើនជាងនេះ';
-
+    final name  = _nameCtrl.text.trim();
     final email = _emailCtrl.text.trim();
-    if (email.isEmpty) return 'សូមបញ្ចូលអុីម៉ែល ឬ លេខទូរស័ព្ទ';
+    final phone = _phoneCtrl.text.trim();
 
-    // Basic email format check
-    final emailReg = RegExp(r'^[\w\-.]+@([\w\-]+\.)+[\w]{2,}$');
-    final phoneReg = RegExp(r'^\+?[0-9]{8,15}$');
-    if (!emailReg.hasMatch(email) && !phoneReg.hasMatch(email)) {
-      return 'អុីម៉ែល ឬ លេខទូរស័ព្ទ មិនត្រឹមត្រូវ';
+    if (name.isEmpty)       return 'សូមបញ្ចូលឈ្មោះរបស់អ្នក';
+    if (name.length < 2)    return 'ឈ្មោះត្រូវតែ 2 តួអក្សរ ឬ ច្រើនជាងនេះ';
+
+    if (email.isEmpty)              return 'សូមបញ្ចូលអុីម៉ែល';
+    if (!_emailReg.hasMatch(email)) return 'អុីម៉ែលមិនត្រឹមត្រូវ';
+
+    if (phone.isEmpty)              return 'សូមបញ្ចូលលេខទូរស័ព្ទ';
+    if (!_phoneReg.hasMatch(phone)) {
+      return 'លេខទូរស័ព្ទមិនត្រឹមត្រូវ (ទទួលស្គាល់តែលេខកម្ពុជាប៉ុណ្ណោះ)';
     }
 
     return null;
   }
-
 
   Future<void> _submit() async {
     final err = _validate();
@@ -56,8 +63,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
     setState(() => _loading = true);
     try {
       await _service.initiateRegister(InitiateRegisterRequest(
-        name: _nameCtrl.text.trim(),
+        name:  _nameCtrl.text.trim(),
         email: _emailCtrl.text.trim(),
+        phone: _phoneCtrl.text.trim(),
       ));
 
       if (mounted) {
@@ -65,9 +73,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
           context,
           AppRoutes.validateEmail,
           arguments: ValidateEmailArgs(
-            flow: AuthFlow.register,
+            flow:  AuthFlow.register,
             email: _emailCtrl.text.trim(),
-            name: _nameCtrl.text.trim(),
+            name:  _nameCtrl.text.trim(),
           ),
         );
       }
@@ -87,7 +95,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // ── Title ───────────────────────────────────────────────────────
+
           const Text(
             'បង្កើតគណនី',
             style: TextStyle(
@@ -103,7 +111,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
           ),
           const SizedBox(height: 28),
 
-          // ── Name ─────────────────────────────────────────────────────────
           AuthTextField(
             label: 'ឈ្មោះ',
             placeholder: 'បញ្ចូលឈ្មោះរបស់អ្នក',
@@ -111,16 +118,26 @@ class _RegisterScreenState extends State<RegisterScreen> {
           ),
           const SizedBox(height: 16),
 
-          // ── Email / phone ────────────────────────────────────────────────
           AuthTextField(
-            label: 'អុីម៉ែល ឬ លេខទូរស័ព្ទ',
-            placeholder: 'បញ្ចូលអុីម៉ែល ឬ លេខទូរស័ពរបស់អ្នក',
+            label: 'អុីម៉ែល',
+            placeholder: 'បញ្ចូលអុីម៉ែល',
             controller: _emailCtrl,
             keyboardType: TextInputType.emailAddress,
           ),
+          const SizedBox(height: 16),
+
+          AuthTextField(
+            label: 'លេខទូរស័ព្ទ',
+            placeholder: 'បញ្ចូលលេខទូរស័ពរបស់អ្នក',
+            controller: _phoneCtrl,
+            keyboardType: TextInputType.phone,
+            inputFormatters: [
+              // Only digits and a leading +
+              FilteringTextInputFormatter.allow(RegExp(r'[0-9+]')),
+            ],
+          ),
           const SizedBox(height: 40),
 
-          // ── Next button ──────────────────────────────────────────────────
           AuthButton(
             label: 'បន្ទាប់',
             onPressed: _submit,
@@ -128,7 +145,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
           ),
           const SizedBox(height: 20),
 
-          // ── Login link ───────────────────────────────────────────────────
           AuthLinkRow(
             prefix: 'មានគណនីហើយឬ​? ',
             linkText: 'ចូលគណនី',
