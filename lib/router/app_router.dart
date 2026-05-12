@@ -7,7 +7,10 @@ import '../features/auth/screens/validate_email_screen.dart';
 import '../features/auth/screens/otp_screen.dart';
 import '../features/auth/screens/set_password_screen.dart';
 import '../features/home/pages/home_screen.dart';
+import '../features/auth/models/user_model.dart';
 import '../screens/avatar_upload_screen.dart';
+import '../screens/setting_screen.dart';
+import '../screens/profile_screen.dart';
 // import '../screens/driver/driver_workspace_screen.dart';
 abstract class AppRoutes {
   AppRoutes._();
@@ -20,6 +23,8 @@ abstract class AppRoutes {
   static const String otp           = '/otp';
   static const String setPassword   = '/set-password';
   static const String avatarUpload   = '/avatar-upload';
+  static const String profile       = '/profile';
+  static const String settings      = '/settings';
   static const String customer      = '/customer';
   static const String driver        = '/driver';
 }
@@ -59,6 +64,14 @@ class AvatarUploadArgs {
   const AvatarUploadArgs({required this.userName, required this.accessToken});
 }
 
+enum ProfileSource { home, settings, drawer }
+
+class ProfileArgs {
+  final UserProfile? profile;
+  final ProfileSource source;
+  const ProfileArgs({this.profile, this.source = ProfileSource.home});
+}
+
 class AppRouter {
   AppRouter._();
 
@@ -84,6 +97,14 @@ class AppRouter {
       case AppRoutes.avatarUpload:
         final args = settings.arguments as AvatarUploadArgs;
         return _slide(AvatarUploadScreen(args: args));
+      case AppRoutes.profile:
+        final args = settings.arguments as ProfileArgs?;
+        return _fade(ProfileScreen(
+          profile: args?.profile,
+          source: args?.source ?? ProfileSource.home,
+        ));
+      case AppRoutes.settings:
+        return _fade(const SettingsScreen());
       case AppRoutes.customer:
         return _fade(const HomeScreen());
       case AppRoutes.driver:

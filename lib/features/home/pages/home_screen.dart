@@ -12,6 +12,7 @@ import '../widgets/app_drawer_wrapper.dart';
 import '../../auth/services/user_service.dart';
 import '../../auth/models/user_model.dart';
 import '../../auth/tokens/token_storage.dart';
+import '../../../router/app_router.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -136,12 +137,30 @@ class _HomeScreenState extends State<HomeScreen> {
     return AppDrawerWrapper(
       city: _city,
       avatarUrl: avatarUrl,
+      userProfile: _userProfile,
+      onProfileTap: () {
+        Navigator.pushNamed(
+          context,
+          AppRoutes.profile,
+          arguments: ProfileArgs(
+            profile: _userProfile,
+            source: ProfileSource.drawer,
+          ),
+        );
+      },
       child: Scaffold(
         backgroundColor: const Color(0xFFEEF3FB),
         extendBody: true,
         bottomNavigationBar: HomeBottomNav(
           currentIndex: _navIndex,
-          onTap: (i) => setState(() => _navIndex = i),
+          onTap: (i) {
+            if (i == 3) {
+              // Settings tab
+              Navigator.pushNamed(context, AppRoutes.settings);
+            } else {
+              setState(() => _navIndex = i);
+            }
+          },
         ),
         body: _loading
             ? const Center(
@@ -193,8 +212,16 @@ class _HomeScreenState extends State<HomeScreen> {
                                     drawerContext,
                                   )?.open(),
                                   onProfileTap: () {
-                                    /* TODO */
-                                  }, avatarUrl: avatarUrl,
+                                    Navigator.pushNamed(
+                                      context,
+                                      AppRoutes.profile,
+                                      arguments: ProfileArgs(
+                                        profile: _userProfile,
+                                        source: ProfileSource.home,
+                                      ),
+                                    );
+                                  }, 
+                                  avatarUrl: avatarUrl,
                                 ),
                               ),
 

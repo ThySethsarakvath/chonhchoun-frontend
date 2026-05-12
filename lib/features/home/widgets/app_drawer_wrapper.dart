@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../auth/models/user_model.dart';
 import 'app_drawer.dart';
 
 class AppDrawerController extends InheritedWidget {
@@ -25,13 +26,17 @@ class AppDrawerController extends InheritedWidget {
 class AppDrawerWrapper extends StatefulWidget {
   final String city;
   final String avatarUrl;
+  final UserProfile? userProfile;
   final Widget child;
+  final VoidCallback? onProfileTap;
 
   const AppDrawerWrapper({
     super.key,
     required this.city,
     required this.avatarUrl,
+    this.userProfile,
     required this.child,
+    this.onProfileTap,
   });
 
   @override
@@ -111,11 +116,18 @@ class _AppDrawerWrapperState extends State<AppDrawerWrapper>
                 child: AppDrawer(
                   city: widget.city,
                   avatarUrl: widget.avatarUrl,
+                  userProfile: widget.userProfile,
                   selectedIndex: _selectedDrawerIndex,
                   onItemSelected: (i) {
                     setState(() => _selectedDrawerIndex = i);
                   },
                   onClose: _close,
+                  onProfileTap: () {
+                    _close();
+                    if (widget.onProfileTap != null) {
+                      widget.onProfileTap!();
+                    }
+                  },
                 ),
               ),
             ],

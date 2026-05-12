@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../auth/models/user_model.dart';
 
 class _DrawerItem {
   final IconData icon;
@@ -15,17 +16,21 @@ class _DrawerItem {
 class AppDrawer extends StatelessWidget {
   final String city;
   final String? avatarUrl; // asset path
+  final UserProfile? userProfile;
   final int selectedIndex;
   final ValueChanged<int> onItemSelected;
   final VoidCallback onClose;
+  final VoidCallback onProfileTap;
 
   const AppDrawer({
     super.key,
     required this.city,
     required this.avatarUrl,
+    required this.userProfile,
     required this.selectedIndex,
     required this.onItemSelected,
     required this.onClose,
+    required this.onProfileTap,
   });
 
   static List<_DrawerItem> _buildItems(ValueChanged<int> onItemSelected) => [
@@ -170,56 +175,73 @@ class AppDrawer extends StatelessWidget {
                 ),
                 Padding(
                   padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 40,
-                        height: 40,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          border: Border.all(color: Colors.white54, width: 1.5),
-                          color: const Color(0xFF4A8DDB),
-                        ),
-                        child: ClipOval(
-                          child: avatarUrl != null && avatarUrl!.isNotEmpty
-                              ? Image.network(
-                                  avatarUrl!,
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (_, __, ___) => const Icon(
-                                    Icons.person_rounded,
-                                    color: Colors.white,
-                                    size: 22,
-                                  ),
-                                )
-                              : Image.asset(
-                                  'assets/images/avatar.png',
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (_, __, ___) => const Icon(
-                                    Icons.person_rounded,
-                                    color: Colors.white,
-                                    size: 22,
-                                  ),
-                                ),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          city,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
+                  child: GestureDetector(
+                    onTap: onProfileTap,
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 40,
+                          height: 40,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(color: Colors.white54, width: 1.5),
+                            color: const Color(0xFF4A8DDB),
                           ),
-                          overflow: TextOverflow.ellipsis,
+                          child: ClipOval(
+                            child: avatarUrl != null && avatarUrl!.isNotEmpty
+                                ? Image.network(
+                                    avatarUrl!,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (_, __, ___) => const Icon(
+                                      Icons.person_rounded,
+                                      color: Colors.white,
+                                      size: 22,
+                                    ),
+                                  )
+                                : Image.asset(
+                                    'assets/images/avatar.png',
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (_, __, ___) => const Icon(
+                                      Icons.person_rounded,
+                                      color: Colors.white,
+                                      size: 22,
+                                    ),
+                                  ),
+                          ),
                         ),
-                      ),
-                      const Icon(
-                        Icons.logout_rounded,
-                        color: Colors.white54,
-                        size: 20,
-                      ),
-                    ],
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                userProfile?.name ?? 'User',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              Text(
+                                userProfile?.email ?? '',
+                                style: const TextStyle(
+                                  color: Colors.white70,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w400,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
+                          ),
+                        ),
+                        const Icon(
+                          Icons.logout_rounded,
+                          color: Colors.white54,
+                          size: 20,
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ],

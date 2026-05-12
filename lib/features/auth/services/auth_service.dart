@@ -96,4 +96,24 @@ class AuthService {
   Future<void> resetPassword(ResetPasswordRequest req) async {
     await _post('/auth/password/reset', req.toJson());
   }
+
+  // ── Logout ────────────────────────────────────────────────────────────────
+
+  /// POST /auth/logout → clears session on backend
+  Future<void> logout({required String accessToken}) async {
+    final res = await http.post(
+      Uri.parse('$_url/auth/logout'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $accessToken',
+      },
+    );
+    if (res.statusCode < 200 || res.statusCode >= 300) {
+      final body = json.decode(res.body) as Map<String, dynamic>;
+      final msg = body['message'] as String? ??
+          body['error'] as String? ??
+          'Logout failed (${res.statusCode})';
+      throw ApiException(msg, res.statusCode);
+    }
+  }
 }
