@@ -220,6 +220,48 @@ class AuthHeaderWithBack extends StatelessWidget {
   }
 }
 
+class AdminAuthInputField extends StatelessWidget {
+  final TextEditingController controller;
+  final String label;
+  final String hint;
+  final IconData icon;
+  final bool isPassword;
+
+  const AdminAuthInputField({
+    super.key,
+    required this.controller,
+    required this.label,
+    required this.hint,
+    required this.icon,
+    this.isPassword = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+        const SizedBox(height: 8),
+        TextField(
+          controller: controller,
+          obscureText: isPassword,
+          decoration: InputDecoration(
+            prefixIcon: Icon(icon, color: const Color(0xFF4A8DDB), size: 20),
+            hintText: hint,
+            filled: true,
+            fillColor: const Color(0xFFF5F7FA),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Color(0xFFDDE3EE)),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 class AuthLinkRow extends StatelessWidget {
   final String prefix;
   final String linkText;

@@ -12,9 +12,11 @@ import '../screens/avatar_upload_screen.dart';
 import '../screens/setting_screen.dart';
 import '../screens/profile_screen.dart';
 // import '../screens/driver/driver_workspace_screen.dart';
+import '../screens/admin/admin_main_screen.dart';
 abstract class AppRoutes {
   AppRoutes._();
 
+  static const String adminDashboard = '/admin-dashboard';
   static const String landing       = '/';
   static const String onboarding    = '/onboarding';
   static const String login         = '/login';
@@ -81,6 +83,7 @@ class AppRouter {
         return _fade(const LandingPage());
       case AppRoutes.onboarding:
         return _fade(const OnboardingScreen());
+      
       case AppRoutes.login:
         return _slide(const LoginScreen());
       case AppRoutes.register:
@@ -107,6 +110,8 @@ class AppRouter {
         return _fade(const SettingsScreen());
       case AppRoutes.customer:
         return _fade(const HomeScreen());
+      case AppRoutes.adminDashboard:
+        return _fade(const AdminMainScreen());
       case AppRoutes.driver:
         return _fade(_stub('Driver Workspace'));
       default:
