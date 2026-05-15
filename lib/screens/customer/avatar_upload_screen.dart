@@ -1,10 +1,10 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import '../../../router/app_router.dart';
-import '../features/auth/services/user_service.dart';
-import '../features/auth/widgets/auth_widgets.dart';
-import '../features/auth/widgets/auth_scaffold.dart';
+import '../../router/app_router.dart';
+import '../../features/auth/services/user_service.dart';
+import '../../features/auth/widgets/auth_widgets.dart';
+import '../../features/auth/widgets/auth_scaffold.dart';
 
 class AvatarUploadScreen extends StatefulWidget {
   final AvatarUploadArgs args;

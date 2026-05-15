@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../router/app_router.dart';
-import '../features/home/widgets/home_bottom_nav.dart';
+import '../../router/app_router.dart';
+import '../../shared/widgets/home_bottom_nav.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});

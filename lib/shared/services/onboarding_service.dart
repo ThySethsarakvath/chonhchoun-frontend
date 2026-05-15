@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../models/onboarding_model.dart';
-import '../../../global/base_url.dart';
+import '../../global/base_url.dart';
 
 class OnboardingService {
   String get _url => baseUrl;

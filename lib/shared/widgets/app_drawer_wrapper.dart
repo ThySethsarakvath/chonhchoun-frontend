@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../auth/models/user_model.dart';
+import '../../features/auth/models/user_model.dart';
 import 'app_drawer.dart';
 
 class AppDrawerController extends InheritedWidget {

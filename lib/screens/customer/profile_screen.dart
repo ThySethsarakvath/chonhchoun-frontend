@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import '../router/app_router.dart';
-import '../features/auth/models/user_model.dart';
-import '../features/auth/services/user_service.dart';
-import '../features/auth/services/auth_service.dart';
-import '../features/auth/tokens/token_storage.dart';
-import '../features/home/widgets/home_bottom_nav.dart';
+import '../../router/app_router.dart';
+import '../../features/auth/models/user_model.dart';
+import '../../features/auth/services/user_service.dart';
+import '../../features/auth/services/auth_service.dart';
+import '../../features/auth/tokens/token_storage.dart';
+import '../../shared/widgets/home_bottom_nav.dart';
 
 class ProfileScreen extends StatefulWidget {
   final UserProfile? profile;
