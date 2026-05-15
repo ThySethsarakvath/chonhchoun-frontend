@@ -37,8 +37,8 @@ class CustomerMapPicker extends StatelessWidget {
       ),
       children: [
         TileLayer(
-          urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-          userAgentPackageName: 'com.chonhchoun.frontend',
+          urlTemplate: MapConfig.urlTemplate,
+          userAgentPackageName: MapConfig.userAgent,
         ),
         if (routePoints != null && routePoints!.isNotEmpty)
           PolylineLayer(
@@ -257,26 +257,15 @@ class DriverLeafletMapCard extends StatelessWidget {
       children: [
         FlutterMap(
           options: MapOptions(
-            initialCenter: driverMapCenter,
+            initialCenter: MapConfig.driverMapCenter,
             initialZoom: interactive ? 13.5 : 13.0,
             interactionOptions: InteractionOptions(flags: flags),
           ),
           children: [
             TileLayer(
-              urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-              userAgentPackageName: 'com.chonhchoun.frontend',
+              urlTemplate: MapConfig.urlTemplate,
+              userAgentPackageName: MapConfig.userAgent,
             ),
-            if (showAttribution)
-              const Align(
-                alignment: Alignment.bottomRight,
-                child: Padding(
-                  padding: EdgeInsets.all(4.0),
-                  child: Text(
-                    '© OpenStreetMap contributors',
-                    style: TextStyle(backgroundColor: Colors.white70, fontSize: 10),
-                  ),
-                ),
-              ),
           ],
         ),
         Positioned.fill(child: IgnorePointer(child: overlay)),

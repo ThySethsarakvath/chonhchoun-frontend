@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 import '../../../shared/models/order.dart';
 import '../../../shared/colors/app_colors.dart';
 import '../../../shared/widgets/app_shell_widgets.dart';
+import '../../../shared/data/map_data.dart';
 
 class CustomerOrderDetailScreen extends StatefulWidget {
   const CustomerOrderDetailScreen({super.key, required this.order});
@@ -190,8 +191,8 @@ class _CustomerOrderDetailScreenState extends State<CustomerOrderDetailScreen> {
           ),
           children: [
             TileLayer(
-              urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-              userAgentPackageName: 'com.chonhchoun.app',
+              urlTemplate: MapConfig.urlTemplate,
+              userAgentPackageName: MapConfig.userAgent,
             ),
             PolylineLayer(
               polylines: [

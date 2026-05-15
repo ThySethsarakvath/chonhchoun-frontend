@@ -35,6 +35,9 @@ class _CustomerItemInfoScreenState extends State<CustomerItemInfoScreen> {
   bool _itemHandling = false;
   final TextEditingController _weightController = TextEditingController(text: "1");
   final TextEditingController _itemNameController = TextEditingController();
+  final TextEditingController _contactNameController = TextEditingController();
+  final TextEditingController _contactPhoneController = TextEditingController();
+  final TextEditingController _noteController = TextEditingController();
 
   double get _totalPrice {
     double base = widget.serviceType == DeliveryServiceType.express ? 8200.0 : 3500.0;
@@ -67,6 +70,8 @@ class _CustomerItemInfoScreenState extends State<CustomerItemInfoScreen> {
             if (widget.serviceType == DeliveryServiceType.express) ...[
               const SizedBox(height: 16),
               _buildVehicleCard(),
+              const SizedBox(height: 16),
+              _buildDropoffContactCard(),
             ],
             const SizedBox(height: 16),
             _buildAddonsCard(),
@@ -372,6 +377,9 @@ class _CustomerItemInfoScreenState extends State<CustomerItemInfoScreen> {
                   status: OrderStatus.searching,
                   createdAt: DateTime.now(),
                   price: _totalPrice,
+                  dropoffContactName: _contactNameController.text.trim(),
+                  dropoffContactNumber: _contactPhoneController.text.trim(),
+                  noteToDriver: _noteController.text.trim(),
                 );
                 
                 widget.onOrderCreated(order);
@@ -394,6 +402,49 @@ class _CustomerItemInfoScreenState extends State<CustomerItemInfoScreen> {
             child: const Text("Confirm & Book Now", style: TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.bold)),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildDropoffContactCard() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: AppSurfaceCard(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text("Drop-off Contact Info", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+            const SizedBox(height: 16),
+            TextField(
+              controller: _contactNameController,
+              decoration: InputDecoration(
+                labelText: "Contact Name",
+                prefixIcon: const Icon(Icons.person_outline, size: 20),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _contactPhoneController,
+              keyboardType: TextInputType.phone,
+              decoration: InputDecoration(
+                labelText: "Contact Number",
+                prefixIcon: const Icon(Icons.phone_outlined, size: 20),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _noteController,
+              maxLines: 2,
+              decoration: InputDecoration(
+                labelText: "Note to Driver (e.g. Call me when arrive)",
+                prefixIcon: const Icon(Icons.note_alt_outlined, size: 20),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
