@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import '../../features/agencies_management/models/branch_model.dart';
-import '../../features/agencies_management/services/branch_service.dart';
+import '../../features/admin_management/models/branch_model.dart';
+import '../../features/admin_management/services/branch_service.dart';
 import '../../features/auth/services/auth_service.dart'; 
+import '../../features/auth/widgets/auth_scaffold.dart';
 import '../../features/auth/widgets/auth_widgets.dart';
 
 class AdminBranchScreen extends StatefulWidget {

@@ -13,13 +13,16 @@ class AdminSidebar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return NavigationRail(
-      extended: true, 
-      minExtendedWidth: 200,
-      backgroundColor: const Color(0xFF1E3A5F), 
+      extended: true,
+      minExtendedWidth: 220,
+      backgroundColor: const Color(0xFF1E3A5F),
       unselectedIconTheme: const IconThemeData(color: Colors.white60),
       selectedIconTheme: const IconThemeData(color: Colors.white),
       unselectedLabelTextStyle: const TextStyle(color: Colors.white60),
-      selectedLabelTextStyle: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+      selectedLabelTextStyle: const TextStyle(
+        color: Colors.white,
+        fontWeight: FontWeight.bold,
+      ),
       selectedIndex: selectedIndex,
       onDestinationSelected: onDestinationSelected,
       leading: Padding(
@@ -27,9 +30,22 @@ class AdminSidebar extends StatelessWidget {
         child: Image.asset('assets/images/logo.png', height: 40),
       ),
       destinations: const [
-        NavigationRailDestination(icon: Icon(Icons.analytics), label: Text('Overview')),
-        NavigationRailDestination(icon: Icon(Icons.account_tree), label: Text('Branches')), // Branch Tracking
-        NavigationRailDestination(icon: Icon(Icons.person_pin_circle), label: Text('Agents')), // Agent Tracking
+        NavigationRailDestination(
+          icon: Icon(Icons.analytics_outlined),
+          label: Text('Overview'),
+        ),
+        NavigationRailDestination(
+          icon: Icon(Icons.account_tree_outlined),
+          label: Text('Branches'),
+        ),
+        NavigationRailDestination(
+          icon: Icon(Icons.person_pin_circle_outlined),
+          label: Text('Agents'),
+        ),
+        NavigationRailDestination(
+          icon: Icon(Icons.manage_accounts_outlined),
+          label: Text('Users'),
+        ),
       ],
     );
   }
