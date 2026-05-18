@@ -334,7 +334,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     'assets/images/footer.png',
                     fit: BoxFit.fitWidth,
                     alignment: Alignment.bottomCenter,
-                    errorBuilder: (_, __, ___) => const SizedBox(height: 60),
+                    errorBuilder: (_, _, _) => const SizedBox(height: 60),
                   ),
                 ),
                 Column(

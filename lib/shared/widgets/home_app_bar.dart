@@ -88,7 +88,7 @@ class HomeAppBar extends StatelessWidget {
                     ? Image.network(
                         avatarUrl!,
                         fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => const Icon(
+                        errorBuilder: (_, _, _) => const Icon(
                           Icons.person_rounded,
                           color: Colors.white,
                           size: 22,
@@ -97,7 +97,7 @@ class HomeAppBar extends StatelessWidget {
                     : Image.asset(
                         'assets/images/avatar.png',
                         fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => const Icon(
+                        errorBuilder: (_, _, _) => const Icon(
                           Icons.person_rounded,
                           color: Colors.white,
                           size: 22,

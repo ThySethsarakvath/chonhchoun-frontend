@@ -11,22 +11,23 @@ import '../features/auth/models/user_model.dart';
 import '../screens/customer/avatar_upload_screen.dart';
 import '../screens/customer/setting_screen.dart';
 import '../screens/customer/profile_screen.dart';
+
 // import '../screens/driver/driver_workspace_screen.dart';
 abstract class AppRoutes {
   AppRoutes._();
 
-  static const String landing       = '/';
-  static const String onboarding    = '/onboarding';
-  static const String login         = '/login';
-  static const String register      = '/register';
+  static const String landing = '/';
+  static const String onboarding = '/onboarding';
+  static const String login = '/login';
+  static const String register = '/register';
   static const String validateEmail = '/validate-email';
-  static const String otp           = '/otp';
-  static const String setPassword   = '/set-password';
-  static const String avatarUpload   = '/avatar-upload';
-  static const String profile       = '/profile';
-  static const String settings      = '/settings';
-  static const String customer      = '/customer';
-  static const String driver        = '/driver';
+  static const String otp = '/otp';
+  static const String setPassword = '/set-password';
+  static const String avatarUpload = '/avatar-upload';
+  static const String profile = '/profile';
+  static const String settings = '/settings';
+  static const String customer = '/customer';
+  static const String driver = '/driver';
 }
 
 enum AuthFlow { register, forgotPassword }
@@ -99,10 +100,12 @@ class AppRouter {
         return _slide(AvatarUploadScreen(args: args));
       case AppRoutes.profile:
         final args = settings.arguments as ProfileArgs?;
-        return _fade(ProfileScreen(
-          profile: args?.profile,
-          source: args?.source ?? ProfileSource.home,
-        ));
+        return _fade(
+          ProfileScreen(
+            profile: args?.profile,
+            source: args?.source ?? ProfileSource.home,
+          ),
+        );
       case AppRoutes.settings:
         return _fade(const SettingsScreen());
       case AppRoutes.customer:
@@ -116,8 +119,8 @@ class AppRouter {
 
   static PageRouteBuilder<dynamic> _fade(Widget page) {
     return PageRouteBuilder(
-      pageBuilder: (_, __, ___) => page,
-      transitionsBuilder: (_, anim, __, child) =>
+      pageBuilder: (_, _, _) => page,
+      transitionsBuilder: (_, anim, _, child) =>
           FadeTransition(opacity: anim, child: child),
       transitionDuration: const Duration(milliseconds: 350),
     );
@@ -125,10 +128,12 @@ class AppRouter {
 
   static PageRouteBuilder<dynamic> _slide(Widget page) {
     return PageRouteBuilder(
-      pageBuilder: (_, __, ___) => page,
-      transitionsBuilder: (_, anim, __, child) {
-        final tween = Tween(begin: const Offset(1, 0), end: Offset.zero)
-            .chain(CurveTween(curve: Curves.easeInOut));
+      pageBuilder: (_, _, _) => page,
+      transitionsBuilder: (_, anim, _, child) {
+        final tween = Tween(
+          begin: const Offset(1, 0),
+          end: Offset.zero,
+        ).chain(CurveTween(curve: Curves.easeInOut));
         return SlideTransition(position: anim.drive(tween), child: child);
       },
       transitionDuration: const Duration(milliseconds: 300),
@@ -136,7 +141,7 @@ class AppRouter {
   }
 
   static Widget _stub(String name) => Scaffold(
-        appBar: AppBar(title: Text(name)),
-        body: Center(child: Text(name, style: const TextStyle(fontSize: 18))),
-      );
+    appBar: AppBar(title: Text(name)),
+    body: Center(child: Text(name, style: const TextStyle(fontSize: 18))),
+  );
 }

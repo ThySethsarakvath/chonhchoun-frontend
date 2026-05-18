@@ -10,7 +10,7 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
-  int _navIndex = 3; // Settings tab index
+  final int _navIndex = 3; // Settings tab index
 
   void _handleNavigation(int index) {
     switch (index) {

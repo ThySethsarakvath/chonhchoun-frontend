@@ -106,7 +106,7 @@ class _AvatarUploadScreenState extends State<AvatarUploadScreen> {
                     'assets/images/footer.png',
                     fit: BoxFit.fitWidth,
                     alignment: Alignment.bottomCenter,
-                    errorBuilder: (_, __, ___) => const SizedBox(height: 70),
+                    errorBuilder: (_, _, _) => const SizedBox(height: 70),
                   ),
                 ),
                 SafeArea(
@@ -129,13 +129,10 @@ class _AvatarUploadScreenState extends State<AvatarUploadScreen> {
                             letterSpacing: 0.3,
                           ),
                         ),
-                        const SizedBox(
-                          height: 8,
-                        ),
+                        const SizedBox(height: 8),
                         Text(
                           widget.args.userName,
-                          textAlign: TextAlign
-                              .center,
+                          textAlign: TextAlign.center,
                           style: const TextStyle(
                             color: Colors.white,
                             fontSize: 22,
@@ -247,7 +244,7 @@ class _AvatarCircle extends StatelessWidget {
             : Image.asset(
                 'assets/images/avatar.png',
                 fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => const Icon(
+                errorBuilder: (_, _, _) => const Icon(
                   Icons.person_rounded,
                   size: 64,
                   color: Color(0xFF2C5F8A),

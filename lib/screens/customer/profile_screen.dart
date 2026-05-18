@@ -23,7 +23,7 @@ class ProfileScreen extends StatefulWidget {
 class _ProfileScreenState extends State<ProfileScreen> {
   final _userService = UserService();
   final _authService = AuthService();
-  
+
   UserProfile? _userProfile;
   bool _loading = false;
 
@@ -58,7 +58,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
         setState(() => _loading = false);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error loading profile: ${e.toString().replaceFirst('Exception: ', '')}'),
+            content: Text(
+              'Error loading profile: ${e.toString().replaceFirst('Exception: ', '')}',
+            ),
             backgroundColor: Colors.redAccent,
           ),
         );
@@ -119,7 +121,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
       // Get access token
       final accessToken = await TokenStorage.getAccessToken();
-      
+
       if (accessToken == null || accessToken.isEmpty) {
         if (mounted) {
           Navigator.pop(context); // Close loading dialog
@@ -135,7 +137,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
       // Call logout endpoint
       await _authService.logout(accessToken: accessToken);
-      
+
       // Clear tokens
       await TokenStorage.clearTokens();
 
@@ -185,21 +187,41 @@ class _ProfileScreenState extends State<ProfileScreen> {
   void _handleNavigation(int index) {
     switch (index) {
       case 0:
-        Navigator.pushNamedAndRemoveUntil(context, AppRoutes.customer, (_) => false);
+        Navigator.pushNamedAndRemoveUntil(
+          context,
+          AppRoutes.customer,
+          (_) => false,
+        );
         break;
       case 1:
-        Navigator.pushNamedAndRemoveUntil(context, AppRoutes.customer, (_) => false);
+        Navigator.pushNamedAndRemoveUntil(
+          context,
+          AppRoutes.customer,
+          (_) => false,
+        );
         // TODO: navigate to shipping screen
         break;
       case 2:
-        Navigator.pushNamedAndRemoveUntil(context, AppRoutes.customer, (_) => false);
+        Navigator.pushNamedAndRemoveUntil(
+          context,
+          AppRoutes.customer,
+          (_) => false,
+        );
         // TODO: navigate to chat screen
         break;
       case 3:
-        Navigator.pushNamedAndRemoveUntil(context, AppRoutes.settings, (_) => false);
+        Navigator.pushNamedAndRemoveUntil(
+          context,
+          AppRoutes.settings,
+          (_) => false,
+        );
         break;
       case 4:
-        Navigator.pushNamedAndRemoveUntil(context, AppRoutes.customer, (_) => false);
+        Navigator.pushNamedAndRemoveUntil(
+          context,
+          AppRoutes.customer,
+          (_) => false,
+        );
         // TODO: handle QR code scanner
         break;
     }
@@ -384,7 +406,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 }
 
-
 class _ProfileAvatar extends StatelessWidget {
   final String? avatarUrl;
   const _ProfileAvatar({this.avatarUrl});
@@ -411,12 +432,12 @@ class _ProfileAvatar extends StatelessWidget {
             ? Image.network(
                 avatarUrl!,
                 fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => _defaultIcon(),
+                errorBuilder: (_, _, _) => _defaultIcon(),
               )
             : Image.asset(
                 'assets/images/avatar.png',
                 fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => _defaultIcon(),
+                errorBuilder: (_, _, _) => _defaultIcon(),
               ),
       ),
     );
