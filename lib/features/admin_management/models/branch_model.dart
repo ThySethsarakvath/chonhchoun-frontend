@@ -5,6 +5,9 @@ class Branch {
   final String? address;
   final String? description;
   final bool isActive;
+  final double? lat;
+  final double? lng;
+
 
   Branch({
     required this.id,
@@ -12,17 +15,20 @@ class Branch {
     required this.code,
     this.address,
     this.description,
+    this.lat,
+    this.lng,
     required this.isActive,
   });
 
   factory Branch.fromJson(Map<String, dynamic> json) {
+    final loc = json['location'] as Map<String, dynamic>?;
     return Branch(
       id: json['_id'],
       name: json['name'],
       code: json['code'],
-      address: json['address'],
-      description: json['description'],
       isActive: json['isActive'] ?? true,
+      lat: loc != null ? (loc['lat'] as num).toDouble() : null,
+      lng: loc != null ? (loc['lng'] as num).toDouble() : null,
     );
   }
 

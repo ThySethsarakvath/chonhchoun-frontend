@@ -49,12 +49,17 @@ class _LoginScreenState extends State<LoginScreen> {
 
     setState(() => _loading = true);
     try {
-      await _service.login(LoginRequest(
+      final authResponse = await _service.login(LoginRequest(
         email: _emailCtrl.text.trim(),
         password: _passwordCtrl.text,
       ));
+
       if (mounted) {
-        Navigator.pushReplacementNamed(context, AppRoutes.customer);
+        if (authResponse.user.role == 'admin') {
+          Navigator.pushReplacementNamed(context, AppRoutes.adminDashboard);
+        } else {
+          Navigator.pushReplacementNamed(context, AppRoutes.customer);
+        }
       }
     } on ApiException catch (e) {
       if (mounted) showErrorDialog(context, e.message);
@@ -64,6 +69,7 @@ class _LoginScreenState extends State<LoginScreen> {
       if (mounted) setState(() => _loading = false);
     }
   }
+
 
   // ── Forgot password ───────────────────────────────────────────────────────
   // Requires a valid email first, calls /forgot to send OTP,

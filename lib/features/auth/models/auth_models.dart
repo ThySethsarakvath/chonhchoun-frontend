@@ -1,3 +1,5 @@
+import 'user_model.dart';
+
 class LoginRequest {
   final String email;
   final String password;
@@ -86,12 +88,14 @@ class ResetPasswordRequest {
 class AuthTokens {
   final String accessToken;
   final String refreshToken;
+  final UserProfile user;
 
-  AuthTokens({required this.accessToken, required this.refreshToken});
+  AuthTokens({required this.accessToken, required this.refreshToken, required this.user});
 
   factory AuthTokens.fromJson(Map<String, dynamic> json) => AuthTokens(
         accessToken: json['accessToken'] as String,
         refreshToken: json['refreshToken'] as String,
+        user: UserProfile.fromJson(json['user'] as Map<String, dynamic>),
       );
 }
 

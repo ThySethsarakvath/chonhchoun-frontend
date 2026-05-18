@@ -12,7 +12,7 @@ import '../screens/avatar_upload_screen.dart';
 import '../screens/setting_screen.dart';
 import '../screens/profile_screen.dart';
 // import '../screens/driver/driver_workspace_screen.dart';
-import '../screens/admin/admin_main_screen.dart';
+import '../features/home/pages/admin_main_screen.dart';
 abstract class AppRoutes {
   AppRoutes._();
 

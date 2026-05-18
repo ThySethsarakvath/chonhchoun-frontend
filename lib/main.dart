@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'router/app_router.dart';
+import 'dart:io';
 
 Future <void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  if (Platform.isWindows || Platform.isMacOS || Platform.isLinux) {
+    
+  }
   try{
     await dotenv.load(fileName: ".env");
   } catch (e) {

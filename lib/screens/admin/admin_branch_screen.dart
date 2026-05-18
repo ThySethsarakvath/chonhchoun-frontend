@@ -46,31 +46,39 @@ class _AdminBranchScreenState extends State<AdminBranchScreen> {
         ],
       ),
       body: _loading
-          ? const Center(child: CircularProgressIndicator())
-          : ListView.builder(
-              padding: const EdgeInsets.all(16),
-              itemCount: _branches.length,
-              itemBuilder: (context, index) {
-                final branch = _branches[index];
-                return Card(
-                  margin: const EdgeInsets.only(bottom: 12),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  child: ListTile(
-                    leading: CircleAvatar(
-                      backgroundColor: const Color(0xFF1E3A5F),
-                      child: Text(branch.code[0], style: const TextStyle(color: Colors.white)),
-                    ),
-                    title: Text(branch.name, style: const TextStyle(fontWeight: FontWeight.w600)),
-                    subtitle: Text(branch.address ?? 'គ្មានអាសយដ្ឋាន'),
-                    trailing: Icon(
-                      Icons.circle_rounded,
-                      size: 12,
-                      color: branch.isActive ? Colors.green : Colors.red,
-                    ),
-                  ),
-                );
-              },
-            ),
+    ? const Center(child: CircularProgressIndicator())
+    : SingleChildScrollView(
+        padding: const EdgeInsets.all(24),
+        child: Container(
+          width: double.infinity,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10)],
+          ),
+          child: DataTable(
+            headingRowColor: WidgetStateProperty.all(const Color(0xFFF8FAFC)),
+            columns: const [
+              DataColumn(label: Text('កូដ (Code)')),
+              DataColumn(label: Text('ឈ្មោះសាខា (Name)')),
+              DataColumn(label: Text('អាសយដ្ឋាន (Address)')),
+              DataColumn(label: Text('ស្ថានភាព (Status)')),
+              DataColumn(label: Text('សកម្មភាព (Actions)')),
+            ],
+            rows: _branches.map((branch) => DataRow(cells: [
+              DataCell(Text(branch.code, style: const TextStyle(fontWeight: FontWeight.bold))),
+              DataCell(Text(branch.name)),
+              DataCell(Text(branch.address ?? 'N/A')),
+              DataCell(Icon(
+                Icons.circle,
+                size: 12,
+                color: branch.isActive ? Colors.green : Colors.red,
+              )),
+              DataCell(IconButton(icon: const Icon(Icons.edit_note), onPressed: () {})),
+            ])).toList(),
+          ),
+        ),
+      ),
       floatingActionButton: FloatingActionButton(
         backgroundColor: const Color(0xFF1E3A5F),
         onPressed: () {
