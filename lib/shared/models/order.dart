@@ -33,6 +33,7 @@ class CustomerOrder {
   final PaymentMethod paymentMethod;
   final DeliveryServiceType serviceType;
   final bool itemHandling;
+  final bool driverPickup;
   OrderStatus status; // Now mutable for cancellation
   final DateTime createdAt;
   final double price;
@@ -55,6 +56,7 @@ class CustomerOrder {
     this.paymentMethod = PaymentMethod.cash,
     this.serviceType = DeliveryServiceType.express,
     this.itemHandling = false,
+    this.driverPickup = false,
     required this.status,
     required this.createdAt,
     required this.price,
@@ -62,6 +64,92 @@ class CustomerOrder {
     this.dropoffContactNumber,
     this.noteToDriver,
   });
+
+  factory CustomerOrder.fromJson(Map<String, dynamic> json) {
+    return CustomerOrder(
+      id: json['_id'] ?? json['id'] ?? '',
+      pickup: LatLng(
+        (json['pickupLat'] ?? 0.0).toDouble(),
+        (json['pickupLng'] ?? 0.0).toDouble(),
+      ),
+      dropoff: LatLng(
+        (json['dropoffLat'] ?? 0.0).toDouble(),
+        (json['dropoffLng'] ?? 0.0).toDouble(),
+      ),
+      pickupAddress: json['pickupAddress'] ?? '',
+      dropoffAddress: json['dropoffAddress'] ?? '',
+      itemName: json['itemName'] ?? '',
+      itemDescription: json['itemDescription'],
+      size: _parseSize(json['size']),
+      weight: (json['weight'] ?? 0.0).toDouble(),
+      itemType: _parseItemType(json['itemType']),
+      vehicleType: _parseVehicleType(json['vehicleType']),
+      paymentMethod: _parsePaymentMethod(json['paymentMethod']),
+      serviceType: _parseServiceType(json['serviceType']),
+      itemHandling: json['itemHandling'] ?? false,
+      driverPickup: json['driverPickup'] ?? false,
+      status: _parseStatus(json['status']),
+      createdAt: json['createdAt'] != null ? DateTime.parse(json['createdAt']) : DateTime.now(),
+      price: (json['price'] ?? 0.0).toDouble(),
+      dropoffContactName: json['dropoffContactName'],
+      dropoffContactNumber: json['dropoffContactNumber'],
+      noteToDriver: json['noteToDriver'],
+    );
+  }
+
+  static ItemSize _parseSize(String? size) {
+    switch (size) {
+      case 'S': return ItemSize.S;
+      case 'M': return ItemSize.M;
+      case 'L': return ItemSize.L;
+      default: return ItemSize.S;
+    }
+  }
+
+  static ItemType _parseItemType(String? type) {
+    switch (type) {
+      case 'document': return ItemType.document;
+      case 'food': return ItemType.food;
+      case 'clothing': return ItemType.clothing;
+      case 'electronics': return ItemType.electronics;
+      default: return ItemType.others;
+    }
+  }
+
+  static VehicleType _parseVehicleType(String? vehicle) {
+    switch (vehicle) {
+      case 'bike': return VehicleType.bike;
+      case 'tuktuk': return VehicleType.tuktuk;
+      default: return VehicleType.bike;
+    }
+  }
+
+  static PaymentMethod _parsePaymentMethod(String? payment) {
+    switch (payment) {
+      case 'cash': return PaymentMethod.cash;
+      case 'online': return PaymentMethod.online;
+      default: return PaymentMethod.cash;
+    }
+  }
+
+  static DeliveryServiceType _parseServiceType(String? service) {
+    switch (service) {
+      case 'express': return DeliveryServiceType.express;
+      case 'warehouse': return DeliveryServiceType.warehouse;
+      default: return DeliveryServiceType.express;
+    }
+  }
+
+  static OrderStatus _parseStatus(String? status) {
+    switch (status) {
+      case 'searching': return OrderStatus.searching;
+      case 'accepted': return OrderStatus.accepted;
+      case 'pickedUp': return OrderStatus.pickedUp;
+      case 'delivered': return OrderStatus.delivered;
+      case 'canceled': return OrderStatus.canceled;
+      default: return OrderStatus.searching;
+    }
+  }
 
   String get statusText {
     if (serviceType == DeliveryServiceType.warehouse) {

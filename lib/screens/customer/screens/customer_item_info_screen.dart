@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:latlong2/latlong.dart' hide Path;
+import 'package:geolocator/geolocator.dart';
+import 'pickup_map_picker.dart';
 import '../../../shared/colors/app_colors.dart';
 import '../../../shared/models/order.dart';
 import '../../../shared/widgets/app_shell_widgets.dart';
@@ -13,6 +15,7 @@ class CustomerItemInfoScreen extends StatefulWidget {
     required this.dropoffAddress,
     required this.serviceType,
     required this.onOrderCreated,
+    required this.userLocation,
   });
 
   final LatLng pickup;
@@ -21,6 +24,7 @@ class CustomerItemInfoScreen extends StatefulWidget {
   final String dropoffAddress;
   final DeliveryServiceType serviceType;
   final Function(CustomerOrder) onOrderCreated;
+  final LatLng userLocation;
 
   @override
   State<CustomerItemInfoScreen> createState() => _CustomerItemInfoScreenState();
@@ -33,14 +37,54 @@ class _CustomerItemInfoScreenState extends State<CustomerItemInfoScreen> {
   VehicleType _selectedVehicle = VehicleType.bike;
   PaymentMethod _selectedPayment = PaymentMethod.cash;
   bool _itemHandling = false;
+  bool _driverPickup = false;
   final TextEditingController _weightController = TextEditingController(text: "1");
   final TextEditingController _itemNameController = TextEditingController();
   final TextEditingController _contactNameController = TextEditingController();
   final TextEditingController _contactPhoneController = TextEditingController();
   final TextEditingController _noteController = TextEditingController();
+  String? _customPickupAddress;
+  LatLng? _customPickupLatLng;
+
+  double _calculateDistanceFee(double distanceInKm) {
+    if (distanceInKm <= 1.0) {
+      return 3000.0; // minimum 3000 riels for any distance below 1km
+    } else {
+      return 3000.0 + (distanceInKm - 1.0) * 2000.0; // added 0.5$ (2000 riels) per km after > 1km
+    }
+  }
+
+  double get _pickupDistance {
+    final origin = _customPickupLatLng ?? widget.userLocation;
+    return Geolocator.distanceBetween(
+      origin.latitude,
+      origin.longitude,
+      widget.pickup.latitude,
+      widget.pickup.longitude,
+    ) / 1000.0;
+  }
+
+  double get _pickupPrice {
+    return _calculateDistanceFee(_pickupDistance);
+  }
 
   double get _totalPrice {
-    double base = widget.serviceType == DeliveryServiceType.express ? 8200.0 : 3500.0;
+    double base = 0.0;
+    if (widget.serviceType == DeliveryServiceType.express) {
+      double dist = Geolocator.distanceBetween(
+        widget.pickup.latitude,
+        widget.pickup.longitude,
+        widget.dropoff.latitude,
+        widget.dropoff.longitude,
+      ) / 1000.0;
+      base = _calculateDistanceFee(dist);
+    } else {
+      base = 4000.0; // flat rate for $1 (4000 riels) delivery for warehouse-to-warehouse
+      if (_driverPickup) {
+        base += _pickupPrice;
+      }
+    }
+
     if (_selectedVehicle == VehicleType.tuktuk) {
       base += 2000.0;
     }
@@ -276,6 +320,67 @@ class _CustomerItemInfoScreenState extends State<CustomerItemInfoScreen> {
                 ],
               ),
             ),
+            if (widget.serviceType == DeliveryServiceType.warehouse) ...[
+              const Divider(height: 24),
+              InkWell(
+                onTap: () => setState(() => _driverPickup = !_driverPickup),
+                child: Row(
+                  children: [
+                    Container(
+                      height: 24,
+                      width: 24,
+                      decoration: BoxDecoration(
+                        color: _driverPickup ? AppColors.blue : Colors.transparent,
+                        border: Border.all(color: _driverPickup ? AppColors.blue : AppColors.line),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: _driverPickup ? const Icon(Icons.check, size: 16, color: Colors.white) : null,
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text("Driver Pick-Up", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                          const SizedBox(height: 4),
+                          Text(
+                            _customPickupAddress != null
+                                ? "Pick up from: ${_customPickupAddress!}"
+                                : "Pick up from your location to warehouse (${_pickupDistance.toStringAsFixed(1)} km)",
+                            style: const TextStyle(color: AppColors.muted, fontSize: 12),
+                          ),
+                          const SizedBox(height: 8),
+                          Row(
+                            children: [
+                              GestureDetector(
+                                onTap: _showChangePickupDialog,
+                                child: const Text(
+                                  "Change Pick-Up Location",
+                                  style: TextStyle(color: AppColors.blue, fontSize: 13, fontWeight: FontWeight.w600),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              if (_customPickupAddress != null)
+                                GestureDetector(
+                                  onTap: () => setState(() => _customPickupAddress = null),
+                                  child: const Text(
+                                    "Use Current Location",
+                                    style: TextStyle(color: AppColors.muted, fontSize: 12),
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    Text(
+                      "+${_pickupPrice.toInt()}៛",
+                      style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.blue),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ],
         ),
       ),
@@ -339,6 +444,29 @@ class _CustomerItemInfoScreenState extends State<CustomerItemInfoScreen> {
     );
   }
 
+  void _showChangePickupDialog() {
+    // Open map picker and await result
+    Navigator.push<Map<String, dynamic>>(
+      context,
+      MaterialPageRoute(
+        builder: (context) => PickupMapPicker(
+          initialLocation: _customPickupLatLng ?? widget.userLocation,
+          initialAddress: _customPickupAddress ?? widget.pickupAddress,
+          warehouseLocation: widget.pickup,
+        ),
+      ),
+    ).then((res) {
+      if (res != null) {
+        setState(() {
+          final latlng = res['latlng'] as LatLng?;
+          final addr = res['address'] as String?;
+          _customPickupLatLng = latlng ?? _customPickupLatLng;
+          _customPickupAddress = addr ?? _customPickupAddress;
+        });
+      }
+    });
+  }
+
   Widget _buildBottomSummary() {
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
@@ -362,7 +490,7 @@ class _CustomerItemInfoScreenState extends State<CustomerItemInfoScreen> {
               try {
                 final order = CustomerOrder(
                   id: "ORDER-${DateTime.now().millisecondsSinceEpoch}",
-                  pickup: widget.pickup,
+                  pickup: _driverPickup ? (_customPickupLatLng ?? widget.userLocation) : widget.pickup,
                   dropoff: widget.dropoff,
                   pickupAddress: widget.pickupAddress,
                   dropoffAddress: widget.dropoffAddress,
@@ -374,6 +502,7 @@ class _CustomerItemInfoScreenState extends State<CustomerItemInfoScreen> {
                   paymentMethod: _selectedPayment,
                   serviceType: widget.serviceType,
                   itemHandling: _itemHandling,
+                  driverPickup: _driverPickup,
                   status: OrderStatus.searching,
                   createdAt: DateTime.now(),
                   price: _totalPrice,

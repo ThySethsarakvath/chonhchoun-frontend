@@ -3,7 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:http/http.dart' as http; // Use http package
+import 'package:geolocator/geolocator.dart';
 import '../../../shared/models/order.dart';
+import '../../../shared/models/warehouse.dart';
 import '../../../shared/colors/app_colors.dart';
 import '../../../shared/widgets/app_map_widgets.dart';
 import '../../../shared/data/warehouse_data.dart';
@@ -31,6 +33,77 @@ class _CustomerBookingScreenState extends State<CustomerBookingScreen> {
   bool _isSelectingPickup = true;
   List<LatLng> _routePoints = [];
   final MapController _mapController = MapController();
+  LatLng? _userLocation;
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeLocation();
+  }
+
+  Future<void> _initializeLocation() async {
+    LatLng userLoc = const LatLng(11.5710, 104.8990); // Default to ITC PP
+    try {
+      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (serviceEnabled) {
+        LocationPermission permission = await Geolocator.checkPermission();
+        if (permission == LocationPermission.denied) {
+          permission = await Geolocator.requestPermission();
+        }
+        if (permission == LocationPermission.whileInUse || permission == LocationPermission.always) {
+          Position position = await Geolocator.getCurrentPosition(
+            desiredAccuracy: LocationAccuracy.high,
+          );
+          userLoc = LatLng(position.latitude, position.longitude);
+        }
+      }
+    } catch (e) {
+      debugPrint("Error getting live location: $e");
+    }
+
+    _userLocation = userLoc;
+
+    setState(() {
+      if (widget.serviceType == DeliveryServiceType.express) {
+        _pickupLocation = userLoc;
+        _pickupName = "My Current Location";
+        _isSelectingPickup = false; // Immediately prompt destination selection
+      } else {
+        final closest = _findClosestWarehouse(userLoc);
+        _pickupLocation = closest.location;
+        _pickupName = closest.name;
+        _isSelectingPickup = false; // Immediately prompt destination selection
+      }
+    });
+
+    if (_pickupLocation != null) {
+      // MapController might not be fully initialized yet, wait a frame
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          _mapController.move(_pickupLocation!, 15);
+        }
+      });
+    }
+  }
+
+  Warehouse _findClosestWarehouse(LatLng userLoc) {
+    Warehouse closest = WarehouseData.allWarehouses.first;
+    double minDistance = double.infinity;
+    
+    for (var w in WarehouseData.allWarehouses) {
+      double dist = Geolocator.distanceBetween(
+        userLoc.latitude,
+        userLoc.longitude,
+        w.location.latitude,
+        w.location.longitude,
+      );
+      if (dist < minDistance) {
+        minDistance = dist;
+        closest = w;
+      }
+    }
+    return closest;
+  }
 
   String _formatLocation(LatLng? loc, String? name) {
     if (name != null) return name;
@@ -379,6 +452,7 @@ class _CustomerBookingScreenState extends State<CustomerBookingScreen> {
                                   _formatLocation(_dropoffLocation, null),
                               serviceType: widget.serviceType,
                               onOrderCreated: widget.onOrderCreated,
+                              userLocation: _userLocation ?? const LatLng(11.5710, 104.8990),
                             ),
                           ),
                         );

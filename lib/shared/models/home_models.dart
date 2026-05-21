@@ -3,6 +3,7 @@ enum DeliveryStatus {
   inTransit,
   arrived,
   delivered,
+  canceled,
 }
 
 extension DeliveryStatusLabel on DeliveryStatus {
@@ -16,6 +17,8 @@ extension DeliveryStatusLabel on DeliveryStatus {
         return 'បានមកដល់';
       case DeliveryStatus.delivered:
         return 'បានដឹកជញ្ជូន';
+      case DeliveryStatus.canceled:
+        return 'បានបោះបង់';
     }
   }
 }
@@ -95,6 +98,7 @@ class DeliveryItem {
       case 'accepted': return DeliveryStatus.inTransit;
       case 'pickedUp': return DeliveryStatus.inTransit;
       case 'delivered': return DeliveryStatus.delivered;
+      case 'canceled': return DeliveryStatus.canceled;
       default: return DeliveryStatus.pending;
     }
   }

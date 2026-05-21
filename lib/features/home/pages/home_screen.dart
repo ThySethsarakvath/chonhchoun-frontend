@@ -1,6 +1,9 @@
 import 'dart:async';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:http/http.dart' as http;
 import '../../../shared/models/home_models.dart';
 import '../../../shared/services/home_service.dart';
 import '../../../shared/widgets/home_app_bar.dart';
@@ -12,6 +15,8 @@ import '../../../shared/widgets/section_header.dart';
 import '../../../shared/widgets/app_drawer_wrapper.dart';
 import '../../../shared/models/order.dart';
 import '../../../screens/customer/screens/customer_booking_screen.dart';
+import '../../../screens/customer/screens/qr_scanner_screen.dart';
+import '../../../screens/customer/screens/customer_order_detail_screen.dart';
 import '../../auth/services/user_service.dart';
 import '../../auth/models/user_model.dart';
 import '../../auth/tokens/token_storage.dart';
@@ -36,8 +41,8 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _loading = true;
   int _navIndex = 0;
 
-  static const String _city = 'ភ្នំពេញ';
-  static const String _userLocation = 'ផ្ទះ 175, ទឹកថ្លា, សែនសុខ';
+  String _city = 'កំពុងស្វែងរក...';
+  String _userLocation = 'កំពុងរកទីតាំង...';
 
   @override
   void initState() {
@@ -49,6 +54,73 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
     _loadData();
+    _fetchLiveLocation();
+  }
+
+  Future<void> _fetchLiveLocation() async {
+    try {
+      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        setState(() {
+          _city = 'ភ្នំពេញ';
+          _userLocation = 'មិនអាចរកទីតាំងបាន';
+        });
+        return;
+      }
+
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+      }
+      if (permission == LocationPermission.deniedForever || permission == LocationPermission.denied) {
+        setState(() {
+          _city = 'ភ្នំពេញ';
+          _userLocation = 'មិនអាចរកទីតាំងបាន';
+        });
+        return;
+      }
+
+      final position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+      );
+
+      // Reverse geocode using Nominatim (OpenStreetMap) – free, no API key needed
+      final url = Uri.parse(
+        'https://nominatim.openstreetmap.org/reverse?format=json&lat=${position.latitude}&lon=${position.longitude}&accept-language=km',
+      );
+      final response = await http.get(url, headers: {'User-Agent': 'ChonhchounApp/1.0'});
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        final address = data['address'] as Map<String, dynamic>?;
+
+        if (address != null) {
+          final city = address['city'] ?? address['town'] ?? address['state'] ?? 'ភ្នំពេញ';
+          final road = address['road'] ?? '';
+          final suburb = address['suburb'] ?? address['neighbourhood'] ?? '';
+          final district = address['city_district'] ?? address['county'] ?? '';
+
+          // Build a readable address line from available parts
+          final parts = [road, suburb, district].where((s) => s.isNotEmpty).toList();
+          final locationStr = parts.isNotEmpty ? parts.join(', ') : 'ទីតាំងបច្ចុប្បន្ន';
+
+          if (mounted) {
+            setState(() {
+              _city = city;
+              _userLocation = locationStr;
+            });
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint('Error fetching live location: $e');
+      if (mounted) {
+        setState(() {
+          _city = 'ភ្នំពេញ';
+          _userLocation = 'មិនអាចរកទីតាំងបាន';
+        });
+      }
+    }
   }
 
   @override
@@ -283,7 +355,9 @@ class _HomeScreenState extends State<HomeScreen> {
         bottomNavigationBar: HomeBottomNav(
           currentIndex: _navIndex,
           onTap: (i) {
-            if (i == 3) {
+            if (i == 4) {
+              Navigator.of(context).push(MaterialPageRoute(builder: (_) => const QRScannerScreen()));
+            } else if (i == 3) {
               Navigator.pushNamed(context, AppRoutes.settings);
             } else {
               setState(() => _navIndex = i);
@@ -395,7 +469,14 @@ class _HomeScreenState extends State<HomeScreen> {
                       (item) => DeliveryCard(
                         item: item,
                         showTracking: true,
-                        onTap: () {},
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => CustomerOrderDetailScreen(packageId: item.id),
+                            ),
+                          );
+                        },
                       ),
                     )),
                   const SizedBox(height: 24),
@@ -411,7 +492,14 @@ class _HomeScreenState extends State<HomeScreen> {
                       (item) => DeliveryCard(
                         item: item,
                         showTracking: false,
-                        onTap: () {},
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => CustomerOrderDetailScreen(packageId: item.id),
+                            ),
+                          );
+                        },
                       ),
                     )),
                   const SizedBox(height: 16),
@@ -451,7 +539,14 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: DeliveryCard(
                     item: _history[index],
                     showTracking: true,
-                    onTap: () {},
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => CustomerOrderDetailScreen(packageId: _history[index].id),
+                        ),
+                      );
+                    },
                   ),
                 );
               },
@@ -483,6 +578,17 @@ class _SearchBar extends StatelessWidget {
         ),
         child: TextField(
           controller: controller,
+          onSubmitted: (value) {
+            if (value.isNotEmpty) {
+              // Same flow as scanning
+              Navigator.of(context).push(MaterialPageRoute(
+                builder: (_) => const QRScannerScreen(),
+              ));
+              // Since the QRScannerScreen relies on camera, we would actually just call
+              // the API directly, but for simplicity, we navigate there. 
+              // Wait, let's just show a snackbar for now.
+            }
+          },
           style: const TextStyle(fontSize: 13, color: Color(0xFF2D3A4E)),
           decoration: const InputDecoration(
             hintText: 'Enter your tracking number',

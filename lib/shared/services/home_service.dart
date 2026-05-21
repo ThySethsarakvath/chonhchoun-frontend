@@ -55,6 +55,7 @@ class HomeService {
       'vehicleType': order.vehicleType.name,
       'serviceType': order.serviceType.name,
       'itemHandling': order.itemHandling,
+      'driverPickup': order.driverPickup,
       'pickupAddress': order.pickupAddress,
       'dropoffAddress': order.dropoffAddress,
       'pickupLat': order.pickup.latitude,
@@ -63,6 +64,9 @@ class HomeService {
       'dropoffLng': order.dropoff.longitude,
       'price': order.price,
       'paymentMethod': order.paymentMethod.name,
+      'dropoffContactName': order.dropoffContactName,
+      'dropoffContactNumber': order.dropoffContactNumber,
+      'noteToDriver': order.noteToDriver,
     };
 
     final res = await http.post(

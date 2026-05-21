@@ -3,33 +3,83 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:http/http.dart' as http;
+import 'package:qr_flutter/qr_flutter.dart';
 import '../../../shared/models/order.dart';
 import '../../../shared/colors/app_colors.dart';
 import '../../../shared/widgets/app_shell_widgets.dart';
 import '../../../shared/data/map_data.dart';
+import '../../../global/base_url.dart';
+import '../../../features/auth/tokens/token_storage.dart';
 
 class CustomerOrderDetailScreen extends StatefulWidget {
-  const CustomerOrderDetailScreen({super.key, required this.order});
+  const CustomerOrderDetailScreen({super.key, this.order, this.packageId, this.allowCancel});
 
-  final CustomerOrder order;
+  final CustomerOrder? order;
+  final String? packageId;
+  final bool? allowCancel;
 
   @override
   State<CustomerOrderDetailScreen> createState() => _CustomerOrderDetailScreenState();
 }
 
 class _CustomerOrderDetailScreenState extends State<CustomerOrderDetailScreen> {
-  late CustomerOrder _currentOrder;
+  CustomerOrder? _currentOrderNullable;
+  CustomerOrder get _currentOrder => _currentOrderNullable!;
   List<LatLng> _routePoints = [];
   bool _isLoadingRoute = true;
+  bool _isLoadingPackage = false;
 
   @override
   void initState() {
     super.initState();
-    _currentOrder = widget.order;
-    _fetchRoute();
+    if (widget.order != null) {
+      _currentOrderNullable = widget.order;
+      _fetchRoute();
+    } else if (widget.packageId != null) {
+      _fetchPackageAndRoute();
+    }
+  }
+
+  Future<void> _fetchPackageAndRoute() async {
+    setState(() {
+      _isLoadingPackage = true;
+    });
+    try {
+      final token = await TokenStorage.getAccessToken();
+      final url = Uri.parse('$baseUrl/packages/${widget.packageId}');
+      
+      final response = await http.get(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+          if (token != null) 'Authorization': 'Bearer $token',
+        }
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        setState(() {
+          _currentOrderNullable = CustomerOrder.fromJson(data);
+          _isLoadingPackage = false;
+        });
+        _fetchRoute();
+      } else {
+        throw Exception('Package not found');
+      }
+    } catch (e) {
+      setState(() {
+        _isLoadingPackage = false;
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to load tracking details: $e')),
+        );
+      }
+    }
   }
 
   Future<void> _fetchRoute() async {
+    if (_currentOrderNullable == null) return;
     try {
       final url = 'https://router.project-osrm.org/route/v1/driving/${_currentOrder.pickup.longitude},${_currentOrder.pickup.latitude};${_currentOrder.dropoff.longitude},${_currentOrder.dropoff.latitude}?overview=full&geometries=geojson';
       
@@ -53,6 +103,7 @@ class _CustomerOrderDetailScreenState extends State<CustomerOrderDetailScreen> {
   }
 
   void _useFallbackRoute() {
+    if (_currentOrderNullable == null) return;
     setState(() {
       _routePoints = [_currentOrder.pickup, _currentOrder.dropoff];
       _isLoadingRoute = false;
@@ -61,6 +112,22 @@ class _CustomerOrderDetailScreenState extends State<CustomerOrderDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    if (_isLoadingPackage || _currentOrderNullable == null) {
+      return Scaffold(
+        backgroundColor: AppColors.surface,
+        appBar: AppBar(
+          title: const Text("Loading Delivery...", style: TextStyle(fontWeight: FontWeight.bold)),
+          backgroundColor: Colors.white,
+          foregroundColor: AppColors.text,
+          elevation: 0,
+          centerTitle: true,
+        ),
+        body: const Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+
     return Scaffold(
       backgroundColor: AppColors.surface,
       appBar: AppBar(
@@ -80,6 +147,8 @@ class _CustomerOrderDetailScreenState extends State<CustomerOrderDetailScreen> {
             const SizedBox(height: 16),
             _buildLocationCard(),
             const SizedBox(height: 16),
+            _buildQRCode(),
+            const SizedBox(height: 16),
             _buildPackageDetails(),
             if (_currentOrder.serviceType == DeliveryServiceType.express) ...[
               const SizedBox(height: 16),
@@ -87,7 +156,7 @@ class _CustomerOrderDetailScreenState extends State<CustomerOrderDetailScreen> {
             ],
             const SizedBox(height: 16),
             _buildBillingInfo(),
-            if (_currentOrder.status != OrderStatus.canceled && _currentOrder.status != OrderStatus.delivered) ...[
+            if (_currentOrder.status != OrderStatus.canceled && _currentOrder.status != OrderStatus.delivered && (widget.allowCancel ?? true)) ...[
               const SizedBox(height: 24),
               _buildCancelButton(),
             ],
@@ -285,14 +354,43 @@ class _CustomerOrderDetailScreenState extends State<CustomerOrderDetailScreen> {
             ...reasons.map((reason) => ListTile(
               title: Text(reason, style: const TextStyle(fontWeight: FontWeight.w500)),
               leading: const Icon(Icons.radio_button_off, size: 20, color: AppColors.muted),
-              onTap: () {
-                setState(() {
-                  _currentOrder.status = OrderStatus.canceled;
-                });
-                Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text("Order has been canceled")),
-                );
+              onTap: () async {
+                final token = await TokenStorage.getAccessToken();
+                final url = Uri.parse('$baseUrl/packages/${_currentOrder.id}/cancel');
+                
+                try {
+                  final response = await http.patch(
+                    url,
+                    headers: {
+                      'Content-Type': 'application/json',
+                      if (token != null) 'Authorization': 'Bearer $token',
+                    }
+                  );
+                  
+                  if (response.statusCode == 200) {
+                    setState(() {
+                      _currentOrder.status = OrderStatus.canceled;
+                    });
+                    if (mounted) {
+                      Navigator.pop(context);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text("Order has been canceled")),
+                      );
+                    }
+                  } else {
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text("Failed to cancel order: ${response.body}")),
+                      );
+                    }
+                  }
+                } catch (e) {
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text("Error cancelling order: $e")),
+                    );
+                  }
+                }
               },
             )),
             const SizedBox(height: 16),
@@ -312,6 +410,28 @@ class _CustomerOrderDetailScreenState extends State<CustomerOrderDetailScreen> {
             child: Align(alignment: Alignment.centerLeft, child: Container(width: 2, height: 20, color: AppColors.line)),
           ),
           _buildDetailRow(Icons.location_on, AppColors.danger, "Drop-off", _currentOrder.dropoffAddress),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildQRCode() {
+    if (_currentOrder.id.isEmpty) return const SizedBox.shrink();
+    return AppSurfaceCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          const Text("Tracking QR Code", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+          const SizedBox(height: 8),
+          const Text("Scan to view live status", style: TextStyle(color: AppColors.muted, fontSize: 12)),
+          const SizedBox(height: 16),
+          Center(
+            child: QrImageView(
+              data: _currentOrder.id,
+              version: QrVersions.auto,
+              size: 200.0,
+            ),
+          ),
         ],
       ),
     );
