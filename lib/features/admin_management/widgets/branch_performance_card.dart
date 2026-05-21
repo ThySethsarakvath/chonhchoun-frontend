@@ -1,14 +1,22 @@
 import 'package:flutter/material.dart';
-import 'package:fl_chart/fl_chart.dart';
+
 import '../models/branch_model.dart';
 
 class BranchPerformanceCard extends StatelessWidget {
+  static const String _defaultLogoPath = 'assets/images/branch_partner_logo.png';
+
   final Branch branch;
 
   const BranchPerformanceCard({super.key, required this.branch});
 
   @override
   Widget build(BuildContext context) {
+    final branchTitle = branch.branchNumber != null
+        ? 'Branch ${branch.branchNumber}'
+        : branch.name;
+    final statusLabel =
+        branch.status ?? (branch.isActive ? 'active' : 'inactive');
+
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -18,7 +26,7 @@ class BranchPerformanceCard extends StatelessWidget {
             color: Colors.black.withOpacity(0.04),
             blurRadius: 10,
             offset: const Offset(0, 4),
-          )
+          ),
         ],
       ),
       padding: const EdgeInsets.all(20),
@@ -26,117 +34,162 @@ class BranchPerformanceCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              _BranchLogo(logoUrl: branch.logoUrl),
+              const SizedBox(width: 14),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      branch.name,
+                      branchTitle,
                       style: const TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
                         color: Color(0xFF1E3A5F),
                       ),
                     ),
+                    const SizedBox(height: 4),
                     Text(
-                      "កូដសាខា: ${branch.code}",
-                      style: const TextStyle(color: Colors.grey, fontSize: 12),
+                      branch.ownerName ?? 'Branch owner not assigned',
+                      style: const TextStyle(
+                        fontSize: 13,
+                        color: Color(0xFF64748B),
+                      ),
                     ),
                   ],
                 ),
               ),
-              _StatusChip(isActive: branch.isActive),
+              _StatusChip(label: statusLabel),
             ],
           ),
-          const Divider(height: 30),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              _StatItem(label: "ការកម្ម៉ង់", value: "128", icon: Icons.shopping_basket_outlined, color: Colors.blue),
-              _StatItem(label: "ចំណូល", value: "\$1.2k", icon: Icons.payments_outlined, color: Colors.green),
-              _StatItem(label: "ភ្នាក់ងារ", value: "12", icon: Icons.motorcycle_outlined, color: Colors.orange),
-            ],
+          const SizedBox(height: 18),
+          _DetailLine(
+            label: 'Address',
+            value: branch.address ?? 'No address available',
           ),
-          const Spacer(),
-          const Text("និន្នាការប្រតិបត្តិការ", style: TextStyle(fontSize: 10, color: Colors.grey)),
-          const SizedBox(height: 8),
-          const SizedBox(height: 40, child: _SparklineChart()),
+          const SizedBox(height: 10),
+          _DetailLine(
+            label: 'Phone',
+            value: branch.phone ?? '-',
+          ),
+          const SizedBox(height: 10),
+          _DetailLine(
+            label: 'Map',
+            value: branch.lat != null && branch.lng != null
+                ? '${branch.lat}, ${branch.lng}'
+                : 'No coordinates',
+          ),
         ],
       ),
     );
   }
 }
 
-class _StatItem extends StatelessWidget {
-  final String label, value;
-  final IconData icon;
-  final Color color;
+class _BranchLogo extends StatelessWidget {
+  final String? logoUrl;
 
-  const _StatItem({required this.label, required this.value, required this.icon, required this.color});
+  const _BranchLogo({required this.logoUrl});
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Icon(icon, color: color, size: 20),
-        const SizedBox(height: 4),
-        Text(value, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-        Text(label, style: const TextStyle(fontSize: 10, color: Colors.grey)),
-      ],
+    final resolved = logoUrl == null ||
+            logoUrl!.isEmpty ||
+            logoUrl == 'assets/images/logo.png'
+        ? BranchPerformanceCard._defaultLogoPath
+        : logoUrl!;
+    final isNetwork =
+        resolved.startsWith('http://') || resolved.startsWith('https://');
+
+    final image = isNetwork
+        ? Image.network(
+            resolved,
+            fit: BoxFit.cover,
+            errorBuilder: (_, __, ___) => Image.asset(
+              BranchPerformanceCard._defaultLogoPath,
+              fit: BoxFit.cover,
+            ),
+          )
+        : Image.asset(
+            resolved,
+            fit: BoxFit.cover,
+            errorBuilder: (_, __, ___) => Image.asset(
+              BranchPerformanceCard._defaultLogoPath,
+              fit: BoxFit.cover,
+            ),
+          );
+
+    return Container(
+      width: 58,
+      height: 58,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        color: const Color(0xFFE0F2FE),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: image,
+    );
+  }
+}
+
+class _DetailLine extends StatelessWidget {
+  final String label;
+  final String value;
+
+  const _DetailLine({
+    required this.label,
+    required this.value,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return RichText(
+      text: TextSpan(
+        style: const TextStyle(
+          fontSize: 13,
+          color: Color(0xFF475569),
+        ),
+        children: [
+          TextSpan(
+            text: '$label: ',
+            style: const TextStyle(
+              fontWeight: FontWeight.w700,
+              color: Color(0xFF1E3A5F),
+            ),
+          ),
+          TextSpan(text: value),
+        ],
+      ),
+      maxLines: 2,
+      overflow: TextOverflow.ellipsis,
     );
   }
 }
 
 class _StatusChip extends StatelessWidget {
-  final bool isActive;
-  const _StatusChip({required this.isActive});
+  final String label;
+
+  const _StatusChip({required this.label});
 
   @override
   Widget build(BuildContext context) {
-    final color = isActive ? Colors.green : Colors.red;
+    final isActive = label == 'active';
+    final color = isActive ? Colors.green : Colors.orange;
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
         color: color.withOpacity(0.1),
         borderRadius: BorderRadius.circular(20),
       ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(Icons.circle, size: 8, color: color),
-          const SizedBox(width: 4),
-          Text(
-            isActive ? "សកម្ម" : "ផ្អាក",
-            style: TextStyle(color: color, fontSize: 12, fontWeight: FontWeight.bold),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _SparklineChart extends StatelessWidget {
-  const _SparklineChart();
-
-  @override
-  Widget build(BuildContext context) {
-    return LineChart(
-      LineChartData(
-        gridData: const FlGridData(show: false),
-        titlesData: const FlTitlesData(show: false),
-        borderData: FlBorderData(show: false),
-        lineBarsData: [
-          LineChartBarData(
-            spots: const [FlSpot(0, 1), FlSpot(1, 3), FlSpot(2, 2), FlSpot(3, 5), FlSpot(4, 3), FlSpot(5, 4)],
-            isCurved: true,
-            color: const Color(0xFF1E3A5F),
-            barWidth: 2,
-            dotData: const FlDotData(show: false),
-            belowBarData: BarAreaData(show: true, color: const Color(0xFF1E3A5F).withOpacity(0.05)),
-          ),
-        ],
+      child: Text(
+        label,
+        style: TextStyle(
+          color: color,
+          fontSize: 12,
+          fontWeight: FontWeight.bold,
+        ),
       ),
     );
   }

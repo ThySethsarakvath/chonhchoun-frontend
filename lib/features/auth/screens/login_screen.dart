@@ -55,11 +55,10 @@ class _LoginScreenState extends State<LoginScreen> {
       ));
 
       if (mounted) {
-        if (authResponse.user.role == 'admin') {
-          Navigator.pushReplacementNamed(context, AppRoutes.adminDashboard);
-        } else {
-          Navigator.pushReplacementNamed(context, AppRoutes.customer);
-        }
+        Navigator.pushReplacementNamed(
+          context,
+          AppRoutes.homeForRole(authResponse.user.role),
+        );
       }
     } on ApiException catch (e) {
       if (mounted) showErrorDialog(context, e.message);

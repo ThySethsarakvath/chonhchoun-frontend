@@ -13,10 +13,11 @@ import '../screens/setting_screen.dart';
 import '../screens/profile_screen.dart';
 // import '../screens/driver/driver_workspace_screen.dart';
 import '../features/home/pages/admin_main_screen.dart';
+import '../features/home/pages/branch_owner_main_screen.dart';
 abstract class AppRoutes {
   AppRoutes._();
 
-  static const String adminDashboard = '/admin-dashboard';
+  static const String adminDashboard = '/admin';
   static const String landing       = '/';
   static const String onboarding    = '/onboarding';
   static const String login         = '/login';
@@ -27,8 +28,21 @@ abstract class AppRoutes {
   static const String avatarUpload   = '/avatar-upload';
   static const String profile       = '/profile';
   static const String settings      = '/settings';
-  static const String customer      = '/customer';
+  static const String customer      = '/home';
+  static const String branchOwner   = '/branch-owner';
   static const String driver        = '/driver';
+
+  static String homeForRole(String role) {
+    switch (role) {
+      case 'admin':
+        return adminDashboard;
+      case 'branch_owner':
+        return branchOwner;
+      case 'customer':
+      default:
+        return customer;
+    }
+  }
 }
 
 enum AuthFlow { register, forgotPassword }
@@ -112,6 +126,8 @@ class AppRouter {
         return _fade(const HomeScreen());
       case AppRoutes.adminDashboard:
         return _fade(const AdminMainScreen());
+      case AppRoutes.branchOwner:
+        return _fade(const BranchOwnerMainScreen());
       case AppRoutes.driver:
         return _fade(_stub('Driver Workspace'));
       default:
