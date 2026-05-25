@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 
-import '../models/admin_activity_model.dart';
+import '../../../global/base_url.dart';
 import '../models/admin_user_model.dart';
 import '../models/branch_model.dart';
 import '../services/admin_user_service.dart';
@@ -17,14 +17,12 @@ class AdminOverviewScreen extends StatefulWidget {
 
 class _AdminOverviewScreenState extends State<AdminOverviewScreen> {
   static const String _defaultLogoPath = 'assets/images/bluelogo.png';
-  static const String _mapTilerKey = 'k0zSDACY9KkW3e9NetrQ';
 
   final _userService = AdminUserService();
   final _branchService = BranchService();
 
   List<AdminUser> _users = [];
   List<Branch> _branches = [];
-  List<AdminActivity> _activities = [];
   bool _loading = true;
 
   @override
@@ -35,22 +33,21 @@ class _AdminOverviewScreenState extends State<AdminOverviewScreen> {
 
   Future<void> _loadDashboard() async {
     setState(() => _loading = true);
+
     try {
       final results = await Future.wait([
         _userService.getUsers(),
         _branchService.getAllBranches(),
-        _userService.getActivityHistory(),
       ]);
 
-      if (mounted) {
-        setState(() {
-          _users = results[0] as List<AdminUser>;
-          _branches = results[1] as List<Branch>;
-          _activities = results[2] as List<AdminActivity>;
-          _loading = false;
-        });
-      }
+      if (!mounted) return;
+
+      setState(() {
+        _users = results[0] as List<AdminUser>;
+        _branches = results[1] as List<Branch>;
+      });
     } catch (_) {
+    } finally {
       if (mounted) {
         setState(() => _loading = false);
       }
@@ -67,10 +64,6 @@ class _AdminOverviewScreenState extends State<AdminOverviewScreen> {
     return logoUrl;
   }
 
-  int get _agentCount => _users
-      .where((user) => user.role == 'driver' || user.role == 'agency')
-      .length;
-
   int get _branchOwnerCount =>
       _users.where((user) => user.role == 'branch_owner').length;
 
@@ -86,7 +79,7 @@ class _AdminOverviewScreenState extends State<AdminOverviewScreen> {
       .where((branch) => branch.lat != null && branch.lng != null)
       .toList();
 
-  String _formatDateTime(DateTime? value) {
+  String _formatDate(DateTime? value) {
     if (value == null) return '-';
 
     final monthNames = <String>[
@@ -104,9 +97,20 @@ class _AdminOverviewScreenState extends State<AdminOverviewScreen> {
       'Dec',
     ];
 
-    final hour = value.hour.toString().padLeft(2, '0');
-    final minute = value.minute.toString().padLeft(2, '0');
-    return '${value.day.toString().padLeft(2, '0')} ${monthNames[value.month - 1]} ${value.year}, $hour:$minute';
+    return '${value.day.toString().padLeft(2, '0')} ${monthNames[value.month - 1]} ${value.year}';
+  }
+
+  String _buildTooltipMessage(Branch branch) {
+    final branchLabel = branch.branchNumber != null
+        ? 'Branch ${branch.branchNumber}'
+        : branch.name;
+    return [
+      branchLabel,
+      'Owner: ${branch.ownerName ?? 'Not assigned'}',
+      'Owner since: ${_formatDate(branch.branchOwnerSince)}',
+      'Address: ${branch.address ?? '-'}',
+      'Phone: ${branch.phone ?? branch.ownerPhone ?? '-'}',
+    ].join('\n');
   }
 
   void _showBranchDetails(Branch branch) {
@@ -122,7 +126,7 @@ class _AdminOverviewScreenState extends State<AdminOverviewScreen> {
             Row(
               children: [
                 _PopupLogo(
-                  logoPath: _defaultLogoPath,
+                  logoPath: _resolvedLogoPath(branch),
                   defaultLogoPath: _defaultLogoPath,
                   size: 56,
                 ),
@@ -154,13 +158,35 @@ class _AdminOverviewScreenState extends State<AdminOverviewScreen> {
             ),
             const SizedBox(height: 18),
             _OverviewDetailRow(
+              label: 'Owner',
+              value: branch.ownerName ?? 'Branch owner not assigned',
+            ),
+            _OverviewDetailRow(
               label: 'Branch',
               value: branch.branchNumber != null
                   ? 'Branch ${branch.branchNumber}'
                   : branch.name,
             ),
             _OverviewDetailRow(label: 'Address', value: branch.address ?? '-'),
-            _OverviewDetailRow(label: 'Phone', value: branch.phone ?? '-'),
+            _OverviewDetailRow(
+              label: 'Phone',
+              value: branch.phone ?? branch.ownerPhone ?? '-',
+            ),
+            _OverviewDetailRow(
+              label: 'Owner Since',
+              value: _formatDate(branch.branchOwnerSince),
+            ),
+            _OverviewDetailRow(
+              label: 'Coordinates',
+              value: branch.lat != null && branch.lng != null
+                  ? '${branch.lat}, ${branch.lng}'
+                  : '-',
+            ),
+            if (branch.description != null && branch.description!.trim().isNotEmpty)
+              _OverviewDetailRow(
+                label: 'Description',
+                value: branch.description!,
+              ),
             _OverviewDetailRow(
               label: 'Status',
               value: branch.status ?? (branch.isActive ? 'active' : 'inactive'),
@@ -192,7 +218,7 @@ class _AdminOverviewScreenState extends State<AdminOverviewScreen> {
                   ),
                   const SizedBox(height: 6),
                   const Text(
-                    'Track overall users, agents, and branches from one place.',
+                    'Track overall users, branch owners, and branches from one place.',
                     style: TextStyle(
                       fontSize: 14,
                       color: Color(0xFF64748B),
@@ -208,12 +234,6 @@ class _AdminOverviewScreenState extends State<AdminOverviewScreen> {
                         value: '${_users.length}',
                         icon: Icons.group_rounded,
                         color: const Color(0xFF1D4ED8),
-                      ),
-                      _OverviewStatCard(
-                        label: 'Total Agents',
-                        value: '$_agentCount',
-                        icon: Icons.support_agent_rounded,
-                        color: const Color(0xFF0F766E),
                       ),
                       _OverviewStatCard(
                         label: 'Total Branches',
@@ -243,8 +263,6 @@ class _AdminOverviewScreenState extends State<AdminOverviewScreen> {
                   ),
                   const SizedBox(height: 24),
                   _buildMapCard(height: 620),
-                  const SizedBox(height: 24),
-                  _buildActivityHistoryCard(),
                 ],
               ),
             ),
@@ -316,7 +334,7 @@ class _AdminOverviewScreenState extends State<AdminOverviewScreen> {
                 children: [
                   TileLayer(
                     urlTemplate:
-                        'https://api.maptiler.com/maps/streets-v2/256/{z}/{x}/{y}.png?key=$_mapTilerKey',
+                        'https://api.maptiler.com/maps/streets-v2/256/{z}/{x}/{y}.png?key=$mapTilerKey',
                     userAgentPackageName: 'com.chonhchoun.delivery',
                     tileDisplay: const TileDisplay.fadeIn(),
                   ),
@@ -325,16 +343,15 @@ class _AdminOverviewScreenState extends State<AdminOverviewScreen> {
                         .map(
                           (branch) => Marker(
                             point: LatLng(branch.lat!, branch.lng!),
-                            width: 58,
-                            height: 72,
+                            width: 74,
+                            height: 92,
                             child: GestureDetector(
                               onTap: () => _showBranchDetails(branch),
                               child: Tooltip(
                                 waitDuration: const Duration(milliseconds: 150),
-                                message:
-                                    '${branch.name}\n${branch.address ?? '-'}',
+                                message: _buildTooltipMessage(branch),
                                 child: _MapMarker(
-                                  logoPath: _defaultLogoPath,
+                                  logoPath: _resolvedLogoPath(branch),
                                   defaultLogoPath: _defaultLogoPath,
                                 ),
                               ),
@@ -352,120 +369,6 @@ class _AdminOverviewScreenState extends State<AdminOverviewScreen> {
     );
   }
 
-  Widget _buildActivityHistoryCard() {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.blueGrey.withOpacity(0.08),
-            blurRadius: 24,
-            offset: const Offset(0, 12),
-          ),
-        ],
-      ),
-      padding: const EdgeInsets.all(22),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Admin Activity History',
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.w700,
-              color: Color(0xFF1E3A5F),
-            ),
-          ),
-          const SizedBox(height: 6),
-          const Text(
-            'Track who upgraded or downgraded users, when branches were created, and when branches were closed.',
-            style: TextStyle(
-              fontSize: 13,
-              color: Color(0xFF64748B),
-            ),
-          ),
-          const SizedBox(height: 18),
-          if (_activities.isEmpty)
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: 12),
-              child: Text(
-                'No activity has been recorded yet.',
-                style: TextStyle(color: Color(0xFF64748B)),
-              ),
-            )
-          else
-            ..._activities.take(12).map(_buildActivityTile),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildActivityTile(AdminActivity activity) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF8FAFC),
-        borderRadius: BorderRadius.circular(18),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: 42,
-            height: 42,
-            decoration: BoxDecoration(
-              color: const Color(0xFFE0F2FE),
-              borderRadius: BorderRadius.circular(14),
-            ),
-            child: const Icon(
-              Icons.history_rounded,
-              color: Color(0xFF1E3A5F),
-            ),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  activity.details ?? _buildActivityFallback(activity),
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w600,
-                    color: Color(0xFF1E3A5F),
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  _formatDateTime(activity.createdAt),
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: Color(0xFF64748B),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  String _buildActivityFallback(AdminActivity activity) {
-    switch (activity.action) {
-      case 'branch_owner_upgraded':
-        return '${activity.actorName} upgraded ${activity.targetUserName ?? 'a user'}.';
-      case 'branch_owner_downgraded':
-        return '${activity.actorName} downgraded ${activity.targetUserName ?? 'a user'}.';
-      case 'branch_created':
-        return '${activity.branchName ?? 'A branch'} was created.';
-      case 'branch_closed':
-        return '${activity.branchName ?? 'A branch'} was closed.';
-      default:
-        return activity.action;
-    }
-  }
 }
 
 class _OverviewStatCard extends StatelessWidget {
@@ -543,52 +446,35 @@ class _MapMarker extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final hasNetworkLogo =
-        logoPath.startsWith('http://') || logoPath.startsWith('https://');
-
-    final imageWidget = hasNetworkLogo
-        ? Image.network(
-            logoPath,
-            fit: BoxFit.cover,
-            errorBuilder: (_, __, ___) => Image.asset(
-              defaultLogoPath,
-              fit: BoxFit.cover,
-            ),
-          )
-        : Image.asset(
-            logoPath,
-            fit: BoxFit.cover,
-            errorBuilder: (_, __, ___) => Image.asset(
-              defaultLogoPath,
-              fit: BoxFit.cover,
-            ),
-          );
-
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
         Container(
-          width: 48,
-          height: 48,
-          padding: const EdgeInsets.all(4),
+          width: 62,
+          height: 62,
+          padding: const EdgeInsets.all(3),
           decoration: BoxDecoration(
             color: Colors.white,
             shape: BoxShape.circle,
-            border: Border.all(color: const Color(0xFF1E3A5F), width: 2),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.18),
-                blurRadius: 12,
-                offset: const Offset(0, 6),
+                color: Colors.black.withOpacity(0.16),
+                blurRadius: 16,
+                offset: const Offset(0, 8),
               ),
             ],
           ),
-          child: ClipOval(child: imageWidget),
+          child: ClipOval(
+            child: _BranchLogoImage(
+              logoPath: logoPath,
+              defaultLogoPath: defaultLogoPath,
+            ),
+          ),
         ),
         const Icon(
           Icons.location_on_rounded,
           color: Color(0xFF1E3A5F),
-          size: 22,
+          size: 28,
         ),
       ],
     );
@@ -608,24 +494,6 @@ class _PopupLogo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final image = logoPath.startsWith('http://') || logoPath.startsWith('https://')
-        ? Image.network(
-            logoPath,
-            fit: BoxFit.cover,
-            errorBuilder: (_, __, ___) => Image.asset(
-              defaultLogoPath,
-              fit: BoxFit.cover,
-            ),
-          )
-        : Image.asset(
-            logoPath,
-            fit: BoxFit.cover,
-            errorBuilder: (_, __, ___) => Image.asset(
-              defaultLogoPath,
-              fit: BoxFit.cover,
-            ),
-          );
-
     return Container(
       width: size,
       height: size,
@@ -634,7 +502,41 @@ class _PopupLogo extends StatelessWidget {
         color: const Color(0xFFE0F2FE),
       ),
       clipBehavior: Clip.antiAlias,
-      child: image,
+      child: _BranchLogoImage(
+        logoPath: logoPath,
+        defaultLogoPath: defaultLogoPath,
+      ),
+    );
+  }
+}
+
+class _BranchLogoImage extends StatelessWidget {
+  final String logoPath;
+  final String defaultLogoPath;
+
+  const _BranchLogoImage({
+    required this.logoPath,
+    required this.defaultLogoPath,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final fallbackImage = Image.asset(defaultLogoPath, fit: BoxFit.cover);
+    final isNetworkImage =
+        logoPath.startsWith('http://') || logoPath.startsWith('https://');
+
+    if (isNetworkImage) {
+      return Image.network(
+        logoPath,
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) => fallbackImage,
+      );
+    }
+
+    return Image.asset(
+      logoPath,
+      fit: BoxFit.cover,
+      errorBuilder: (_, __, ___) => fallbackImage,
     );
   }
 }

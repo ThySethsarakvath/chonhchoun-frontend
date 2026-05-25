@@ -11,9 +11,10 @@ import '../features/auth/models/user_model.dart';
 import '../screens/avatar_upload_screen.dart';
 import '../screens/setting_screen.dart';
 import '../screens/profile_screen.dart';
+import '../features/driver_registration/screens/driver_application_screen.dart';
 // import '../screens/driver/driver_workspace_screen.dart';
 import '../features/home/pages/admin_main_screen.dart';
-import '../features/home/pages/branch_owner_main_screen.dart';
+import '../features/branch_owner/screens/branch_owner_main_screen.dart';
 abstract class AppRoutes {
   AppRoutes._();
 
@@ -31,6 +32,7 @@ abstract class AppRoutes {
   static const String customer      = '/home';
   static const String branchOwner   = '/branch-owner';
   static const String driver        = '/driver';
+  static const String driverApplication = '/driver-application';
 
   static String homeForRole(String role) {
     switch (role) {
@@ -38,6 +40,8 @@ abstract class AppRoutes {
         return adminDashboard;
       case 'branch_owner':
         return branchOwner;
+      case 'driver':
+        return driver;
       case 'customer':
       default:
         return customer;
@@ -130,6 +134,8 @@ class AppRouter {
         return _fade(const BranchOwnerMainScreen());
       case AppRoutes.driver:
         return _fade(_stub('Driver Workspace'));
+      case AppRoutes.driverApplication:
+        return _slide(const DriverApplicationScreen());
       default:
         return _fade(_stub('404 — Page not found'));
     }

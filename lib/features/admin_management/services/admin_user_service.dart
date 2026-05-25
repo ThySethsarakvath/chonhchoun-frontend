@@ -5,7 +5,6 @@ import 'package:http/http.dart' as http;
 import '../../../global/base_url.dart';
 import '../../auth/services/auth_service.dart';
 import '../../auth/tokens/token_storage.dart';
-import '../models/admin_activity_model.dart';
 import '../models/admin_user_model.dart';
 
 class UpgradeBranchOwnerRequest {
@@ -52,25 +51,6 @@ class AdminUserService {
     final body = json.decode(res.body) as Map<String, dynamic>;
     throw ApiException(
       body['message'] as String? ?? 'Failed to fetch users',
-      res.statusCode,
-    );
-  }
-
-  Future<List<AdminActivity>> getActivityHistory() async {
-    final res = await http.get(
-      Uri.parse('$baseUrl/admin/activity-history'),
-      headers: await _headers(),
-    );
-    if (res.statusCode == 200) {
-      final data = json.decode(res.body) as List<dynamic>;
-      return data
-          .map((item) => AdminActivity.fromJson(item as Map<String, dynamic>))
-          .toList();
-    }
-
-    final body = json.decode(res.body) as Map<String, dynamic>;
-    throw ApiException(
-      body['message'] as String? ?? 'Failed to fetch activity history',
       res.statusCode,
     );
   }

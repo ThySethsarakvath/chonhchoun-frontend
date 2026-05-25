@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 
-class AdminSidebar extends StatelessWidget {
+class BranchOwnerSidebar extends StatelessWidget {
   final int selectedIndex;
   final ValueChanged<int> onDestinationSelected;
 
-  const AdminSidebar({
+  const BranchOwnerSidebar({
     super.key,
     required this.selectedIndex,
     required this.onDestinationSelected,
@@ -14,7 +14,7 @@ class AdminSidebar extends StatelessWidget {
   Widget build(BuildContext context) {
     return NavigationRail(
       extended: true,
-      minExtendedWidth: 220,
+      minExtendedWidth: 230,
       backgroundColor: const Color(0xFF1E3A5F),
       unselectedIconTheme: const IconThemeData(color: Colors.white60),
       selectedIconTheme: const IconThemeData(color: Colors.white),
@@ -27,20 +27,41 @@ class AdminSidebar extends StatelessWidget {
       onDestinationSelected: onDestinationSelected,
       leading: Padding(
         padding: const EdgeInsets.symmetric(vertical: 20),
-        child: Image.asset('assets/images/logo.png', height: 40),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Image.asset('assets/images/logo.png', height: 40),
+            const SizedBox(height: 12),
+            const Text(
+              'Branch Owner',
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
+        ),
       ),
       destinations: const [
         NavigationRailDestination(
-          icon: Icon(Icons.analytics_outlined),
+          icon: Icon(Icons.dashboard_outlined),
           label: Text('Overview'),
         ),
         NavigationRailDestination(
-          icon: Icon(Icons.account_tree_outlined),
-          label: Text('Branches'),
+          icon: Icon(Icons.storefront_outlined),
+          label: Text('Branch Info'),
         ),
         NavigationRailDestination(
-          icon: Icon(Icons.manage_accounts_outlined),
-          label: Text('Users'),
+          icon: Icon(Icons.show_chart_outlined),
+          label: Text('Sales'),
+        ),
+        NavigationRailDestination(
+          icon: Icon(Icons.local_shipping_outlined),
+          label: Text('Driver Agents'),
+        ),
+        NavigationRailDestination(
+          icon: Icon(Icons.assignment_turned_in_outlined),
+          label: Text('Driver Requests'),
         ),
       ],
     );

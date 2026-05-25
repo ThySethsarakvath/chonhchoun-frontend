@@ -7,15 +7,24 @@ class BranchPerformanceCard extends StatelessWidget {
 
   final Branch branch;
 
-  const BranchPerformanceCard({super.key, required this.branch});
+  const BranchPerformanceCard({
+    super.key,
+    required this.branch,
+  });
+
+  String _formatStatus(String? value) {
+    final normalized = (value ?? (branch.isActive ? 'active' : 'inactive'))
+        .trim()
+        .toLowerCase();
+    return normalized[0].toUpperCase() + normalized.substring(1);
+  }
 
   @override
   Widget build(BuildContext context) {
     final branchTitle = branch.branchNumber != null
         ? 'Branch ${branch.branchNumber}'
         : branch.name;
-    final statusLabel =
-        branch.status ?? (branch.isActive ? 'active' : 'inactive');
+    final statusLabel = _formatStatus(branch.status);
 
     return Container(
       decoration: BoxDecoration(
@@ -52,7 +61,9 @@ class BranchPerformanceCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      branch.ownerName ?? 'Branch owner not assigned',
+                      branch.code?.isNotEmpty == true
+                          ? 'Code: ${branch.code}'
+                          : (branch.ownerName ?? 'Branch owner not assigned'),
                       style: const TextStyle(
                         fontSize: 13,
                         color: Color(0xFF64748B),
@@ -66,6 +77,11 @@ class BranchPerformanceCard extends StatelessWidget {
           ),
           const SizedBox(height: 18),
           _DetailLine(
+            label: 'Owner',
+            value: branch.ownerName ?? 'Branch owner not assigned',
+          ),
+          const SizedBox(height: 10),
+          _DetailLine(
             label: 'Address',
             value: branch.address ?? 'No address available',
           ),
@@ -76,10 +92,10 @@ class BranchPerformanceCard extends StatelessWidget {
           ),
           const SizedBox(height: 10),
           _DetailLine(
-            label: 'Map',
-            value: branch.lat != null && branch.lng != null
-                ? '${branch.lat}, ${branch.lng}'
-                : 'No coordinates',
+            label: 'Description',
+            value: branch.description?.trim().isNotEmpty == true
+                ? branch.description!.trim()
+                : 'No description available',
           ),
         ],
       ),
@@ -174,7 +190,7 @@ class _StatusChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isActive = label == 'active';
+    final isActive = label.toLowerCase() == 'active';
     final color = isActive ? Colors.green : Colors.orange;
 
     return Container(

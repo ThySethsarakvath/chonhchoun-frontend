@@ -8,6 +8,7 @@ import '../models/branch_model.dart';
 class BranchService {
   String get _adminUrl => '$baseUrl/admin/branches';
   String get _mapUrl => '$baseUrl/branches/map';
+  String get _myBranchUrl => '$baseUrl/branches/me';
 
   Future<Map<String, String>> _getHeaders() async {
     final token = await TokenStorage.getAccessToken();
@@ -39,5 +40,59 @@ class BranchService {
     }
 
     throw ApiException('Failed to fetch branch map data', res.statusCode);
+  }
+
+  Future<Branch> getMyBranch() async {
+    final res = await http.get(
+      Uri.parse(_myBranchUrl),
+      headers: await _getHeaders(),
+    );
+
+    final body = json.decode(res.body) as Map<String, dynamic>;
+    if (res.statusCode == 200) {
+      return Branch.fromJson(body);
+    }
+
+    throw ApiException(
+      body['message'] as String? ?? 'Failed to fetch your branch information',
+      res.statusCode,
+    );
+  }
+
+  Future<Branch> updateBranch({
+    required String branchId,
+    required String name,
+    required String address,
+    required String phone,
+    String? description,
+    required double latitude,
+    required double longitude,
+  }) async {
+    final res = await http.patch(
+      Uri.parse('$_adminUrl/$branchId'),
+      headers: await _getHeaders(),
+      body: json.encode({
+        'name': name,
+        'address': address,
+        'phone': phone,
+        'description': description,
+        'latitude': latitude,
+        'longitude': longitude,
+      }),
+    );
+
+    final body = json.decode(res.body) as Map<String, dynamic>;
+    if (res.statusCode == 200) {
+      return Branch.fromJson(body);
+    }
+
+    final message = body['message'];
+
+    throw ApiException(
+      message is List
+          ? message.join(', ')
+          : message as String? ?? 'Failed to update branch',
+      res.statusCode,
+    );
   }
 }

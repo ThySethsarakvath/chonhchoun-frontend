@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../admin_management/screens/admin_overview_screen.dart';
-import '../../admin_management/screens/admin_agent_screen.dart';
-import '../../admin_management/screens/admin_branch_screen.dart';
+import '../../admin_management/screens/branch_screen.dart';
 import '../../admin_management/screens/admin_user_screen.dart';
 import '../../auth/services/auth_service.dart';
 import '../../auth/tokens/token_storage.dart';
@@ -76,8 +75,7 @@ class _AdminMainScreenState extends State<AdminMainScreen> {
   Widget build(BuildContext context) {
     final adminViews = <Widget>[
       const AdminOverviewScreen(),
-      const AdminBranchScreen(),
-      const AdminAgentScreen(),
+      const BranchScreen(),
       const AdminUserScreen(),
     ];
 

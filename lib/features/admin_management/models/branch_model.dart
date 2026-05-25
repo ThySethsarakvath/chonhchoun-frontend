@@ -1,5 +1,6 @@
 class Branch {
   final String id;
+  final String? ownerId;
   final String name;
   final int? branchNumber;
   final String? code;
@@ -13,10 +14,13 @@ class Branch {
   final String? logoUrl;
   final bool isVisibleOnMap;
   final String? ownerName;
+  final String? ownerPhone;
+  final DateTime? branchOwnerSince;
 
 
   Branch({
     required this.id,
+    this.ownerId,
     required this.name,
     this.branchNumber,
     this.code,
@@ -30,6 +34,8 @@ class Branch {
     this.logoUrl,
     required this.isVisibleOnMap,
     this.ownerName,
+    this.ownerPhone,
+    this.branchOwnerSince,
   });
 
   factory Branch.fromJson(Map<String, dynamic> json) {
@@ -39,6 +45,7 @@ class Branch {
     final owner = json['ownerId'];
     return Branch(
       id: json['_id'] as String,
+      ownerId: owner is Map<String, dynamic> ? owner['_id'] as String? : null,
       name: json['name'] as String? ?? '',
       branchNumber: json['branchNumber'] as int?,
       code: json['code'] as String?,
@@ -60,6 +67,10 @@ class Branch {
       logoUrl: json['logoUrl'] as String?,
       isVisibleOnMap: json['isVisibleOnMap'] as bool? ?? true,
       ownerName: owner is Map<String, dynamic> ? owner['name'] as String? : null,
+      ownerPhone: owner is Map<String, dynamic> ? owner['phone'] as String? : null,
+      branchOwnerSince: json['branchOwnerSince'] is String
+          ? DateTime.tryParse(json['branchOwnerSince'] as String)
+          : null,
     );
   }
 
