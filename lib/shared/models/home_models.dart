@@ -156,54 +156,7 @@ class HomeData {
     ),
   ];
 
-  static const List<DeliveryItem> recentDeliveries = [
-    DeliveryItem(
-      id: '1',
-      itemName: 'Package',
-      trackingNumber: '#HWDSF776567DS',
-      status: DeliveryStatus.inTransit,
-      date: '24 មករា',
-      origin: 'ភ្នំពេញ, ទឹកថ្លា',
-      destination: 'បាត់ដំបង, វត្តលៀប',
-      checkpoints: [
-        TrackingPoint(label: 'ទទួល', completed: true),
-        TrackingPoint(label: 'ចាកចេញ', completed: true),
-        TrackingPoint(label: 'កំពុង', completed: true),
-        TrackingPoint(label: 'ទៅដល់', completed: false),
-      ],
-    ),
-  ];
+  static const List<DeliveryItem> recentDeliveries = [];
 
-  static const List<DeliveryItem> deliveryHistory = [
-    DeliveryItem(
-      id: '2',
-      itemName: 'Package',
-      trackingNumber: '#HWDSF776567DS',
-      status: DeliveryStatus.delivered,
-      date: '24 ធ្នូ',
-      origin: 'ភ្នំពេញ, ទឹកថ្លា',
-      destination: 'សៀមរាប, ក្រុង',
-      checkpoints: [],
-    ),
-    DeliveryItem(
-      id: '3',
-      itemName: 'Package',
-      trackingNumber: '#ABCDE123456FG',
-      status: DeliveryStatus.delivered,
-      date: '18 ធ្នូ',
-      origin: 'កំពត, ក្រុង',
-      destination: 'ភ្នំពេញ, ខណ្ឌចំការមន',
-      checkpoints: [],
-    ),
-    DeliveryItem(
-      id: '4',
-      itemName: 'Package',
-      trackingNumber: '#ZXQRT987654KL',
-      status: DeliveryStatus.delivered,
-      date: '5 ធ្នូ',
-      origin: 'បាត់ដំបង, ក្រុង',
-      destination: 'ភ្នំពេញ, ខណ្ឌដូនពេញ',
-      checkpoints: [],
-    ),
-  ];
+  static const List<DeliveryItem> deliveryHistory = [];
 }

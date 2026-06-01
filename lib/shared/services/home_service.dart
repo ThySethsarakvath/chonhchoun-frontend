@@ -24,9 +24,9 @@ class HomeService {
         final list = json.decode(res.body) as List<dynamic>;
         return list.take(5).map((e) => DeliveryItem.fromJson(e)).toList();
       }
-      return HomeData.recentDeliveries; // Fallback
+      return [];
     } catch (_) {
-      return HomeData.recentDeliveries;
+      return [];
     }
   }
 
@@ -40,9 +40,9 @@ class HomeService {
         final list = json.decode(res.body) as List<dynamic>;
         return list.map((e) => DeliveryItem.fromJson(e)).toList();
       }
-      return HomeData.deliveryHistory; // Fallback
+      return [];
     } catch (_) {
-      return HomeData.deliveryHistory;
+      return [];
     }
   }
 
