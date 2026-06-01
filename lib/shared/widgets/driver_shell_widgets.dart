@@ -143,22 +143,25 @@ class DriverStatusChip extends StatelessWidget {
   const DriverStatusChip({
     super.key,
     required this.label,
+    this.color,
   });
 
   final String label;
+  final Color? color;
 
   @override
   Widget build(BuildContext context) {
+    final chipColor = color ?? DriverColors.success;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
       decoration: BoxDecoration(
-        color: DriverColors.success.withValues(alpha: 0.14),
+        color: chipColor.withValues(alpha: 0.14),
         borderRadius: BorderRadius.circular(999),
       ),
       child: Text(
         label,
-        style: const TextStyle(
-          color: DriverColors.success,
+        style: TextStyle(
+          color: chipColor,
           fontWeight: FontWeight.w700,
         ),
       ),

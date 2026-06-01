@@ -59,7 +59,7 @@ class DeliveryItem {
 
   factory DeliveryItem.fromJson(Map<String, dynamic> json) {
     final status = _parseStatus(json['status']);
-    final name = json['itemName'] ?? 'Package';
+    final name = (json['package'] ?? {})['name'] ?? 'Package';
     final id = json['_id'] ?? json['id'] ?? '';
     final shortId = id.toString().length > 8 ? id.toString().substring(0, 8) : id.toString();
     
@@ -83,12 +83,12 @@ class DeliveryItem {
       trackingNumber: "$name - #${shortId.toUpperCase()}",
       status: status,
       date: json['date'] ?? (json['createdAt'] != null ? _formatDate(json['createdAt']) : 'Just now'),
-      origin: json['origin'] ?? json['pickupAddress'] ?? '',
-      destination: json['destination'] ?? json['dropoffAddress'] ?? '',
+      origin: (json['pickup'] ?? {})['address'] ?? '',
+      destination: (json['dropoff'] ?? {})['address'] ?? '',
       checkpoints: checkpoints,
-      dropoffContactName: json['dropoffContactName'],
-      dropoffContactNumber: json['dropoffContactNumber'],
-      noteToDriver: json['noteToDriver'],
+      dropoffContactName: (json['dropoff'] ?? {})['contactName'],
+      dropoffContactNumber: (json['dropoff'] ?? {})['phone'],
+      noteToDriver: (json['package'] ?? {})['note'],
     );
   }
 

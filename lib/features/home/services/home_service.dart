@@ -1,4 +1,4 @@
-import '../models/home_models.dart';
+import '../../../shared/models/home_models.dart';
 import '../../../global/base_url.dart';
 
 /// All home-screen API calls.

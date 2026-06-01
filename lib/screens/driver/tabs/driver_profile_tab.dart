@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 
-import '../data/driver_demo_data.dart';
-import '../models/driver_request.dart';
-import '../widgets/driver_button_widgets.dart';
-import '../widgets/driver_colors.dart';
-import '../widgets/driver_map_widgets.dart';
-import '../widgets/driver_request_widgets.dart';
-import '../widgets/driver_shell_widgets.dart';
+import '../../../shared/models/driver_request.dart';
+import '../../../shared/widgets/driver_button_widgets.dart';
+import '../../../shared/widgets/driver_colors.dart';
+import '../../../shared/widgets/driver_map_widgets.dart';
+import '../../../shared/widgets/driver_request_widgets.dart';
+import '../../../shared/widgets/driver_shell_widgets.dart';
+import '../driver_provider.dart';
 
 class DriverProfileTab extends StatelessWidget {
   const DriverProfileTab({
@@ -20,13 +20,15 @@ class DriverProfileTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final provider = DriverScope.of(context);
+    
     return ListView(
       padding: EdgeInsets.zero,
       children: [
         DriverHeroSection(
           subtitle: 'Account and readiness',
-          name: driverDisplayName,
-          content: const DriverStatusSummary(),
+          name: 'Driver',
+          content: DriverBalanceCard(amount: provider.balance.toStringAsFixed(2)),
         ),
         Transform.translate(
           offset: const Offset(0, -30),
@@ -62,21 +64,21 @@ class DriverProfileTab extends StatelessWidget {
                             ),
                           ),
                           const SizedBox(width: 16),
-                          const Expanded(
+                          Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  'Motorbike Courier',
-                                  style: TextStyle(
+                                  provider.vehicleType,
+                                  style: const TextStyle(
                                     color: DriverColors.text,
                                     fontWeight: FontWeight.w700,
                                     fontSize: 17,
                                   ),
                                 ),
-                                SizedBox(height: 4),
-                                Text(
-                                  'Fast urban delivery with compact parcels',
+                                const SizedBox(height: 4),
+                                const Text(
+                                  'Ready for deliveries',
                                   style: TextStyle(color: DriverColors.muted),
                                 ),
                               ],
@@ -152,13 +154,16 @@ class DriverProfileTab extends StatelessWidget {
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              'Next package: ${request.title}',
+                              provider.isOnline ? 'Online and ready' : 'Currently Offline',
                               style: const TextStyle(color: DriverColors.muted),
                             ),
                           ],
                         ),
                       ),
-                      const DriverStatusChip(label: 'Online'),
+                      DriverStatusChip(
+                        label: provider.isOnline ? 'Online' : 'Offline',
+                        color: provider.isOnline ? DriverColors.green : DriverColors.muted,
+                      ),
                     ],
                   ),
                 ),

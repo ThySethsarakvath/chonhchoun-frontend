@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 
-import '../models/driver_request.dart';
-import '../widgets/driver_button_widgets.dart';
-import '../widgets/driver_colors.dart';
-import '../widgets/driver_map_widgets.dart';
-import '../widgets/driver_shell_widgets.dart';
+import '../../../shared/models/driver_request.dart';
+import '../../../shared/widgets/driver_button_widgets.dart';
+import '../../../shared/widgets/driver_colors.dart';
+import '../../../shared/widgets/driver_map_widgets.dart';
+import '../../../shared/widgets/driver_shell_widgets.dart';
 
 class DriverMapDetailScreen extends StatelessWidget {
   const DriverMapDetailScreen({

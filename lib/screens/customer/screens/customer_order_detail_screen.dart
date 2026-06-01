@@ -487,7 +487,7 @@ class _CustomerOrderDetailScreenState extends State<CustomerOrderDetailScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               const Text("Total Amount", style: TextStyle(fontWeight: FontWeight.bold)),
-              Text("${_currentOrder.price.toInt()}៛", style: const TextStyle(fontWeight: FontWeight.w900, color: AppColors.blue, fontSize: 20)),
+              Text("\$${_currentOrder.price.toStringAsFixed(2)}", style: const TextStyle(fontWeight: FontWeight.w900, color: AppColors.blue, fontSize: 20)),
             ],
           ),
         ],

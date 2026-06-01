@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 
-import '../data/driver_demo_data.dart';
-import '../models/driver_request.dart';
-import '../widgets/driver_button_widgets.dart';
-import '../widgets/driver_colors.dart';
-import '../widgets/driver_request_widgets.dart';
-import '../widgets/driver_shell_widgets.dart';
+import '../../../shared/data/driver_demo_data.dart';
+import '../../../shared/models/driver_request.dart';
+import '../../../shared/widgets/driver_button_widgets.dart';
+import '../../../shared/widgets/driver_colors.dart';
+import '../../../shared/widgets/driver_request_widgets.dart';
+import '../../../shared/widgets/driver_shell_widgets.dart';
+import '../driver_provider.dart';
 
 class DriverDeliveriesTab extends StatelessWidget {
   const DriverDeliveriesTab({
@@ -21,13 +22,16 @@ class DriverDeliveriesTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final provider = DriverScope.of(context);
+    final currentReq = provider.currentDelivery;
+
     return ListView(
       padding: EdgeInsets.zero,
       children: [
         DriverHeroSection(
           subtitle: 'Weekly Overview',
-          name: driverDisplayName,
-          content: const DriverBalanceCard(amount: driverAvailableBalance),
+          name: 'Driver',
+          content: DriverBalanceCard(amount: provider.balance.toStringAsFixed(2)),
         ),
         Transform.translate(
           offset: const Offset(0, -30),
@@ -99,11 +103,38 @@ class DriverDeliveriesTab extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 14),
-                      DriverHomeRequestPreview(
-                        request: request,
-                        onTap: onOpenDetail,
-                        showButtons: false,
-                      ),
+                      if (currentReq == null)
+                        const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 20),
+                          child: Center(
+                            child: Text(
+                              'No active delivery right now.',
+                              style: TextStyle(color: DriverColors.muted),
+                            ),
+                          ),
+                        )
+                      else ...[
+                        DriverHomeRequestPreview(
+                          request: currentReq,
+                          onTap: onOpenDetail,
+                          showButtons: false,
+                        ),
+                        const SizedBox(height: 16),
+                        SizedBox(
+                          width: double.infinity,
+                          child: provider.isLoading 
+                              ? const Center(child: CircularProgressIndicator())
+                              : DriverPrimaryButton(
+                                  label: _getNextStatusLabel(currentReq.status ?? 'ACCEPTED'),
+                                  onPressed: () {
+                                    final next = _getNextStatus(currentReq!.status ?? 'ACCEPTED');
+                                    if (next != null) {
+                                      provider.updateDeliveryStatus(next);
+                                    }
+                                  },
+                                ),
+                        ),
+                      ],
                       const SizedBox(height: 16),
                       Align(
                         alignment: Alignment.centerRight,
@@ -127,5 +158,23 @@ class DriverDeliveriesTab extends StatelessWidget {
         ),
       ],
     );
+  }
+
+  String _getNextStatusLabel(String current) {
+    switch (current) {
+      case 'ACCEPTED': return 'Mark as Picked Up';
+      case 'PICKED_UP': return 'Mark as In Transit';
+      case 'IN_TRANSIT': return 'Mark as Delivered';
+      default: return 'Finished';
+    }
+  }
+
+  String? _getNextStatus(String current) {
+    switch (current) {
+      case 'ACCEPTED': return 'PICKED_UP';
+      case 'PICKED_UP': return 'IN_TRANSIT';
+      case 'IN_TRANSIT': return 'DELIVERED';
+      default: return null;
+    }
   }
 }

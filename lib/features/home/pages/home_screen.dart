@@ -281,7 +281,7 @@ class _HomeScreenState extends State<HomeScreen> {
         _service.fetchBanners(),
         _service.fetchRecentDeliveries(accessToken),
         _service.fetchDeliveryHistory(accessToken),
-        _userService.getMe(accessToken: accessToken).catchError((_) => null),
+        _userService.getMe(accessToken: accessToken).then<UserProfile?>((v) => v).catchError((_) => null),
       ]);
 
       if (mounted) {

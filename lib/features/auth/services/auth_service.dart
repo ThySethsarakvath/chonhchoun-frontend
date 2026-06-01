@@ -56,6 +56,17 @@ class AuthService {
 
   // ── Registration ─────────────────────────────────────────────────────────
 
+  /// POST /auth/driver-register → { accessToken, refreshToken } (Bypass OTP)
+  Future<AuthTokens> driverRegister(Map<String, dynamic> payload) async {
+    final data = await _post('/auth/driver-register', payload);
+    final tokens = AuthTokens.fromJson(data);
+    await TokenStorage.saveTokens(
+      accessToken: tokens.accessToken,
+      refreshToken: tokens.refreshToken,
+    );
+    return tokens;
+  }
+
   /// POST /auth/register/initiate → sends OTP, returns { message }
   Future<void> initiateRegister(InitiateRegisterRequest req) async {
     await _post('/auth/register/initiate', req.toJson());

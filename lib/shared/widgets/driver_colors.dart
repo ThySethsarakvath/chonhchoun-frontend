@@ -9,5 +9,7 @@ class DriverColors {
   static const muted = Color(0xFF7A8CA3);
   static const line = Color(0xFFD8E2EC);
   static const success = Color(0xFF31B67A);
+  static const green = Color(0xFF31B67A);
   static const danger = Color(0xFFF0626A);
+  static const background = Color(0xFFF4F7FB);
 }
