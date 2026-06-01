@@ -68,12 +68,31 @@ class _AvatarUploadScreenState extends State<AvatarUploadScreen> {
 
   void _skip() => _goHome();
 
-  void _goHome() {
-    Navigator.pushNamedAndRemoveUntil(
-      context,
-      AppRoutes.customer,
-      (_) => false,
-    );
+  Future<void> _goHome() async {
+    setState(() => _uploading = true);
+    try {
+      final profile = await _userService.getMe(accessToken: widget.args.accessToken);
+      if (mounted) {
+        if (profile.role.toLowerCase() == 'driver') {
+          Navigator.pushNamedAndRemoveUntil(
+            context,
+            AppRoutes.driver,
+            (_) => false,
+          );
+          return;
+        }
+      }
+    } catch (_) {} finally {
+      if (mounted) setState(() => _uploading = false);
+    }
+
+    if (mounted) {
+      Navigator.pushNamedAndRemoveUntil(
+        context,
+        AppRoutes.customer,
+        (_) => false,
+      );
+    }
   }
 
   @override

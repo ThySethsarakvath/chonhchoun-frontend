@@ -5,6 +5,7 @@ import '../models/auth_models.dart';
 import '../widgets/auth_scaffold.dart';
 import '../widgets/auth_header.dart';
 import '../widgets/auth_widgets.dart';
+import '../services/user_service.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -49,12 +50,19 @@ class _LoginScreenState extends State<LoginScreen> {
 
     setState(() => _loading = true);
     try {
-      await _service.login(LoginRequest(
+      final tokens = await _service.login(LoginRequest(
         email: _emailCtrl.text.trim(),
         password: _passwordCtrl.text,
       ));
+      
+      final profile = await UserService().getMe(accessToken: tokens.accessToken);
+      
       if (mounted) {
-        Navigator.pushReplacementNamed(context, AppRoutes.customer);
+        if (profile.role.toLowerCase() == 'driver') {
+          Navigator.pushReplacementNamed(context, AppRoutes.driver);
+        } else {
+          Navigator.pushReplacementNamed(context, AppRoutes.customer);
+        }
       }
     } on ApiException catch (e) {
       if (mounted) showErrorDialog(context, e.message);
