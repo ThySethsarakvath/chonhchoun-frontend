@@ -11,6 +11,7 @@ import '../../admin_management/services/branch_service.dart';
 import '../../auth/widgets/auth_header.dart';
 import '../../auth/widgets/auth_scaffold.dart';
 import '../../auth/widgets/auth_widgets.dart';
+import '../models/vehicle_type.dart';
 import '../services/driver_application_service.dart';
 import '../widgets/driver_application_widgets.dart';
 
@@ -33,6 +34,7 @@ class _DriverApplicationScreenState extends State<DriverApplicationScreen> {
 
   List<Branch> _branches = const [];
   String? _selectedBranchId;
+  String _vehicleChoice = driverOwnMotorcycleType;
   File? _avatarFile;
   File? _cvFile;
   File? _nationalIdFile;
@@ -44,6 +46,9 @@ class _DriverApplicationScreenState extends State<DriverApplicationScreen> {
 
   static final _emailReg = RegExp(r'^[\w\-.]+@([\w\-]+\.)+[\w]{2,}$');
   static final _phoneReg = RegExp(r'^(\+?855|0)[0-9]{8,9}$');
+
+  bool get _requiresDrivingLicense =>
+      _vehicleChoice != driverOwnMotorcycleType;
 
   @override
   void initState() {
@@ -113,25 +118,29 @@ class _DriverApplicationScreenState extends State<DriverApplicationScreen> {
   }
 
   String? _validate() {
-    if (_nameCtrl.text.trim().length < 2) return 'សូមបញ្ចូលឈ្មោះពេញឱ្យត្រឹមត្រូវ។';
-    if (!_emailReg.hasMatch(_emailCtrl.text.trim())) return 'សូមបញ្ចូលអ៊ីមែលឱ្យត្រឹមត្រូវ។';
+    if (_nameCtrl.text.trim().length < 2) {
+      return 'Please enter your full name.';
+    }
+    if (!_emailReg.hasMatch(_emailCtrl.text.trim())) {
+      return 'Please enter a valid email address.';
+    }
     if (!_phoneReg.hasMatch(_phoneCtrl.text.trim())) {
-      return 'សូមបញ្ចូលលេខទូរស័ព្ទខ្មែរឱ្យត្រឹមត្រូវ។';
+      return 'Please enter a valid Cambodian phone number.';
     }
     if (_passwordCtrl.text.length < 6) {
-      return 'ពាក្យសម្ងាត់ត្រូវមានយ៉ាងតិច ៦ តួអក្សរ។';
+      return 'Password must be at least 6 characters.';
     }
     if (_passwordCtrl.text != _confirmPasswordCtrl.text) {
-      return 'ពាក្យសម្ងាត់មិនដូចគ្នា។';
+      return 'Passwords do not match.';
     }
     if (_selectedBranchId == null || _selectedBranchId!.isEmpty) {
-      return 'សូមជ្រើសរើសសាខា។';
+      return 'Please select a branch.';
     }
-    if (_avatarFile == null ||
-        _cvFile == null ||
-        _nationalIdFile == null ||
-        _drivingLicenseFile == null) {
-      return 'សូមបង្ហោះរូបភាពប្រវត្តិរូប CV អត្តសញ្ញាណប័ណ្ណ និងប័ណ្ណបើកបរ។';
+    if (_avatarFile == null || _cvFile == null || _nationalIdFile == null) {
+      return 'Please upload your profile photo, CV, and national ID.';
+    }
+    if (_requiresDrivingLicense && _drivingLicenseFile == null) {
+      return 'Please upload your driving license for branch truck applications.';
     }
     return null;
   }
@@ -152,15 +161,17 @@ class _DriverApplicationScreenState extends State<DriverApplicationScreen> {
         password: _passwordCtrl.text,
         confirmPassword: _confirmPasswordCtrl.text,
         branchId: _selectedBranchId!,
+        vehicleType:
+            _vehicleChoice == driverOwnMotorcycleType ? driverOwnMotorcycleType : null,
         avatarFile: _avatarFile!,
         cvFile: _cvFile!,
         nationalIdFile: _nationalIdFile!,
-        drivingLicenseFile: _drivingLicenseFile!,
+        drivingLicenseFile: _drivingLicenseFile,
       );
       if (!mounted) return;
       showSuccessSnack(
         context,
-        'ពាក្យស្នើសុំអ្នកបើកបររបស់អ្នកត្រូវបានផ្ញើសម្រាប់ការពិនិត្យរបស់ម្ចាស់សាខារួចហើយ។',
+        'Driver application submitted successfully.',
       );
       Navigator.pushNamedAndRemoveUntil(
         context,
@@ -193,21 +204,21 @@ class _DriverApplicationScreenState extends State<DriverApplicationScreen> {
           ),
           const SizedBox(height: 20),
           AuthTextField(
-            label: 'ឈ្មោះពេញ',
-            placeholder: 'សូមបញ្ចូលឈ្មោះពេញ',
+            label: 'Full name',
+            placeholder: 'Enter your full name',
             controller: _nameCtrl,
           ),
           const SizedBox(height: 16),
           AuthTextField(
-            label: 'អ៊ីមែល',
-            placeholder: 'សូមបញ្ចូលអ៊ីមែល',
+            label: 'Email',
+            placeholder: 'Enter your email',
             controller: _emailCtrl,
             keyboardType: TextInputType.emailAddress,
           ),
           const SizedBox(height: 16),
           AuthTextField(
-            label: 'លេខទូរស័ព្ទ',
-            placeholder: 'សូមបញ្ចូលលេខទូរស័ព្ទ',
+            label: 'Phone number',
+            placeholder: 'Enter your phone number',
             controller: _phoneCtrl,
             keyboardType: TextInputType.phone,
             inputFormatters: [
@@ -216,8 +227,8 @@ class _DriverApplicationScreenState extends State<DriverApplicationScreen> {
           ),
           const SizedBox(height: 16),
           AuthTextField(
-            label: 'ពាក្យសម្ងាត់',
-            placeholder: 'បង្កើតពាក្យសម្ងាត់',
+            label: 'Password',
+            placeholder: 'Create a password',
             controller: _passwordCtrl,
             obscure: _obscurePassword,
             showToggle: true,
@@ -227,8 +238,8 @@ class _DriverApplicationScreenState extends State<DriverApplicationScreen> {
           ),
           const SizedBox(height: 16),
           AuthTextField(
-            label: 'បញ្ជាក់ពាក្យសម្ងាត់',
-            placeholder: 'សូមបញ្ជាក់ពាក្យសម្ងាត់',
+            label: 'Confirm password',
+            placeholder: 'Confirm your password',
             controller: _confirmPasswordCtrl,
             obscure: _obscureConfirmPassword,
             showToggle: true,
@@ -245,9 +256,19 @@ class _DriverApplicationScreenState extends State<DriverApplicationScreen> {
             loading: _loadingBranches,
             onChanged: (value) => setState(() => _selectedBranchId = value),
           ),
+          const SizedBox(height: 16),
+          DriverApplicationVehicleChoice(
+            selectedValue: _vehicleChoice,
+            onChanged: (value) => setState(() {
+              _vehicleChoice = value;
+              if (!_requiresDrivingLicense) {
+                _drivingLicenseFile = null;
+              }
+            }),
+          ),
           const SizedBox(height: 20),
           DriverDocumentPickerTile(
-            label: 'បង្ហោះ CV',
+            label: 'Upload CV',
             fileName: _fileName(_cvFile),
             onTap: () => _pickDocument(
               allowedExtensions: const ['pdf', 'jpg', 'jpeg', 'png', 'webp'],
@@ -256,32 +277,35 @@ class _DriverApplicationScreenState extends State<DriverApplicationScreen> {
           ),
           const SizedBox(height: 12),
           DriverDocumentPickerTile(
-            label: 'បង្ហោះអត្តសញ្ញាណប័ណ្ណ',
+            label: 'Upload national ID',
             fileName: _fileName(_nationalIdFile),
             onTap: () => _pickDocument(
               allowedExtensions: const ['pdf', 'jpg', 'jpeg', 'png', 'webp'],
               onSelected: (file) => _nationalIdFile = file,
             ),
           ),
-          const SizedBox(height: 12),
-          DriverDocumentPickerTile(
-            label: 'បង្ហោះប័ណ្ណបើកបរ',
-            fileName: _fileName(_drivingLicenseFile),
-            onTap: () => _pickDocument(
-              allowedExtensions: const ['pdf', 'jpg', 'jpeg', 'png', 'webp'],
-              onSelected: (file) => _drivingLicenseFile = file,
+          if (_requiresDrivingLicense) ...[
+            const SizedBox(height: 12),
+            DriverDocumentPickerTile(
+              label: 'Upload driving license',
+              fileName: _fileName(_drivingLicenseFile),
+              helperText: 'Required only for branch truck drivers.',
+              onTap: () => _pickDocument(
+                allowedExtensions: const ['pdf', 'jpg', 'jpeg', 'png', 'webp'],
+                onSelected: (file) => _drivingLicenseFile = file,
+              ),
             ),
-          ),
+          ],
           const SizedBox(height: 24),
           AuthButton(
-            label: 'ដាក់ស្នើពាក្យ',
+            label: 'Submit application',
             onPressed: _submit,
             loading: _submitting,
           ),
           const SizedBox(height: 20),
           AuthLinkRow(
-            prefix: 'ត្រូវការគណនីអតិថិជនធម្មតាមែនទេ? ',
-            linkText: 'ចុះឈ្មោះនៅទីនេះ',
+            prefix: 'Need a customer account instead? ',
+            linkText: 'Register here',
             onTap: () => Navigator.pushReplacementNamed(
               context,
               AppRoutes.register,

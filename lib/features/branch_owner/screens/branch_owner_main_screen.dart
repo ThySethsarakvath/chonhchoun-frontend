@@ -167,6 +167,7 @@ class _BranchOwnerMainScreenState extends State<BranchOwnerMainScreen> {
           error: _branchInfoError,
           drivers: _branchDrivers,
           onRefresh: _loadBranchOwnerData,
+          onUpdateVehicleType: _updateDriverVehicleType,
         ),
       ),
       _BranchOwnerSectionData(
@@ -279,9 +280,17 @@ class _BranchOwnerMainScreenState extends State<BranchOwnerMainScreen> {
     return trimmed;
   }
 
-  Future<void> _approveApplication(DriverApplication application) async {
+  Future<void> _approveApplication(
+    DriverApplication application,
+    String? vehicleType, {
+    String? assignedVehicleCode,
+  }) async {
     try {
-      await _driverApplicationService.approveApplication(application.id);
+      await _driverApplicationService.approveApplication(
+        application.id,
+        vehicleType: vehicleType,
+        assignedVehicleCode: assignedVehicleCode,
+      );
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('${application.name} has been approved.')),
@@ -310,6 +319,35 @@ class _BranchOwnerMainScreenState extends State<BranchOwnerMainScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('${application.name} has been rejected.')),
+      );
+      await _loadBranchOwnerData();
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(e.toString().replaceFirst('Exception: ', '')),
+          backgroundColor: const Color(0xFFD32F2F),
+        ),
+      );
+    }
+  }
+
+  Future<void> _updateDriverVehicleType(
+    BranchDriver driver,
+    String vehicleType,
+    String? assignedVehicleCode,
+  ) async {
+    try {
+      await _driverApplicationService.updateBranchDriverVehicleType(
+        driver.id,
+        vehicleType: vehicleType,
+        assignedVehicleCode: assignedVehicleCode,
+      );
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('${driver.name} vehicle updated to $vehicleType.'),
+        ),
       );
       await _loadBranchOwnerData();
     } catch (e) {

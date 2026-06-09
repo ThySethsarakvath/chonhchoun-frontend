@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../driver_registration/models/driver_application_model.dart';
+import '../../driver_registration/models/vehicle_type.dart';
 import '../widgets/branch_owner_content_widgets.dart';
 
 class BranchDriverRequestsScreen extends StatelessWidget {
@@ -9,7 +10,11 @@ class BranchDriverRequestsScreen extends StatelessWidget {
   final String? error;
   final List<DriverApplication> applications;
   final Future<void> Function() onRefresh;
-  final Future<void> Function(DriverApplication application) onApprove;
+  final Future<void> Function(
+    DriverApplication application,
+    String? vehicleType, {
+    String? assignedVehicleCode,
+  }) onApprove;
   final Future<void> Function(DriverApplication application, String? reason)
       onReject;
 
@@ -44,7 +49,7 @@ class BranchDriverRequestsScreen extends StatelessWidget {
       return BranchOwnerMessageCard(
         title: 'មិនទាន់មានសំណើអ្នកបើកបរនៅឡើយទេ',
         description:
-            'ពាក្យស្នើសុំអ្នកបើកបរថ្មីៗដែលផ្ញើមកសាខារបស់អ្នកនឹងបង្ហាញនៅទីនេះ។',
+            'ពាក្យស្នើសុំអ្នកបើកបរថ្មីដែលផ្ញើមកសាខារបស់អ្នកនឹងបង្ហាញនៅទីនេះ។',
         actionLabel: 'ផ្ទុកឡើងវិញ',
         onAction: onRefresh,
       );
@@ -64,7 +69,11 @@ class BranchDriverRequestsScreen extends StatelessWidget {
             padding: const EdgeInsets.only(bottom: 14),
             child: _DriverApplicationCard(
               application: application,
-              onApprove: () => onApprove(application),
+              onApprove: (vehicleType, {assignedVehicleCode}) => onApprove(
+                application,
+                vehicleType,
+                assignedVehicleCode: assignedVehicleCode,
+              ),
               onReject: (reason) => onReject(application, reason),
             ),
           ),
@@ -74,9 +83,12 @@ class BranchDriverRequestsScreen extends StatelessWidget {
   }
 }
 
-class _DriverApplicationCard extends StatelessWidget {
+class _DriverApplicationCard extends StatefulWidget {
   final DriverApplication application;
-  final Future<void> Function() onApprove;
+  final Future<void> Function(
+    String? vehicleType, {
+    String? assignedVehicleCode,
+  }) onApprove;
   final Future<void> Function(String? reason) onReject;
 
   const _DriverApplicationCard({
@@ -84,6 +96,25 @@ class _DriverApplicationCard extends StatelessWidget {
     required this.onApprove,
     required this.onReject,
   });
+
+  @override
+  State<_DriverApplicationCard> createState() => _DriverApplicationCardState();
+}
+
+class _DriverApplicationCardState extends State<_DriverApplicationCard> {
+  final _truckCodeCtrl = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _truckCodeCtrl.text = widget.application.assignedVehicleCode ?? '';
+  }
+
+  @override
+  void dispose() {
+    _truckCodeCtrl.dispose();
+    super.dispose();
+  }
 
   Future<void> _promptReject(BuildContext context) async {
     final controller = TextEditingController();
@@ -115,13 +146,24 @@ class _DriverApplicationCard extends StatelessWidget {
     );
 
     if (confirmed == true) {
-      await onReject(controller.text.trim().isEmpty ? null : controller.text);
+      await widget.onReject(
+        controller.text.trim().isEmpty ? null : controller.text,
+      );
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final application = widget.application;
     final isPending = application.status == 'pending';
+    final isMotorcycleApplication =
+        application.vehicleType == driverOwnMotorcycleType;
+    final effectiveVehicleType =
+        isMotorcycleApplication ? driverOwnMotorcycleType : driverBranchTruckType;
+    final effectiveTruckCode = application.assignedVehicleCode?.isNotEmpty == true
+        ? application.assignedVehicleCode!
+        : _truckCodeCtrl.text.trim();
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(18),
@@ -158,6 +200,34 @@ class _DriverApplicationCard extends StatelessWidget {
             'សាខា: ${application.branch?.name ?? '-'}',
             style: const TextStyle(fontSize: 13, color: Color(0xFF475569)),
           ),
+          const SizedBox(height: 8),
+          _VehicleTypeBadge(
+            vehicleType: effectiveVehicleType,
+            assignedVehicleCode: application.assignedVehicleCode,
+          ),
+          if (isPending && !isMotorcycleApplication) ...[
+            const SizedBox(height: 12),
+            TextField(
+              controller: _truckCodeCtrl,
+              decoration: InputDecoration(
+                labelText: 'លេខកូដឡានរបស់សាខា',
+                hintText: 'ឧទាហរណ៍ TRK-01',
+                filled: true,
+                fillColor: Colors.white,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: Color(0xFFDDE3EE)),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: Color(0xFFDDE3EE)),
+                ),
+                helperText:
+                    'បញ្ចូលលេខកូដឡានដែលសាខានឹងផ្ដល់ឲ្យអ្នកបើកបរ។',
+              ),
+              onChanged: (_) => setState(() {}),
+            ),
+          ],
           const SizedBox(height: 12),
           Wrap(
             spacing: 10,
@@ -182,7 +252,13 @@ class _DriverApplicationCard extends StatelessWidget {
             Row(
               children: [
                 FilledButton.icon(
-                  onPressed: onApprove,
+                  onPressed: !isMotorcycleApplication && effectiveTruckCode.isEmpty
+                      ? null
+                      : () => widget.onApprove(
+                            isMotorcycleApplication ? null : driverBranchTruckType,
+                            assignedVehicleCode:
+                                isMotorcycleApplication ? null : effectiveTruckCode,
+                          ),
                   icon: const Icon(Icons.check_circle_outline_rounded),
                   label: const Text('អនុម័ត'),
                 ),
@@ -243,6 +319,52 @@ class _StatusChip extends StatelessWidget {
           fontWeight: FontWeight.w700,
           color: foregroundColor,
         ),
+      ),
+    );
+  }
+}
+
+class _VehicleTypeBadge extends StatelessWidget {
+  final String? vehicleType;
+  final String? assignedVehicleCode;
+
+  const _VehicleTypeBadge({
+    required this.vehicleType,
+    this.assignedVehicleCode,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final label = assignedVehicleCode?.isNotEmpty == true
+        ? 'ឡានរបស់សាខា • ${assignedVehicleCode!}'
+        : vehicleType == driverBranchTruckType
+            ? 'ឡានរបស់សាខា'
+            : reviewVehicleTypeLabel(vehicleType);
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: const Color(0xFFE0F2FE),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            vehicleTypeIcon(vehicleType),
+            size: 16,
+            color: const Color(0xFF075985),
+          ),
+          const SizedBox(width: 8),
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+              color: Color(0xFF075985),
+            ),
+          ),
+        ],
       ),
     );
   }

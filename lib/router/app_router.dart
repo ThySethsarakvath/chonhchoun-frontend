@@ -12,7 +12,7 @@ import '../screens/avatar_upload_screen.dart';
 import '../screens/setting_screen.dart';
 import '../screens/profile_screen.dart';
 import '../features/driver_registration/screens/driver_application_screen.dart';
-// import '../screens/driver/driver_workspace_screen.dart';
+import '../screens/driver/driver_workspace_screen.dart';
 import '../features/home/pages/admin_main_screen.dart';
 import '../features/branch_owner/screens/branch_owner_main_screen.dart';
 abstract class AppRoutes {
@@ -133,7 +133,7 @@ class AppRouter {
       case AppRoutes.branchOwner:
         return _fade(const BranchOwnerMainScreen());
       case AppRoutes.driver:
-        return _fade(_stub('Driver Workspace'));
+         return _fade(const DriverWorkspaceScreen());
       case AppRoutes.driverApplication:
         return _slide(const DriverApplicationScreen());
       default:

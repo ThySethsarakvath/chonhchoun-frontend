@@ -37,10 +37,11 @@ class DriverApplicationService {
     required String password,
     required String confirmPassword,
     required String branchId,
+    String? vehicleType,
     required File avatarFile,
     required File cvFile,
     required File nationalIdFile,
-    required File drivingLicenseFile,
+    File? drivingLicenseFile,
   }) async {
     final request = http.MultipartRequest(
       'POST',
@@ -53,6 +54,7 @@ class DriverApplicationService {
         'password': password,
         'confirmPassword': confirmPassword,
         'branchId': branchId,
+        if (vehicleType != null) 'vehicleType': vehicleType,
       })
       ..files.addAll([
         await http.MultipartFile.fromPath(
@@ -70,11 +72,12 @@ class DriverApplicationService {
           nationalIdFile.path,
           contentType: _mediaTypeForFile(nationalIdFile),
         ),
-        await http.MultipartFile.fromPath(
-          'drivingLicense',
-          drivingLicenseFile.path,
-          contentType: _mediaTypeForFile(drivingLicenseFile),
-        ),
+        if (drivingLicenseFile != null)
+          await http.MultipartFile.fromPath(
+            'drivingLicense',
+            drivingLicenseFile.path,
+            contentType: _mediaTypeForFile(drivingLicenseFile),
+          ),
       ]);
 
     final streamed = await request.send();
@@ -147,10 +150,20 @@ class DriverApplicationService {
     );
   }
 
-  Future<void> approveApplication(String applicationId) async {
+  Future<void> approveApplication(
+    String applicationId, {
+    String? vehicleType,
+    String? assignedVehicleCode,
+  }) async {
     final response = await http.post(
       Uri.parse('$_url/driver-applications/$applicationId/approve'),
       headers: await _authHeaders(),
+      body: json.encode({
+        if (vehicleType != null && vehicleType.isNotEmpty)
+          'vehicleType': vehicleType,
+        if (assignedVehicleCode != null && assignedVehicleCode.isNotEmpty)
+          'assignedVehicleCode': assignedVehicleCode,
+      }),
     );
     if (response.statusCode >= 200 && response.statusCode < 300) {
       return;
@@ -183,6 +196,32 @@ class DriverApplicationService {
     throw ApiException(
       body['message'] as String? ??
           'Failed to reject application (${response.statusCode})',
+      response.statusCode,
+    );
+  }
+
+  Future<void> updateBranchDriverVehicleType(
+    String driverId, {
+    required String vehicleType,
+    String? assignedVehicleCode,
+  }) async {
+    final response = await http.patch(
+      Uri.parse('$_url/driver-applications/branch-owner/drivers/$driverId/vehicle-type'),
+      headers: await _authHeaders(),
+      body: json.encode({
+        'vehicleType': vehicleType,
+        if (assignedVehicleCode != null && assignedVehicleCode.isNotEmpty)
+          'assignedVehicleCode': assignedVehicleCode,
+      }),
+    );
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      return;
+    }
+
+    final body = json.decode(response.body) as Map<String, dynamic>;
+    throw ApiException(
+      body['message'] as String? ??
+          'Failed to update driver vehicle type (${response.statusCode})',
       response.statusCode,
     );
   }

@@ -29,6 +29,8 @@ class DriverApplication {
   final String name;
   final String email;
   final String phone;
+  final String vehicleType;
+  final String? assignedVehicleCode;
   final String status;
   final DriverApplicationBranch? branch;
   final String? avatarUrl;
@@ -44,6 +46,8 @@ class DriverApplication {
     required this.name,
     required this.email,
     required this.phone,
+    required this.vehicleType,
+    this.assignedVehicleCode,
     required this.status,
     this.branch,
     this.avatarUrl,
@@ -61,6 +65,8 @@ class DriverApplication {
       name: json['name'] as String? ?? '',
       email: json['email'] as String? ?? '',
       phone: json['phone'] as String? ?? '',
+      vehicleType: json['vehicleType'] as String? ?? '',
+      assignedVehicleCode: json['assignedVehicleCode'] as String?,
       status: json['status'] as String? ?? 'pending',
       branch: json['branch'] is Map<String, dynamic>
           ? DriverApplicationBranch.fromJson(
@@ -87,6 +93,8 @@ class BranchDriver {
   final String name;
   final String email;
   final String phone;
+  final String? vehicleType;
+  final String? assignedVehicleCode;
   final String? avatarUrl;
   final bool isActive;
   final DateTime? createdAt;
@@ -96,6 +104,8 @@ class BranchDriver {
     required this.name,
     required this.email,
     required this.phone,
+    this.vehicleType,
+    this.assignedVehicleCode,
     this.avatarUrl,
     required this.isActive,
     this.createdAt,
@@ -107,6 +117,8 @@ class BranchDriver {
       name: json['name'] as String? ?? '',
       email: json['email'] as String? ?? '',
       phone: json['phone'] as String? ?? '',
+      vehicleType: json['vehicleType'] as String?,
+      assignedVehicleCode: json['assignedVehicleCode'] as String?,
       avatarUrl: json['avatarUrl'] as String?,
       isActive: json['isActive'] as bool? ?? true,
       createdAt: json['createdAt'] is String
