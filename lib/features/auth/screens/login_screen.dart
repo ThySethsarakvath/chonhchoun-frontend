@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../../router/app_router.dart';
 import '../services/auth_service.dart';
+import '../services/user_service.dart';
+import '../tokens/token_storage.dart';
 import '../models/auth_models.dart';
 import '../widgets/auth_scaffold.dart';
 import '../widgets/auth_header.dart';
@@ -53,8 +55,19 @@ class _LoginScreenState extends State<LoginScreen> {
         email: _emailCtrl.text.trim(),
         password: _passwordCtrl.text,
       ));
+
+      // Route by role: drivers go to the driver workspace, everyone else home.
+      var route = AppRoutes.customer;
+      final token = await TokenStorage.getAccessToken();
+      if (token != null) {
+        try {
+          final me = await UserService().getMe(accessToken: token);
+          if (me.role == 'driver') route = AppRoutes.driver;
+        } catch (_) {}
+      }
+
       if (mounted) {
-        Navigator.pushReplacementNamed(context, AppRoutes.customer);
+        Navigator.pushReplacementNamed(context, route);
       }
     } on ApiException catch (e) {
       if (mounted) showErrorDialog(context, e.message);

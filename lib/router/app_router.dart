@@ -11,8 +11,8 @@ import '../features/auth/models/user_model.dart';
 import '../screens/customer/avatar_upload_screen.dart';
 import '../screens/customer/setting_screen.dart';
 import '../screens/customer/profile_screen.dart';
+import '../features/driver/screens/driver_home_screen.dart';
 
-// import '../screens/driver/driver_workspace_screen.dart';
 abstract class AppRoutes {
   AppRoutes._();
 
@@ -111,7 +111,7 @@ class AppRouter {
       case AppRoutes.customer:
         return _fade(const HomeScreen());
       case AppRoutes.driver:
-        return _fade(_stub('Driver Workspace'));
+        return _fade(const DriverHomeScreen());
       default:
         return _fade(_stub('404 — Page not found'));
     }

@@ -21,6 +21,10 @@ import '../../auth/services/user_service.dart';
 import '../../auth/models/user_model.dart';
 import '../../auth/tokens/token_storage.dart';
 import '../../../router/app_router.dart';
+import '../../chatbot/screens/chatbot_screen.dart';
+import '../../chat/screens/conversations_screen.dart';
+import '../../chat/services/conversation_service.dart';
+import '../../chat/models/conversation.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -352,6 +356,18 @@ class _HomeScreenState extends State<HomeScreen> {
       child: Scaffold(
         backgroundColor: const Color(0xFFEEF3FB),
         extendBody: true,
+        // Chatbot is only available to customer accounts.
+        floatingActionButton: _userProfile?.role == 'customer'
+            ? _ChatbotFab(
+                onTap: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => ChatbotScreen(userId: _userProfile?.id),
+                    ),
+                  );
+                },
+              )
+            : null,
         bottomNavigationBar: HomeBottomNav(
           currentIndex: _navIndex,
           onTap: (i) {
@@ -373,7 +389,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 children: [
                   _buildHomeView(bluePanelHeight, avatarUrl),
                   _buildShippingView(),
-                  const Center(child: Text('ការឆ្លើយឆ្លង - ឆាប់ៗនេះ')),
+                  _buildMessagesView(),
                 ],
               ),
       ),
@@ -553,6 +569,24 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
     );
   }
+
+  Widget _buildMessagesView() {
+    final profile = _userProfile;
+    if (profile == null) {
+      return const Center(
+        child: Text('សូមចូលគណនីជាមុនសិន',
+            style: TextStyle(color: Color(0xFF8BA4C8))),
+      );
+    }
+    return ConversationsScreen(
+      currentUserId: profile.id,
+      loader: () async {
+        final token = await TokenStorage.getAccessToken();
+        if (token == null) return <Conversation>[];
+        return ConversationService().customerConversations(token);
+      },
+    );
+  }
 }
 
 class _SearchBar extends StatelessWidget {
@@ -601,6 +635,42 @@ class _SearchBar extends StatelessWidget {
             border: InputBorder.none,
             contentPadding: EdgeInsets.symmetric(vertical: 13, horizontal: 4),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ChatbotFab extends StatelessWidget {
+  final VoidCallback onTap;
+  const _ChatbotFab({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 56,
+        height: 56,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          gradient: const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [Color(0xFF2C6B9E), Color(0xFF1E4D73)],
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF1E3A5F).withOpacity(0.35),
+              blurRadius: 14,
+              offset: const Offset(0, 5),
+            ),
+          ],
+        ),
+        child: const Icon(
+          Icons.support_agent_rounded,
+          color: Colors.white,
+          size: 28,
         ),
       ),
     );
