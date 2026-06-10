@@ -82,8 +82,8 @@ class _PickupMapPickerState extends State<PickupMapPicker> {
         children: [
           FlutterMap(
             options: MapOptions(
-              center: _selected,
-              zoom: 15,
+              initialCenter: _selected,
+              initialZoom: 15,
               onTap: (tapPos, latlng) async {
                 setState(() => _selected = latlng);
                 await _reverseGeocode(latlng);
