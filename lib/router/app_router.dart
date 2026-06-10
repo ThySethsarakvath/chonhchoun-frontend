@@ -8,26 +8,45 @@ import '../features/auth/screens/otp_screen.dart';
 import '../features/auth/screens/set_password_screen.dart';
 import '../features/home/pages/home_screen.dart';
 import '../features/auth/models/user_model.dart';
-import '../screens/customer/avatar_upload_screen.dart';
-import '../screens/customer/setting_screen.dart';
-import '../screens/customer/profile_screen.dart';
-import '../features/driver/screens/driver_home_screen.dart';
-
+import '../screens/avatar_upload_screen.dart';
+import '../screens/setting_screen.dart';
+import '../screens/profile_screen.dart';
+import '../features/driver_registration/screens/driver_application_screen.dart';
+import '../screens/driver/driver_workspace_screen.dart';
+import '../features/home/pages/admin_main_screen.dart';
+import '../features/branch_owner/screens/branch_owner_main_screen.dart';
 abstract class AppRoutes {
   AppRoutes._();
 
-  static const String landing = '/';
-  static const String onboarding = '/onboarding';
-  static const String login = '/login';
-  static const String register = '/register';
+  static const String adminDashboard = '/admin';
+  static const String landing       = '/';
+  static const String onboarding    = '/onboarding';
+  static const String login         = '/login';
+  static const String register      = '/register';
   static const String validateEmail = '/validate-email';
-  static const String otp = '/otp';
-  static const String setPassword = '/set-password';
-  static const String avatarUpload = '/avatar-upload';
-  static const String profile = '/profile';
-  static const String settings = '/settings';
-  static const String customer = '/customer';
-  static const String driver = '/driver';
+  static const String otp           = '/otp';
+  static const String setPassword   = '/set-password';
+  static const String avatarUpload   = '/avatar-upload';
+  static const String profile       = '/profile';
+  static const String settings      = '/settings';
+  static const String customer      = '/home';
+  static const String branchOwner   = '/branch-owner';
+  static const String driver        = '/driver';
+  static const String driverApplication = '/driver-application';
+
+  static String homeForRole(String role) {
+    switch (role) {
+      case 'admin':
+        return adminDashboard;
+      case 'branch_owner':
+        return branchOwner;
+      case 'driver':
+        return driver;
+      case 'customer':
+      default:
+        return customer;
+    }
+  }
 }
 
 enum AuthFlow { register, forgotPassword }
@@ -82,6 +101,7 @@ class AppRouter {
         return _fade(const LandingPage());
       case AppRoutes.onboarding:
         return _fade(const OnboardingScreen());
+      
       case AppRoutes.login:
         return _slide(const LoginScreen());
       case AppRoutes.register:
@@ -100,18 +120,22 @@ class AppRouter {
         return _slide(AvatarUploadScreen(args: args));
       case AppRoutes.profile:
         final args = settings.arguments as ProfileArgs?;
-        return _fade(
-          ProfileScreen(
-            profile: args?.profile,
-            source: args?.source ?? ProfileSource.home,
-          ),
-        );
+        return _fade(ProfileScreen(
+          profile: args?.profile,
+          source: args?.source ?? ProfileSource.home,
+        ));
       case AppRoutes.settings:
         return _fade(const SettingsScreen());
       case AppRoutes.customer:
         return _fade(const HomeScreen());
+      case AppRoutes.adminDashboard:
+        return _fade(const AdminMainScreen());
+      case AppRoutes.branchOwner:
+        return _fade(const BranchOwnerMainScreen());
       case AppRoutes.driver:
-        return _fade(const DriverHomeScreen());
+         return _fade(const DriverWorkspaceScreen());
+      case AppRoutes.driverApplication:
+        return _slide(const DriverApplicationScreen());
       default:
         return _fade(_stub('404 — Page not found'));
     }
@@ -119,8 +143,8 @@ class AppRouter {
 
   static PageRouteBuilder<dynamic> _fade(Widget page) {
     return PageRouteBuilder(
-      pageBuilder: (_, _, _) => page,
-      transitionsBuilder: (_, anim, _, child) =>
+      pageBuilder: (_, __, ___) => page,
+      transitionsBuilder: (_, anim, __, child) =>
           FadeTransition(opacity: anim, child: child),
       transitionDuration: const Duration(milliseconds: 350),
     );
@@ -128,12 +152,10 @@ class AppRouter {
 
   static PageRouteBuilder<dynamic> _slide(Widget page) {
     return PageRouteBuilder(
-      pageBuilder: (_, _, _) => page,
-      transitionsBuilder: (_, anim, _, child) {
-        final tween = Tween(
-          begin: const Offset(1, 0),
-          end: Offset.zero,
-        ).chain(CurveTween(curve: Curves.easeInOut));
+      pageBuilder: (_, __, ___) => page,
+      transitionsBuilder: (_, anim, __, child) {
+        final tween = Tween(begin: const Offset(1, 0), end: Offset.zero)
+            .chain(CurveTween(curve: Curves.easeInOut));
         return SlideTransition(position: anim.drive(tween), child: child);
       },
       transitionDuration: const Duration(milliseconds: 300),
@@ -141,7 +163,7 @@ class AppRouter {
   }
 
   static Widget _stub(String name) => Scaffold(
-    appBar: AppBar(title: Text(name)),
-    body: Center(child: Text(name, style: const TextStyle(fontSize: 18))),
-  );
+        appBar: AppBar(title: Text(name)),
+        body: Center(child: Text(name, style: const TextStyle(fontSize: 18))),
+      );
 }

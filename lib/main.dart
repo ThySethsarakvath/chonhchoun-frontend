@@ -1,15 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+
 import 'router/app_router.dart';
 
-Future <void> main() async {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  try{
-    await dotenv.load(fileName: ".env");
+  try {
+    await dotenv.load(fileName: '.env');
   } catch (e) {
-    debugPrint("Warning: Could not load .env file: $e");
+    debugPrint('Warning: Could not load .env file: $e');
   }
+
   runApp(const MyApp());
 }
 
