@@ -52,9 +52,12 @@ class DriverRequest {
     final price = ((map['payment'] ?? {})['amount'] as num?)?.toDouble() ?? 
                   (map['estimatedPrice'] as num?)?.toDouble() ?? 0.0;
     final itemType = (map['package'] ?? {})['type'] as String? ?? 'Package';
-    final customerName = map['customerName'] as String? ?? 'Customer';
-    final initials = customerName.isNotEmpty
-        ? customerName.trim().split(' ').map((w) => w[0]).take(2).join()
+    final customerIdMap = map['customerId'] is Map ? map['customerId'] as Map<String, dynamic> : null;
+    final customerName = map['customerName'] as String? ??
+                         customerIdMap?['name'] as String? ??
+                         'Customer';
+    final initials = customerName.trim().isNotEmpty
+        ? customerName.trim().split(' ').where((w) => w.isNotEmpty).map((w) => w[0]).take(2).join().toUpperCase()
         : '??';
 
     return DriverRequest(

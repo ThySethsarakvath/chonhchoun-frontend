@@ -13,17 +13,25 @@ class DriverDeliveriesTab extends StatelessWidget {
     super.key,
     required this.request,
     required this.onViewAll,
+    required this.onSeeHistory,
     required this.onOpenDetail,
   });
 
-  final DriverRequest request;
+  final DriverRequest? request;
   final VoidCallback onViewAll;
+  final VoidCallback onSeeHistory;
   final VoidCallback onOpenDetail;
 
   @override
   Widget build(BuildContext context) {
     final provider = DriverScope.of(context);
     final currentReq = provider.currentDelivery;
+    
+    final deliveriesCount = provider.historyRequests.length;
+    final totalMinutes = deliveriesCount * 25;
+    final hours = totalMinutes ~/ 60;
+    final mins = totalMinutes % 60;
+    final timeStr = "$hours Hours $mins Minutes";
 
     return ListView(
       padding: EdgeInsets.zero,
@@ -69,21 +77,21 @@ class DriverDeliveriesTab extends StatelessWidget {
                         ],
                       ),
                       const SizedBox(height: 26),
-                      const DriverStatLine(
+                      DriverStatLine(
                         label: 'Time',
-                        value: driverTotalTime,
+                        value: timeStr,
                       ),
                       const SizedBox(height: 18),
-                      const DriverStatLine(
+                      DriverStatLine(
                         label: 'Deliveries',
-                        value: driverTotalDeliveries,
+                        value: deliveriesCount.toString(),
                       ),
                       const SizedBox(height: 28),
                       SizedBox(
                         width: double.infinity,
                         child: DriverPrimaryButton(
                           label: 'See Details',
-                          onPressed: onOpenDetail,
+                          onPressed: onSeeHistory,
                         ),
                       ),
                     ],
@@ -127,7 +135,7 @@ class DriverDeliveriesTab extends StatelessWidget {
                               : DriverPrimaryButton(
                                   label: _getNextStatusLabel(currentReq.status ?? 'ACCEPTED'),
                                   onPressed: () {
-                                    final next = _getNextStatus(currentReq!.status ?? 'ACCEPTED');
+                                    final next = _getNextStatus(currentReq.status ?? 'ACCEPTED');
                                     if (next != null) {
                                       provider.updateDeliveryStatus(next);
                                     }

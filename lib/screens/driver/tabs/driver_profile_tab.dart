@@ -15,7 +15,7 @@ class DriverProfileTab extends StatelessWidget {
     required this.onOpenMap,
   });
 
-  final DriverRequest request;
+  final DriverRequest? request;
   final VoidCallback onOpenMap;
 
   @override
@@ -131,11 +131,11 @@ class DriverProfileTab extends StatelessWidget {
                     children: [
                       CircleAvatar(
                         radius: 24,
-                        backgroundColor: request.accent.withValues(alpha: 0.12),
+                        backgroundColor: (request?.accent ?? DriverColors.blue).withValues(alpha: 0.12),
                         child: Text(
-                          request.senderInitials,
+                          request?.senderInitials ?? '?',
                           style: TextStyle(
-                            color: request.accent,
+                            color: request?.accent ?? DriverColors.blue,
                             fontWeight: FontWeight.w800,
                           ),
                         ),

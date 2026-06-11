@@ -48,6 +48,8 @@ dependencies:
   qr_code_vision: ^0.1.2
   image: ^4.8.0
   geolocator: ^14.0.2
+  share_plus: ^10.1.4
+
 
 dev_dependencies:
   flutter_test:

@@ -72,7 +72,7 @@ class DriverHomeTab extends StatelessWidget {
                             ? const CircularProgressIndicator()
                             : Switch(
                                 value: provider.isOnline,
-                                activeColor: DriverColors.blue,
+                                activeThumbColor: DriverColors.blue,
                                 onChanged: (val) {
                                   provider.toggleOnline();
                                 },

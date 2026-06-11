@@ -93,13 +93,23 @@ class DeliveryItem {
   }
 
   static DeliveryStatus _parseStatus(String? status) {
-    switch (status) {
-      case 'searching': return DeliveryStatus.pending;
-      case 'accepted': return DeliveryStatus.inTransit;
-      case 'pickedUp': return DeliveryStatus.inTransit;
-      case 'delivered': return DeliveryStatus.delivered;
-      case 'canceled': return DeliveryStatus.canceled;
-      default: return DeliveryStatus.pending;
+    if (status == null) return DeliveryStatus.pending;
+    switch (status.toUpperCase()) {
+      case 'PENDING':
+        return DeliveryStatus.pending;
+      case 'ACCEPTED':
+        return DeliveryStatus.inTransit;
+      case 'PICKED_UP':
+      case 'IN_TRANSIT':
+        return DeliveryStatus.inTransit;
+      case 'DELIVERED':
+        return DeliveryStatus.delivered;
+      case 'CANCELLED':
+      case 'CANCELLED_BY_CUSTOMER':
+      case 'CANCELED':
+        return DeliveryStatus.canceled;
+      default:
+        return DeliveryStatus.pending;
     }
   }
 

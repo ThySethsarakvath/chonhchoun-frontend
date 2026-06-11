@@ -21,7 +21,10 @@ class HomeService {
         headers: _headers(token),
       );
       if (res.statusCode == 200) {
-        final list = json.decode(res.body) as List<dynamic>;
+        final decoded = json.decode(res.body);
+        final list = decoded is Map && decoded.containsKey('data') 
+            ? decoded['data'] as List<dynamic>
+            : decoded as List<dynamic>;
         return list.take(5).map((e) => DeliveryItem.fromJson(e)).toList();
       }
       return [];
@@ -37,7 +40,10 @@ class HomeService {
         headers: _headers(token),
       );
       if (res.statusCode == 200) {
-        final list = json.decode(res.body) as List<dynamic>;
+        final decoded = json.decode(res.body);
+        final list = decoded is Map && decoded.containsKey('data')
+            ? decoded['data'] as List<dynamic>
+            : decoded as List<dynamic>;
         return list.map((e) => DeliveryItem.fromJson(e)).toList();
       }
       return [];

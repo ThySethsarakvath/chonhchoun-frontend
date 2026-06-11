@@ -107,10 +107,11 @@ class _CustomerBookingScreenState extends State<CustomerBookingScreen> {
 
   String _formatLocation(LatLng? loc, String? name) {
     if (name != null) return name;
-    if (loc == null)
+    if (loc == null) {
       return widget.serviceType == DeliveryServiceType.express
           ? "Center pin on location"
           : "Select warehouse";
+    }
     return "${loc.latitude.toStringAsFixed(4)}, ${loc.longitude.toStringAsFixed(4)}";
   }
 

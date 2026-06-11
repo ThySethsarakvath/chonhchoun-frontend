@@ -40,6 +40,7 @@ class _HomeScreenState extends State<HomeScreen> {
   UserProfile? _userProfile;
   bool _loading = true;
   int _navIndex = 0;
+  Timer? _pollTimer;
 
   String _city = 'កំពុងស្វែងរក...';
   String _userLocation = 'កំពុងរកទីតាំង...';
@@ -55,6 +56,32 @@ class _HomeScreenState extends State<HomeScreen> {
     );
     _loadData();
     _fetchLiveLocation();
+    // Poll every 10 seconds for live status updates
+    _pollTimer = Timer.periodic(const Duration(seconds: 10), (_) => _silentRefresh());
+  }
+
+  @override
+  void dispose() {
+    _pollTimer?.cancel();
+    _searchCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _silentRefresh() async {
+    try {
+      final accessToken = await TokenStorage.getAccessToken();
+      if (accessToken == null || accessToken.isEmpty || !mounted) return;
+      final results = await Future.wait([
+        _service.fetchRecentDeliveries(accessToken),
+        _service.fetchDeliveryHistory(accessToken),
+      ]);
+      if (mounted) {
+        setState(() {
+          _recent = List<DeliveryItem>.from(results[0] as List);
+          _history = List<DeliveryItem>.from(results[1] as List);
+        });
+      }
+    } catch (_) {}
   }
 
   Future<void> _fetchLiveLocation() async {
@@ -123,11 +150,8 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  @override
-  void dispose() {
-    _searchCtrl.dispose();
-    super.dispose();
-  }
+
+
 
   Future<void> _addOrder(CustomerOrder order) async {
     try {

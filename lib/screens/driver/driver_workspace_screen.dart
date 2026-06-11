@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 
-import '../../shared/data/driver_demo_data.dart';
 import '../../shared/models/driver_request.dart';
 import 'screens/driver_map_detail_screen.dart';
 import 'screens/driver_request_detail_screen.dart';
 import 'screens/driver_requests_screen.dart';
 import 'tabs/driver_deliveries_tab.dart';
 import 'tabs/driver_home_tab.dart';
+import 'tabs/driver_history_tab.dart';
 import 'tabs/driver_profile_tab.dart';
 import 'driver_provider.dart';
 import '../../shared/widgets/driver_colors.dart';
@@ -35,32 +35,11 @@ class _DriverWorkspaceScreenState extends State<DriverWorkspaceScreen> {
     super.dispose();
   }
 
-  List<Widget> get _tabs => [
-        DriverHomeTab(
-          requests: driverRequests,
-          onViewAll: _openRequests,
-          onOpenDetail: _openRequestDetail,
-        ),
-        DriverDeliveriesTab(
-          request: _primaryRequest,
-          onViewAll: _openRequests,
-          onOpenDetail: () => _openRequestDetail(_primaryRequest),
-        ),
-        // Placeholder for activity tab (not implemented yet)
-        const Center(child: Text('Activity Tab', style: TextStyle(color: DriverColors.text))),
-        DriverProfileTab(
-          request: _primaryRequest,
-          onOpenMap: () => _openMapDetail(_primaryRequest),
-        ),
-      ];
-
-  DriverRequest get _primaryRequest => driverRequests.first;
-
   void _openRequests() {
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => DriverRequestsScreen(
-          requests: driverRequests,
+          requests: _provider.availableRequests,
           onOpenDetail: _openRequestDetail,
         ),
       ),
@@ -73,6 +52,22 @@ class _DriverWorkspaceScreenState extends State<DriverWorkspaceScreen> {
         builder: (_) => DriverRequestDetailScreen(
           request: request,
           onOpenMap: () => _openMapDetail(request),
+          onAccept: () async {
+            if (request.id != null) {
+              final success = await _provider.acceptRequest(request.id!);
+              if (success && mounted) {
+                Navigator.of(context).pop();
+                setState(() => _currentIndex = 1);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Delivery accepted successfully!')),
+                );
+              } else if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Failed to accept delivery.')),
+                );
+              }
+            }
+          },
         ),
       ),
     );
@@ -81,7 +76,22 @@ class _DriverWorkspaceScreenState extends State<DriverWorkspaceScreen> {
   void _openMapDetail(DriverRequest request) {
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (_) => DriverMapDetailScreen(request: request),
+        builder: (_) => DriverMapDetailScreen(
+          request: request,
+          onAccept: () async {
+            if (request.id != null) {
+              final success = await _provider.acceptRequest(request.id!);
+              if (success && mounted) {
+                Navigator.of(context).pop();
+                Navigator.of(context).pop();
+                setState(() => _currentIndex = 1);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Delivery accepted successfully!')),
+                );
+              }
+            }
+          },
+        ),
       ),
     );
   }
@@ -97,13 +107,49 @@ class _DriverWorkspaceScreenState extends State<DriverWorkspaceScreen> {
   Widget build(BuildContext context) {
     return DriverScope(
       notifier: _provider,
-      child: Scaffold(
-        backgroundColor: DriverColors.background,
-        body: IndexedStack(
-          index: _currentIndex,
-          children: _tabs,
-        ),
-        bottomNavigationBar: _buildBottomNav(),
+      child: AnimatedBuilder(
+        animation: _provider,
+        builder: (context, _) {
+          final currentDelivery = _provider.currentDelivery;
+
+          final tabs = [
+            DriverHomeTab(
+              requests: _provider.availableRequests,
+              onViewAll: _openRequests,
+              onOpenDetail: _openRequestDetail,
+            ),
+            DriverDeliveriesTab(
+              request: currentDelivery,
+              onViewAll: _openRequests,
+              onSeeHistory: () {
+                setState(() => _currentIndex = 2);
+              },
+              onOpenDetail: () {
+                if (currentDelivery != null) {
+                  _openRequestDetail(currentDelivery);
+                }
+              },
+            ),
+            DriverHistoryTab(
+              onOpenDetail: _openRequestDetail,
+            ),
+            DriverProfileTab(
+              request: currentDelivery,
+              onOpenMap: () {
+                if (currentDelivery != null) _openMapDetail(currentDelivery);
+              },
+            ),
+          ];
+
+          return Scaffold(
+            backgroundColor: DriverColors.background,
+            body: IndexedStack(
+              index: _currentIndex,
+              children: tabs,
+            ),
+            bottomNavigationBar: _buildBottomNav(),
+          );
+        },
       ),
     );
   }

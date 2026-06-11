@@ -10,9 +10,11 @@ class DriverMapDetailScreen extends StatelessWidget {
   const DriverMapDetailScreen({
     super.key,
     required this.request,
+    required this.onAccept,
   });
 
   final DriverRequest request;
+  final VoidCallback onAccept;
 
   @override
   Widget build(BuildContext context) {
@@ -21,7 +23,7 @@ class DriverMapDetailScreen extends StatelessWidget {
       bottomNavigationBar: DriverDecisionBar(
         primaryLabel: 'Accept',
         secondaryLabel: 'Reject',
-        onPrimaryPressed: () => Navigator.of(context).pop(),
+        onPrimaryPressed: onAccept,
         onSecondaryPressed: () => Navigator.of(context).pop(),
       ),
       body: SafeArea(

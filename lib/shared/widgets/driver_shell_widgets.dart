@@ -286,7 +286,7 @@ class DriverBottomBar extends StatelessWidget {
     return SafeArea(
       top: false,
       child: Container(
-        padding: EdgeInsets.fromLTRB(18, 8, 18, bottomInset > 0 ? 10 : 8),
+        padding: EdgeInsets.fromLTRB(10, 8, 10, bottomInset > 0 ? 10 : 8),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
@@ -302,7 +302,7 @@ class DriverBottomBar extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
             SizedBox(
-              width: 84,
+              width: 80,
               child: _DriverBottomBarItem(
                 icon: Icons.home_filled,
                 label: 'Home',
@@ -311,21 +311,30 @@ class DriverBottomBar extends StatelessWidget {
               ),
             ),
             SizedBox(
-              width: 84,
+              width: 80,
               child: _DriverBottomBarItem(
-                icon: Icons.work_history_rounded,
+                icon: Icons.directions_bike_rounded,
                 label: 'Deliveries',
                 isSelected: selectedIndex == 1,
                 onTap: () => onSelected(1),
               ),
             ),
             SizedBox(
-              width: 84,
+              width: 80,
+              child: _DriverBottomBarItem(
+                icon: Icons.history_rounded,
+                label: 'History',
+                isSelected: selectedIndex == 2,
+                onTap: () => onSelected(2),
+              ),
+            ),
+            SizedBox(
+              width: 80,
               child: _DriverBottomBarItem(
                 icon: Icons.person_rounded,
                 label: 'Profile',
-                isSelected: selectedIndex == 2,
-                onTap: () => onSelected(2),
+                isSelected: selectedIndex == 3,
+                onTap: () => onSelected(3),
               ),
             ),
           ],

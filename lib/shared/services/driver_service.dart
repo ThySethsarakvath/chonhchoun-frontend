@@ -28,6 +28,25 @@ class DriverService {
     }
   }
 
+  Future<List<dynamic>> fetchDriverPackages(String token) async {
+    try {
+      final res = await http.get(
+        Uri.parse('$_url/packages/driver/my'),
+        headers: _headers(token),
+      );
+      print("DEV-LOG: fetchDriverPackages statusCode: ${res.statusCode}");
+      print("DEV-LOG: fetchDriverPackages body: ${res.body}");
+      if (res.statusCode == 200) {
+        final Map<String, dynamic> body = json.decode(res.body) as Map<String, dynamic>;
+        return body['data'] as List<dynamic>;
+      }
+      return [];
+    } catch (e) {
+      print("DEV-LOG: DriverService.fetchDriverPackages exception: $e");
+      return [];
+    }
+  }
+
   Future<bool> acceptPackage(String packageId, String token) async {
     try {
       final res = await http.patch(
