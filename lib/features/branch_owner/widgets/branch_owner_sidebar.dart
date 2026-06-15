@@ -57,7 +57,7 @@ class BranchOwnerSidebar extends StatelessWidget {
         ),
         NavigationRailDestination(
           icon: Icon(Icons.local_shipping_outlined),
-          label: Text('Driver Agents'),
+          label: Text('Driver Management'),
         ),
         NavigationRailDestination(
           icon: Icon(Icons.assignment_turned_in_outlined),

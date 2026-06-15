@@ -28,6 +28,7 @@ class _DriverApplicationScreenState extends State<DriverApplicationScreen> {
   final _phoneCtrl = TextEditingController();
   final _passwordCtrl = TextEditingController();
   final _confirmPasswordCtrl = TextEditingController();
+  final _plateNumberCtrl = TextEditingController();
   final _service = DriverApplicationService();
   final _branchService = BranchService();
   final _picker = ImagePicker();
@@ -35,6 +36,7 @@ class _DriverApplicationScreenState extends State<DriverApplicationScreen> {
   List<Branch> _branches = const [];
   String? _selectedBranchId;
   String _vehicleChoice = driverOwnMotorcycleType;
+  String _ownVehicleType = driverOwnMotorcycleType;
   File? _avatarFile;
   File? _cvFile;
   File? _nationalIdFile;
@@ -47,8 +49,15 @@ class _DriverApplicationScreenState extends State<DriverApplicationScreen> {
   static final _emailReg = RegExp(r'^[\w\-.]+@([\w\-]+\.)+[\w]{2,}$');
   static final _phoneReg = RegExp(r'^(\+?855|0)[0-9]{8,9}$');
 
-  bool get _requiresDrivingLicense =>
-      _vehicleChoice != driverOwnMotorcycleType;
+  bool get _usesOwnVehicle => _vehicleChoice != driverBranchTruckChoice;
+
+  bool get _requiresDrivingLicense {
+    if (!_usesOwnVehicle) return true;
+    return _ownVehicleType != driverOwnMotorcycleType;
+  }
+
+  bool get _showsPlateNumberField =>
+      _usesOwnVehicle && _ownVehicleType != driverOwnMotorcycleType;
 
   @override
   void initState() {
@@ -63,6 +72,7 @@ class _DriverApplicationScreenState extends State<DriverApplicationScreen> {
     _phoneCtrl.dispose();
     _passwordCtrl.dispose();
     _confirmPasswordCtrl.dispose();
+    _plateNumberCtrl.dispose();
     super.dispose();
   }
 
@@ -140,7 +150,7 @@ class _DriverApplicationScreenState extends State<DriverApplicationScreen> {
       return 'Please upload your profile photo, CV, and national ID.';
     }
     if (_requiresDrivingLicense && _drivingLicenseFile == null) {
-      return 'Please upload your driving license for branch truck applications.';
+      return 'Please upload your driving license.';
     }
     return null;
   }
@@ -161,8 +171,11 @@ class _DriverApplicationScreenState extends State<DriverApplicationScreen> {
         password: _passwordCtrl.text,
         confirmPassword: _confirmPasswordCtrl.text,
         branchId: _selectedBranchId!,
-        vehicleType:
-            _vehicleChoice == driverOwnMotorcycleType ? driverOwnMotorcycleType : null,
+        vehicleType: _usesOwnVehicle ? _ownVehicleType : null,
+        plateNumber:
+            _showsPlateNumberField && _plateNumberCtrl.text.trim().isNotEmpty
+                ? _plateNumberCtrl.text.trim()
+                : null,
         avatarFile: _avatarFile!,
         cvFile: _cvFile!,
         nationalIdFile: _nationalIdFile!,
@@ -259,13 +272,40 @@ class _DriverApplicationScreenState extends State<DriverApplicationScreen> {
           const SizedBox(height: 16),
           DriverApplicationVehicleChoice(
             selectedValue: _vehicleChoice,
+            selectedOwnVehicleType: _usesOwnVehicle ? _ownVehicleType : null,
             onChanged: (value) => setState(() {
+              _vehicleChoice = value;
+              if (_vehicleChoice == driverBranchTruckChoice) {
+                _drivingLicenseFile = null;
+                _plateNumberCtrl.clear();
+              }
+              if (!_requiresDrivingLicense) {
+                _drivingLicenseFile = null;
+              }
+              if (!_showsPlateNumberField) {
+                _plateNumberCtrl.clear();
+              }
+            }),
+            onOwnVehicleTypeChanged: (value) => setState(() {
+              if (value == null || value.isEmpty) return;
+              _ownVehicleType = value;
               _vehicleChoice = value;
               if (!_requiresDrivingLicense) {
                 _drivingLicenseFile = null;
               }
+              if (!_showsPlateNumberField) {
+                _plateNumberCtrl.clear();
+              }
             }),
           ),
+          if (_showsPlateNumberField) ...[
+            const SizedBox(height: 16),
+            AuthTextField(
+              label: 'Plate number',
+              placeholder: 'Enter plate number (optional)',
+              controller: _plateNumberCtrl,
+            ),
+          ],
           const SizedBox(height: 20),
           DriverDocumentPickerTile(
             label: 'Upload CV',
@@ -289,7 +329,10 @@ class _DriverApplicationScreenState extends State<DriverApplicationScreen> {
             DriverDocumentPickerTile(
               label: 'Upload driving license',
               fileName: _fileName(_drivingLicenseFile),
-              helperText: 'Required only for branch truck drivers.',
+              helperText:
+                  _usesOwnVehicle
+                      ? 'Required for own truck registrations.'
+                      : 'Required when the branch will assign a vehicle.',
               onTap: () => _pickDocument(
                 allowedExtensions: const ['pdf', 'jpg', 'jpeg', 'png', 'webp'],
                 onSelected: (file) => _drivingLicenseFile = file,

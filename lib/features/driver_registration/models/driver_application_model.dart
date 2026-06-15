@@ -29,8 +29,12 @@ class DriverApplication {
   final String name;
   final String email;
   final String phone;
-  final String vehicleType;
+  final String? vehicleType;
   final String? assignedVehicleCode;
+  final String? plateNumber;
+  final double? maxWeightKg;
+  final double? maxVolumeM3;
+  final int? maxPackageCount;
   final String status;
   final DriverApplicationBranch? branch;
   final String? avatarUrl;
@@ -46,8 +50,12 @@ class DriverApplication {
     required this.name,
     required this.email,
     required this.phone,
-    required this.vehicleType,
+    this.vehicleType,
     this.assignedVehicleCode,
+    this.plateNumber,
+    this.maxWeightKg,
+    this.maxVolumeM3,
+    this.maxPackageCount,
     required this.status,
     this.branch,
     this.avatarUrl,
@@ -60,13 +68,19 @@ class DriverApplication {
   });
 
   factory DriverApplication.fromJson(Map<String, dynamic> json) {
+    final weight = json['maxWeightKg'];
+    final volume = json['maxVolumeM3'];
     return DriverApplication(
       id: json['_id'] as String,
       name: json['name'] as String? ?? '',
       email: json['email'] as String? ?? '',
       phone: json['phone'] as String? ?? '',
-      vehicleType: json['vehicleType'] as String? ?? '',
+      vehicleType: json['vehicleType'] as String?,
       assignedVehicleCode: json['assignedVehicleCode'] as String?,
+      plateNumber: json['plateNumber'] as String?,
+      maxWeightKg: weight is num ? weight.toDouble() : null,
+      maxVolumeM3: volume is num ? volume.toDouble() : null,
+      maxPackageCount: json['maxPackageCount'] as int?,
       status: json['status'] as String? ?? 'pending',
       branch: json['branch'] is Map<String, dynamic>
           ? DriverApplicationBranch.fromJson(

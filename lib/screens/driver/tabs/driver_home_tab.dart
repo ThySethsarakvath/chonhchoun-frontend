@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../../features/auth/models/user_model.dart';
+import '../../../features/driver_registration/models/vehicle_type.dart';
 import '../data/driver_demo_data.dart';
 import '../models/driver_request.dart';
 import '../widgets/driver_colors.dart';
@@ -12,21 +14,43 @@ class DriverHomeTab extends StatelessWidget {
     required this.requests,
     required this.onViewAll,
     required this.onOpenDetail,
+    required this.driverState,
+    required this.loadingDriverState,
   });
 
   final List<DriverRequest> requests;
   final VoidCallback onViewAll;
   final ValueChanged<DriverRequest> onOpenDetail;
+  final DriverStateSnapshot? driverState;
+  final bool loadingDriverState;
 
   @override
   Widget build(BuildContext context) {
+    final currentVehicle = driverState?.currentVehicle;
+    final driverName = driverState?.profile.name.trim().isNotEmpty == true
+        ? driverState!.profile.name
+        : driverDisplayName;
+    final heroAmount = loadingDriverState
+        ? 'Loading...'
+        : currentVehicle != null
+            ? _vehicleHeadline(currentVehicle)
+            : 'No vehicle';
+    final heroHelper = loadingDriverState
+        ? 'Checking assignment'
+        : currentVehicle != null
+            ? '${deliveryCategoryLabel(currentVehicle.type)} | ${currentVehicle.status.replaceAll('_', ' ')}'
+            : 'No active vehicle assigned';
+
     return ListView(
       padding: EdgeInsets.zero,
       children: [
         DriverHeroSection(
           subtitle: 'Welcome Back',
-          name: driverDisplayName,
-          content: const DriverBalanceCard(amount: driverAvailableBalance),
+          name: driverName,
+          content: DriverStatusSummary(
+            amount: heroAmount,
+            helperText: heroHelper,
+          ),
         ),
         Transform.translate(
           offset: const Offset(0, -30),
@@ -151,4 +175,20 @@ class DriverHomeTab extends StatelessWidget {
       ],
     );
   }
+}
+
+String _vehicleHeadline(DriverCurrentVehicle vehicle) {
+  if (vehicle.ownershipType == 'DRIVER_OWNED') {
+    if (vehicle.plateNumber?.isNotEmpty == true) {
+      return vehicle.plateNumber!;
+    }
+    if (vehicle.type == driverOwnMotorcycleType) {
+      return 'Own motorbike';
+    }
+    return 'Own vehicle';
+  }
+  if (vehicle.plateNumber?.isNotEmpty == true) {
+    return vehicle.plateNumber!;
+  }
+  return vehicle.code;
 }

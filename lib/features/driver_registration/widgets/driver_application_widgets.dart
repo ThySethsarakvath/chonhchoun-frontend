@@ -14,7 +14,7 @@ class DriverApplicationHeader extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'ដាក់ពាក្យអ្នកបើកបរ',
+          'Driver Application',
           style: TextStyle(
             fontSize: 24,
             fontWeight: FontWeight.w700,
@@ -23,7 +23,7 @@ class DriverApplicationHeader extends StatelessWidget {
         ),
         SizedBox(height: 8),
         Text(
-          'ដាក់ពាក្យធ្វើការក្រោមការគ្រប់គ្រងរបស់ម្ចាស់សាខា។ យើងនឹងផ្ញើអ៊ីមែលជូនអ្នកបន្ទាប់ពីម្ចាស់សាខាពិនិត្យពាក្យស្នើសុំរបស់អ្នករួច។',
+          'Apply as a driver in a few simple steps. Choose whether you will use your own vehicle or need one from the branch.',
           style: TextStyle(fontSize: 13, color: Color(0xFF6B7A8D)),
         ),
       ],
@@ -64,7 +64,7 @@ class DriverAvatarPicker extends StatelessWidget {
         const SizedBox(height: 10),
         const Center(
           child: Text(
-            'ចុចដើម្បីបង្ហោះរូបភាពប្រវត្តិរូប',
+            'Upload a profile photo',
             style: TextStyle(fontSize: 12, color: Color(0xFF6B7A8D)),
           ),
         ),
@@ -93,7 +93,7 @@ class DriverBranchDropdown extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'ជ្រើសរើសសាខា',
+          'Branch',
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 fontWeight: FontWeight.w600,
                 color: const Color(0xFF1E2D3D),
@@ -114,7 +114,7 @@ class DriverBranchDropdown extends StatelessWidget {
               borderSide: const BorderSide(color: Color(0xFFDDE3EE)),
             ),
           ),
-          hint: Text(loading ? 'កំពុងផ្ទុកសាខា...' : 'សូមជ្រើសរើសសាខា'),
+          hint: Text(loading ? 'Loading branches...' : 'Select a branch'),
           items: branches
               .map(
                 (branch) => DropdownMenuItem<String>(
@@ -133,9 +133,9 @@ class DriverBranchDropdown extends StatelessWidget {
     final branchNumber = branch.branchNumber?.toString() ?? '1';
     final address = (branch.address ?? '').trim();
     if (address.isNotEmpty) {
-      return 'សាខា $branchNumber ($address)';
+      return 'Branch $branchNumber ($address)';
     }
-    return 'សាខា $branchNumber';
+    return 'Branch $branchNumber';
   }
 }
 
@@ -206,12 +206,16 @@ class DriverVehicleTypeDropdown extends StatelessWidget {
 
 class DriverApplicationVehicleChoice extends StatelessWidget {
   final String selectedValue;
+  final String? selectedOwnVehicleType;
   final ValueChanged<String> onChanged;
+  final ValueChanged<String?> onOwnVehicleTypeChanged;
 
   const DriverApplicationVehicleChoice({
     super.key,
     required this.selectedValue,
+    required this.selectedOwnVehicleType,
     required this.onChanged,
+    required this.onOwnVehicleTypeChanged,
   });
 
   @override
@@ -220,7 +224,7 @@ class DriverApplicationVehicleChoice extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'តើអ្នកនឹងប្រើយានជំនិះប្រភេទណា?',
+          'Vehicle setup',
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 fontWeight: FontWeight.w600,
                 color: const Color(0xFF1E2D3D),
@@ -228,18 +232,30 @@ class DriverApplicationVehicleChoice extends StatelessWidget {
         ),
         const SizedBox(height: 8),
         _VehicleChoiceTile(
-          selected: selectedValue == driverOwnMotorcycleType,
-          title: 'ម៉ូតូផ្ទាល់ខ្លួន',
-          subtitle: 'សូមប្រើម៉ូតូផ្ទាល់ខ្លួនរបស់អ្នកសម្រាប់ការងារដឹកជញ្ជូន។',
+          selected: selectedValue != driverBranchTruckChoice,
+          title: 'Use my own vehicle',
+          subtitle:
+              'Pick this if you already have your own motorcycle or truck.',
           icon: Icons.two_wheeler_rounded,
-          onTap: () => onChanged(driverOwnMotorcycleType),
+          onTap: () => onChanged(
+            selectedOwnVehicleType ?? driverOwnMotorcycleType,
+          ),
         ),
+        if (selectedValue != driverBranchTruckChoice) ...[
+          const SizedBox(height: 12),
+          DriverVehicleTypeDropdown(
+            selectedVehicleType: selectedOwnVehicleType,
+            onChanged: onOwnVehicleTypeChanged,
+            options: ownVehicleTypeOptions,
+            label: 'Your vehicle type',
+            hintText: 'Select your own vehicle',
+          ),
+        ],
         const SizedBox(height: 10),
         _VehicleChoiceTile(
           selected: selectedValue == driverBranchTruckChoice,
-          title: 'បើកឡានរបស់សាខា',
-          subtitle:
-              'សាខានឹងផ្ដល់ឡានឲ្យអ្នកបន្ទាប់ពីការស្នើសុំត្រូវបានអនុម័ត។',
+          title: 'Need a branch vehicle',
+          subtitle: 'Pick this if the branch should assign a company truck.',
           icon: Icons.local_shipping_rounded,
           onTap: () => onChanged(driverBranchTruckChoice),
         ),

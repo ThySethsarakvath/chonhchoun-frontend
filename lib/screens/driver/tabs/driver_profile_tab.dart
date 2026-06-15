@@ -16,10 +16,14 @@ class DriverProfileTab extends StatefulWidget {
     super.key,
     required this.request,
     required this.onOpenMap,
+    required this.driverState,
+    required this.onRefreshDriverState,
   });
 
   final DriverRequest request;
   final VoidCallback onOpenMap;
+  final DriverStateSnapshot? driverState;
+  final Future<void> Function() onRefreshDriverState;
 
   @override
   State<DriverProfileTab> createState() => _DriverProfileTabState();
@@ -29,6 +33,7 @@ class _DriverProfileTabState extends State<DriverProfileTab> {
   final UserService _userService = UserService();
   UserProfile? _profile;
   bool _loadingProfile = true;
+  bool _updatingAvailability = false;
 
   @override
   void initState() {
@@ -44,10 +49,46 @@ class _DriverProfileTabState extends State<DriverProfileTab> {
       if (!mounted) return;
       setState(() => _profile = profile);
     } catch (_) {
-
     } finally {
       if (mounted) {
         setState(() => _loadingProfile = false);
+      }
+    }
+    await widget.onRefreshDriverState();
+  }
+
+  Future<void> _updateAvailabilityStatus(String availabilityStatus) async {
+    if (_updatingAvailability) return;
+    try {
+      final accessToken = await TokenStorage.getAccessToken();
+      if (accessToken == null || accessToken.isEmpty) return;
+      setState(() => _updatingAvailability = true);
+      final profile = await _userService.updateDriverAvailabilityStatus(
+        accessToken: accessToken,
+        availabilityStatus: availabilityStatus,
+      );
+      if (!mounted) return;
+      setState(() => _profile = profile);
+      await widget.onRefreshDriverState();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Availability updated to ${availabilityStatus.replaceAll('_', ' ')}.',
+          ),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(e.toString().replaceFirst('Exception: ', '')),
+          backgroundColor: const Color(0xFFD32F2F),
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _updatingAvailability = false);
       }
     }
   }
@@ -55,18 +96,40 @@ class _DriverProfileTabState extends State<DriverProfileTab> {
   @override
   Widget build(BuildContext context) {
     final profile = _profile;
-    final vehicleType = _profile?.vehicleType;
+    final driverState = widget.driverState;
+    final currentVehicle = driverState?.currentVehicle;
+    final vehicleType = currentVehicle?.type ?? _profile?.vehicleType;
     final vehicleLabel = vehicleTypeLabel(vehicleType);
-    final assignedVehicleCode = _profile?.assignedVehicleCode;
+    final assignedVehicleCode =
+        currentVehicle?.ownershipType == 'DRIVER_OWNED'
+            ? null
+            : currentVehicle?.code ?? _profile?.assignedVehicleCode;
     final profileName =
-        profile?.name.trim().isNotEmpty == true ? profile!.name : 'Driver';
-    final profileEmail = profile?.email ?? 'Email not available';
+        profile?.name.trim().isNotEmpty == true
+            ? profile!.name
+            : (driverState?.profile.name.trim().isNotEmpty == true
+                ? driverState!.profile.name
+                : 'Driver');
+    final profileEmail =
+        profile?.email ?? driverState?.profile.email ?? 'Email not available';
     final profilePhone = profile?.phone?.trim().isNotEmpty == true
         ? profile!.phone!
-        : 'Phone not available';
-    final statusLabel = profile?.isActive == false ? 'Inactive' : 'Active';
+        : (driverState?.profile.phone?.trim().isNotEmpty == true
+            ? driverState!.profile.phone!
+            : 'Phone not available');
+    final effectiveRole = profile?.role ?? driverState?.profile.role;
+    final statusLabel =
+        driverState?.profile.availabilityStatus?.replaceAll('_', ' ') ??
+            (profile?.isActive == false ? 'Inactive' : 'Active');
+    final selectedAvailability =
+        driverState?.profile.availabilityStatus ??
+        profile?.availabilityStatus ??
+        'OFFLINE';
     final accountLabel =
-        profile?.role == 'driver' ? 'Driver account' : 'Account profile';
+        effectiveRole == 'driver' ? 'Driver account' : 'Account profile';
+    final categoryLabel = deliveryCategoryLabel(vehicleType);
+    final operationLabel = deliveryOperationLabel(vehicleType);
+    final routeLabel = deliveryRouteLabel(vehicleType);
 
     return ListView(
       padding: EdgeInsets.zero,
@@ -75,11 +138,15 @@ class _DriverProfileTabState extends State<DriverProfileTab> {
           subtitle: accountLabel,
           name: profileName,
           content: DriverStatusSummary(
-            amount: assignedVehicleCode?.isNotEmpty == true
-                ? assignedVehicleCode!
+            amount: currentVehicle != null
+                ? _driverVehicleHeadline(currentVehicle)
+                : assignedVehicleCode?.isNotEmpty == true
+                    ? assignedVehicleCode!
                 : vehicleLabel,
-            helperText: assignedVehicleCode?.isNotEmpty == true
-                ? 'Assigned truck code'
+            helperText: currentVehicle?.ownershipType == 'DRIVER_OWNED'
+                ? 'Your own vehicle'
+                : assignedVehicleCode?.isNotEmpty == true
+                ? 'Current assigned vehicle'
                 : 'Current vehicle',
           ),
         ),
@@ -145,6 +212,55 @@ class _DriverProfileTabState extends State<DriverProfileTab> {
                         label: 'Profile status',
                         value: _loadingProfile ? 'Loading...' : 'Ready',
                       ),
+                      const SizedBox(height: 12),
+                      DriverStatLine(label: 'Availability', value: statusLabel),
+                      if (vehicleType != null && vehicleType.isNotEmpty) ...[
+                        const SizedBox(height: 12),
+                        DriverStatLine(label: 'Operation', value: categoryLabel),
+                      ],
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+                DriverSurfaceCard(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Availability Control',
+                        style: TextStyle(
+                          color: DriverColors.text,
+                          fontWeight: FontWeight.w800,
+                          fontSize: 20,
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      const Text(
+                        'Both you and the branch owner can update this status.',
+                        style: TextStyle(color: DriverColors.muted),
+                      ),
+                      const SizedBox(height: 16),
+                      DropdownButtonFormField<String>(
+                        value: selectedAvailability,
+                        decoration: const InputDecoration(
+                          labelText: 'Driver status',
+                        ),
+                        items: _driverAvailabilityOptions
+                            .map(
+                              (status) => DropdownMenuItem<String>(
+                                value: status,
+                                child: Text(status.replaceAll('_', ' ')),
+                              ),
+                            )
+                            .toList(),
+                        onChanged: _updatingAvailability
+                            ? null
+                            : (value) {
+                                if (value != null) {
+                                  _updateAvailabilityStatus(value);
+                                }
+                              },
+                      ),
                     ],
                   ),
                 ),
@@ -193,14 +309,46 @@ class _DriverProfileTabState extends State<DriverProfileTab> {
                                 Text(
                                   vehicleType == null || vehicleType.isEmpty
                                       ? 'Vehicle type will appear here after branch approval.'
-                                      : 'Assigned vehicle for your delivery profile',
-                                  style: const TextStyle(color: DriverColors.muted),
+                                      : '$categoryLabel - $operationLabel',
+                                  style: const TextStyle(
+                                    color: DriverColors.muted,
+                                  ),
                                 ),
+                                if (vehicleType != null && vehicleType.isNotEmpty) ...[
+                                  const SizedBox(height: 6),
+                                  Text(
+                                    'Route: $routeLabel',
+                                    style: const TextStyle(
+                                      color: DriverColors.muted,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ],
                                 if (assignedVehicleCode != null &&
                                     assignedVehicleCode.isNotEmpty) ...[
                                   const SizedBox(height: 6),
                                   Text(
-                                    'Truck code: $assignedVehicleCode',
+                                    'Vehicle code: $assignedVehicleCode',
+                                    style: const TextStyle(
+                                      color: DriverColors.muted,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ],
+                                if (currentVehicle?.plateNumber?.isNotEmpty == true) ...[
+                                  const SizedBox(height: 6),
+                                  Text(
+                                    'Plate: ${currentVehicle!.plateNumber!}',
+                                    style: const TextStyle(
+                                      color: DriverColors.muted,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ],
+                                if (currentVehicle != null) ...[
+                                  const SizedBox(height: 6),
+                                  Text(
+                                    'Status: ${currentVehicle.status.replaceAll('_', ' ')}',
                                     style: const TextStyle(
                                       color: DriverColors.muted,
                                       fontWeight: FontWeight.w600,
@@ -322,6 +470,22 @@ class _DriverProfileTabState extends State<DriverProfileTab> {
   }
 }
 
+String _driverVehicleHeadline(DriverCurrentVehicle vehicle) {
+  if (vehicle.ownershipType == 'DRIVER_OWNED') {
+    if (vehicle.plateNumber?.isNotEmpty == true) {
+      return vehicle.plateNumber!;
+    }
+    if (vehicle.type == driverOwnMotorcycleType) {
+      return 'Own motorbike';
+    }
+    return 'Own vehicle';
+  }
+  if (vehicle.plateNumber?.isNotEmpty == true) {
+    return vehicle.plateNumber!;
+  }
+  return vehicle.code;
+}
+
 class _DriverProfileAvatar extends StatelessWidget {
   final UserProfile? profile;
 
@@ -357,3 +521,10 @@ class _DriverProfileAvatar extends StatelessWidget {
     );
   }
 }
+
+const _driverAvailabilityOptions = [
+  'AVAILABLE',
+  'ON_BREAK',
+  'UNAVAILABLE',
+  'OFFLINE',
+];

@@ -32,25 +32,25 @@ class BranchDriverRequestsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     if (loading) {
       return const BranchOwnerLoadingCard(
-        message: 'កំពុងផ្ទុកពាក្យស្នើសុំអ្នកបើកបរ...',
+        message: 'Loading driver requests...',
       );
     }
 
     if (error != null) {
       return BranchOwnerMessageCard(
-        title: 'មិនអាចផ្ទុកសំណើអ្នកបើកបរបានទេ',
+        title: 'Unable to load driver requests',
         description: error!,
-        actionLabel: 'ព្យាយាមម្តងទៀត',
+        actionLabel: 'Try again',
         onAction: onRefresh,
       );
     }
 
     if (applications.isEmpty) {
       return BranchOwnerMessageCard(
-        title: 'មិនទាន់មានសំណើអ្នកបើកបរនៅឡើយទេ',
+        title: 'No driver requests yet',
         description:
-            'ពាក្យស្នើសុំអ្នកបើកបរថ្មីដែលផ្ញើមកសាខារបស់អ្នកនឹងបង្ហាញនៅទីនេះ។',
-        actionLabel: 'ផ្ទុកឡើងវិញ',
+            'New driver applications sent to your branch will appear here.',
+        actionLabel: 'Refresh',
         onAction: onRefresh,
       );
     }
@@ -59,9 +59,9 @@ class BranchDriverRequestsScreen extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const BranchOwnerSectionCard(
-          title: 'ពិនិត្យពាក្យស្នើសុំអ្នកបើកបរ',
+          title: 'Driver Requests',
           description:
-              'ពិនិត្យឯកសារដែលអ្នកបើកបរបានបង្ហោះ ហើយអនុម័ត ឬបដិសេធពាក្យស្នើសុំនីមួយៗ។',
+              'Review documents, approve city express riders with their own motorcycles, or reject requests. Branch vehicles can still be assigned later for branch-driver roles.',
         ),
         const SizedBox(height: 14),
         ...applications.map(
@@ -102,44 +102,30 @@ class _DriverApplicationCard extends StatefulWidget {
 }
 
 class _DriverApplicationCardState extends State<_DriverApplicationCard> {
-  final _truckCodeCtrl = TextEditingController();
-
-  @override
-  void initState() {
-    super.initState();
-    _truckCodeCtrl.text = widget.application.assignedVehicleCode ?? '';
-  }
-
-  @override
-  void dispose() {
-    _truckCodeCtrl.dispose();
-    super.dispose();
-  }
-
   Future<void> _promptReject(BuildContext context) async {
     final controller = TextEditingController();
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('បដិសេធពាក្យស្នើសុំ'),
+        title: const Text('Reject Driver Request'),
         content: TextField(
           controller: controller,
           maxLines: 3,
           decoration: const InputDecoration(
-            hintText: 'មូលហេតុបដិសេធ (បើមាន)',
+            hintText: 'Optional rejection reason',
           ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext, false),
-            child: const Text('បោះបង់'),
+            child: const Text('Cancel'),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(dialogContext, true),
             style: FilledButton.styleFrom(
               backgroundColor: const Color(0xFFD32F2F),
             ),
-            child: const Text('បដិសេធ'),
+            child: const Text('Reject'),
           ),
         ],
       ),
@@ -147,7 +133,7 @@ class _DriverApplicationCardState extends State<_DriverApplicationCard> {
 
     if (confirmed == true) {
       await widget.onReject(
-        controller.text.trim().isEmpty ? null : controller.text,
+        controller.text.trim().isEmpty ? null : controller.text.trim(),
       );
     }
   }
@@ -156,13 +142,13 @@ class _DriverApplicationCardState extends State<_DriverApplicationCard> {
   Widget build(BuildContext context) {
     final application = widget.application;
     final isPending = application.status == 'pending';
-    final isMotorcycleApplication =
-        application.vehicleType == driverOwnMotorcycleType;
+    final isOwnVehicleApplication =
+        application.vehicleType != null &&
+        application.vehicleType != driverBranchTruckChoice;
     final effectiveVehicleType =
-        isMotorcycleApplication ? driverOwnMotorcycleType : driverBranchTruckType;
-    final effectiveTruckCode = application.assignedVehicleCode?.isNotEmpty == true
-        ? application.assignedVehicleCode!
-        : _truckCodeCtrl.text.trim();
+        isOwnVehicleApplication
+            ? application.vehicleType
+            : driverBranchTruckChoice;
 
     return Container(
       width: double.infinity,
@@ -192,12 +178,12 @@ class _DriverApplicationCardState extends State<_DriverApplicationCard> {
           ),
           const SizedBox(height: 8),
           Text(
-            '${application.email} • ${application.phone}',
+            '${application.email} | ${application.phone}',
             style: const TextStyle(fontSize: 13, color: Color(0xFF475569)),
           ),
           const SizedBox(height: 8),
           Text(
-            'សាខា: ${application.branch?.name ?? '-'}',
+            'Branch: ${application.branch?.name ?? '-'}',
             style: const TextStyle(fontSize: 13, color: Color(0xFF475569)),
           ),
           const SizedBox(height: 8),
@@ -205,27 +191,30 @@ class _DriverApplicationCardState extends State<_DriverApplicationCard> {
             vehicleType: effectiveVehicleType,
             assignedVehicleCode: application.assignedVehicleCode,
           ),
-          if (isPending && !isMotorcycleApplication) ...[
+          if (application.plateNumber?.isNotEmpty == true) ...[
+            const SizedBox(height: 10),
+            _InfoChip(label: 'Plate: ${application.plateNumber!}'),
+          ],
+          if (isPending &&
+              application.vehicleType == driverOwnMotorcycleType) ...[
             const SizedBox(height: 12),
-            TextField(
-              controller: _truckCodeCtrl,
-              decoration: InputDecoration(
-                labelText: 'លេខកូដឡានរបស់សាខា',
-                hintText: 'ឧទាហរណ៍ TRK-01',
-                filled: true,
-                fillColor: Colors.white,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: Color(0xFFDDE3EE)),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: Color(0xFFDDE3EE)),
-                ),
-                helperText:
-                    'បញ្ចូលលេខកូដឡានដែលសាខានឹងផ្ដល់ឲ្យអ្នកបើកបរ។',
+            const Text(
+              'Approving this request keeps the rider on their own motorbike for city express delivery.',
+              style: TextStyle(
+                fontSize: 12,
+                color: Color(0xFF047857),
+                height: 1.4,
               ),
-              onChanged: (_) => setState(() {}),
+            ),
+          ],
+          if (isPending && !isOwnVehicleApplication) ...[
+            const SizedBox(height: 12),
+            const Text(
+              'Approve first, then assign an existing branch vehicle later from Driver Management.',
+              style: TextStyle(
+                fontSize: 12,
+                color: Color(0xFF64748B),
+              ),
             ),
           ],
           const SizedBox(height: 12),
@@ -233,17 +222,20 @@ class _DriverApplicationCardState extends State<_DriverApplicationCard> {
             spacing: 10,
             runSpacing: 10,
             children: [
-              _LinkChip(label: 'រូបភាព', url: application.avatarUrl),
+              _LinkChip(label: 'Photo', url: application.avatarUrl),
               _LinkChip(label: 'CV', url: application.cvUrl),
-              _LinkChip(label: 'អត្តសញ្ញាណប័ណ្ណ', url: application.nationalIdUrl),
-              _LinkChip(label: 'ប័ណ្ណបើកបរ', url: application.drivingLicenseUrl),
+              _LinkChip(label: 'National ID', url: application.nationalIdUrl),
+              _LinkChip(
+                label: 'Driving License',
+                url: application.drivingLicenseUrl,
+              ),
             ],
           ),
           if (application.rejectionReason != null &&
               application.rejectionReason!.isNotEmpty) ...[
             const SizedBox(height: 12),
             Text(
-              'មូលហេតុ: ${application.rejectionReason}',
+              'Reason: ${application.rejectionReason}',
               style: const TextStyle(fontSize: 13, color: Color(0xFFB45309)),
             ),
           ],
@@ -252,21 +244,22 @@ class _DriverApplicationCardState extends State<_DriverApplicationCard> {
             Row(
               children: [
                 FilledButton.icon(
-                  onPressed: !isMotorcycleApplication && effectiveTruckCode.isEmpty
-                      ? null
-                      : () => widget.onApprove(
-                            isMotorcycleApplication ? null : driverBranchTruckType,
-                            assignedVehicleCode:
-                                isMotorcycleApplication ? null : effectiveTruckCode,
-                          ),
+                  onPressed: () => widget.onApprove(
+                    isOwnVehicleApplication ? null : driverTruckType,
+                    assignedVehicleCode: null,
+                  ),
                   icon: const Icon(Icons.check_circle_outline_rounded),
-                  label: const Text('អនុម័ត'),
+                  label: Text(
+                    application.vehicleType == driverOwnMotorcycleType
+                        ? 'Approve City Express'
+                        : 'Approve',
+                  ),
                 ),
                 const SizedBox(width: 10),
                 OutlinedButton.icon(
                   onPressed: () => _promptReject(context),
                   icon: const Icon(Icons.close_rounded),
-                  label: const Text('បដិសេធ'),
+                  label: const Text('Reject'),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: const Color(0xFFD32F2F),
                   ),
@@ -301,10 +294,10 @@ class _StatusChip extends StatelessWidget {
             ? const Color(0xFFB91C1C)
             : const Color(0xFF92400E);
     final statusLabel = isApproved
-        ? 'អនុម័ត'
+        ? 'Approved'
         : isRejected
-            ? 'បដិសេធ'
-            : 'កំពុងរង់ចាំ';
+            ? 'Rejected'
+            : 'Pending';
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -336,9 +329,9 @@ class _VehicleTypeBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final label = assignedVehicleCode?.isNotEmpty == true
-        ? 'ឡានរបស់សាខា • ${assignedVehicleCode!}'
-        : vehicleType == driverBranchTruckType
-            ? 'ឡានរបស់សាខា'
+        ? 'Branch Vehicle - ${assignedVehicleCode!}'
+        : vehicleType == driverBranchTruckChoice
+            ? 'Branch Vehicle'
             : reviewVehicleTypeLabel(vehicleType);
 
     return Container(
@@ -394,12 +387,38 @@ class _LinkChip extends StatelessWidget {
             : () => launchUrl(Uri.parse(url!)),
         borderRadius: BorderRadius.circular(999),
         child: Text(
-          url == null || url!.isEmpty ? '$label មិនមាន' : 'បើក $label',
+          url == null || url!.isEmpty ? '$label missing' : 'Open $label',
           style: const TextStyle(
             fontSize: 12,
             fontWeight: FontWeight.w600,
             color: Color(0xFF1E3A5F),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _InfoChip extends StatelessWidget {
+  final String label;
+
+  const _InfoChip({required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8FAFC),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+      ),
+      child: Text(
+        label,
+        style: const TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+          color: Color(0xFF334155),
         ),
       ),
     );

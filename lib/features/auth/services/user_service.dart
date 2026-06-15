@@ -51,4 +51,48 @@ class UserService {
         'Failed to fetch user profile (${res.statusCode})';
     throw Exception(msg);
   }
+
+  Future<DriverStateSnapshot> getDriverState({required String accessToken}) async {
+    final uri = Uri.parse('$_url/users/me/driver-state');
+    final res = await http.get(
+      uri,
+      headers: {
+        'Authorization': 'Bearer $accessToken',
+        'Content-Type': 'application/json',
+      },
+    );
+    final body = json.decode(res.body) as Map<String, dynamic>;
+    if (res.statusCode == 200) {
+      return DriverStateSnapshot.fromJson(body);
+    }
+    final msg = body['message'] as String? ??
+        body['error'] as String? ??
+        'Failed to fetch driver state (${res.statusCode})';
+    throw Exception(msg);
+  }
+
+  Future<UserProfile> updateDriverAvailabilityStatus({
+    required String accessToken,
+    required String availabilityStatus,
+  }) async {
+    final uri = Uri.parse('$_url/users/me/availability-status');
+    final res = await http.patch(
+      uri,
+      headers: {
+        'Authorization': 'Bearer $accessToken',
+        'Content-Type': 'application/json',
+      },
+      body: json.encode({
+        'availabilityStatus': availabilityStatus,
+      }),
+    );
+    final body = json.decode(res.body) as Map<String, dynamic>;
+    if (res.statusCode == 200) {
+      return UserProfile.fromJson(body);
+    }
+    final msg = body['message'] as String? ??
+        body['error'] as String? ??
+        'Failed to update driver availability (${res.statusCode})';
+    throw Exception(msg);
+  }
 }

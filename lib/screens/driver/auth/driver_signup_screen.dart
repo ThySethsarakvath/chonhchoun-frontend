@@ -74,7 +74,7 @@ class _DriverSignupScreenState extends State<DriverSignupScreen> {
                 child: DriverFeatureTile(
                   icon: Icons.two_wheeler_rounded,
                   title: 'Vehicle Type',
-                  subtitle: 'Motorbike or car',
+                  subtitle: 'Motorbike or truck',
                 ),
               ),
               SizedBox(width: 12),
@@ -140,11 +140,11 @@ class _DriverSignupScreenState extends State<DriverSignupScreen> {
               const SizedBox(width: 12),
               Expanded(
                 child: DriverVehicleOptionCard(
-                  label: 'Car',
-                  icon: Icons.directions_car_rounded,
-                  isSelected: _selectedVehicle == 'Car',
+                  label: 'Truck',
+                  icon: Icons.local_shipping_rounded,
+                  isSelected: _selectedVehicle == 'Truck',
                   onTap: () {
-                    setState(() => _selectedVehicle = 'Car');
+                    setState(() => _selectedVehicle = 'Truck');
                   },
                 ),
               ),

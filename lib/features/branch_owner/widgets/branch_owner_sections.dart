@@ -37,7 +37,7 @@ class BranchOwnerOverviewSection extends StatelessWidget {
               color: const Color(0xFF15803D),
             ),
             BranchOwnerStatCard(
-              label: 'Driver Agents',
+              label: 'Driver Management',
               value: driverAgentCountLabel,
               icon: Icons.local_shipping_rounded,
               color: const Color(0xFF1D4ED8),
@@ -122,18 +122,18 @@ class BranchOwnerDriverAgentsSection extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const BranchOwnerSectionCard(
-          title: 'Driver Agent List',
+          title: 'Driver Management',
           description:
-              'This section should show the driver agents connected to the branch so branch owners can monitor who is active and who belongs to the branch.',
+              'This section should show branch drivers, vehicle readiness, and assignment capacity so branch owners can decide who is ready for warehouse-to-warehouse work.',
         ),
         const SizedBox(height: 14),
         BranchOwnerFeatureListCard(
           title: 'Planned tools',
           items: const [
-            'List all branch driver agents',
-            'View driver contact and status',
-            'Check active and inactive driver availability',
-            'Review branch-driver operational visibility',
+            'List all branch drivers and live availability',
+            'View vehicle assignments and owned-vehicle registrations',
+            'Store carrying capacity on each branch vehicle',
+            'Review driver readiness for dispatch',
           ],
         ),
       ],

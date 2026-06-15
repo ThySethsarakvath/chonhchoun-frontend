@@ -9,9 +9,19 @@ import '../../../global/base_url.dart';
 import '../../auth/services/auth_service.dart';
 import '../../auth/tokens/token_storage.dart';
 import '../models/driver_application_model.dart';
+import '../models/driver_management_model.dart';
 
 class DriverApplicationService {
   String get _url => baseUrl;
+
+  dynamic _safeDecode(String body) {
+    if (body.trim().isEmpty) return null;
+    try {
+      return json.decode(body);
+    } catch (_) {
+      return null;
+    }
+  }
 
   MediaType _mediaTypeForFile(File file) {
     final extension = path.extension(file.path).toLowerCase();
@@ -38,6 +48,7 @@ class DriverApplicationService {
     required String confirmPassword,
     required String branchId,
     String? vehicleType,
+    String? plateNumber,
     required File avatarFile,
     required File cvFile,
     required File nationalIdFile,
@@ -55,6 +66,8 @@ class DriverApplicationService {
         'confirmPassword': confirmPassword,
         'branchId': branchId,
         if (vehicleType != null) 'vehicleType': vehicleType,
+        if (plateNumber != null && plateNumber.trim().isNotEmpty)
+          'plateNumber': plateNumber.trim(),
       })
       ..files.addAll([
         await http.MultipartFile.fromPath(
@@ -86,7 +99,7 @@ class DriverApplicationService {
       return;
     }
 
-    final body = json.decode(response.body) as Map<String, dynamic>;
+    final body = _safeDecode(response.body) as Map<String, dynamic>? ?? const {};
     final message = body['message'];
     throw ApiException(
       message is List
@@ -111,7 +124,7 @@ class DriverApplicationService {
       Uri.parse('$_url/driver-applications/branch-owner'),
       headers: await _authHeaders(),
     );
-    final body = json.decode(response.body);
+    final body = _safeDecode(response.body);
     if (response.statusCode == 200) {
       return (body as List)
           .map(
@@ -135,7 +148,7 @@ class DriverApplicationService {
       Uri.parse('$_url/driver-applications/branch-owner/drivers'),
       headers: await _authHeaders(),
     );
-    final body = json.decode(response.body);
+    final body = _safeDecode(response.body);
     if (response.statusCode == 200) {
       return (body as List)
           .map((item) => BranchDriver.fromJson(item as Map<String, dynamic>))
@@ -169,9 +182,11 @@ class DriverApplicationService {
       return;
     }
 
-    final body = json.decode(response.body) as Map<String, dynamic>;
+    final body = _safeDecode(response.body) as Map<String, dynamic>? ?? const {};
     throw ApiException(
-      body['message'] as String? ??
+      (body['message'] is List
+          ? (body['message'] as List).join(', ')
+          : body['message'] as String?) ??
           'Failed to approve application (${response.statusCode})',
       response.statusCode,
     );
@@ -192,9 +207,11 @@ class DriverApplicationService {
       return;
     }
 
-    final body = json.decode(response.body) as Map<String, dynamic>;
+    final body = _safeDecode(response.body) as Map<String, dynamic>? ?? const {};
     throw ApiException(
-      body['message'] as String? ??
+      (body['message'] is List
+          ? (body['message'] as List).join(', ')
+          : body['message'] as String?) ??
           'Failed to reject application (${response.statusCode})',
       response.statusCode,
     );
@@ -218,10 +235,244 @@ class DriverApplicationService {
       return;
     }
 
-    final body = json.decode(response.body) as Map<String, dynamic>;
+    final body = _safeDecode(response.body) as Map<String, dynamic>? ?? const {};
     throw ApiException(
-      body['message'] as String? ??
+      (body['message'] is List
+          ? (body['message'] as List).join(', ')
+          : body['message'] as String?) ??
           'Failed to update driver vehicle type (${response.statusCode})',
+      response.statusCode,
+    );
+  }
+
+  Future<BranchDriverManagementOverview> getBranchOwnerManagementOverview() async {
+    final response = await http.get(
+      Uri.parse('$_url/driver-applications/branch-owner/management-overview'),
+      headers: await _authHeaders(),
+    );
+    final body =
+        _safeDecode(response.body) as Map<String, dynamic>? ?? const {};
+    if (response.statusCode == 200) {
+      return BranchDriverManagementOverview.fromJson(body);
+    }
+
+    throw ApiException(
+      (body['message'] is List
+          ? (body['message'] as List).join(', ')
+          : body['message'] as String?) ??
+          'Failed to load driver management overview (${response.statusCode})',
+      response.statusCode,
+    );
+  }
+
+  Future<void> createBranchVehicle({
+    required String code,
+    required String vehicleType,
+    String? plateNumber,
+    String? currentWarehouse,
+    double? maxWeightKg,
+    double? maxVolumeM3,
+    int? maxPackageCount,
+  }) async {
+    final response = await http.post(
+      Uri.parse('$_url/driver-applications/branch-owner/vehicles'),
+      headers: await _authHeaders(),
+      body: json.encode({
+        'code': code,
+        'type': vehicleType,
+        if (plateNumber != null && plateNumber.trim().isNotEmpty)
+          'plateNumber': plateNumber.trim(),
+        if (currentWarehouse != null && currentWarehouse.trim().isNotEmpty)
+          'currentWarehouse': currentWarehouse.trim(),
+        if (maxWeightKg != null) 'maxWeightKg': maxWeightKg,
+        if (maxVolumeM3 != null) 'maxVolumeM3': maxVolumeM3,
+        if (maxPackageCount != null) 'maxPackageCount': maxPackageCount,
+      }),
+    );
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      return;
+    }
+
+    final body = _safeDecode(response.body) as Map<String, dynamic>? ?? const {};
+    throw ApiException(
+      (body['message'] is List
+          ? (body['message'] as List).join(', ')
+          : body['message'] as String?) ??
+          'Failed to create vehicle (${response.statusCode})',
+      response.statusCode,
+    );
+  }
+
+  Future<void> updateBranchVehicle(
+    String vehicleId, {
+    String? plateNumber,
+    String? currentWarehouse,
+    String? status,
+    double? maxWeightKg,
+    int? maxPackageCount,
+  }) async {
+    final response = await http.patch(
+      Uri.parse('$_url/driver-applications/branch-owner/vehicles/$vehicleId'),
+      headers: await _authHeaders(),
+      body: json.encode({
+        'plateNumber': plateNumber,
+        'maxWeightKg': maxWeightKg,
+        'maxPackageCount': maxPackageCount,
+        if (currentWarehouse != null) 'currentWarehouse': currentWarehouse,
+        if (status != null && status.isNotEmpty) 'status': status,
+      }),
+    );
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      return;
+    }
+
+    final body = _safeDecode(response.body) as Map<String, dynamic>? ?? const {};
+    throw ApiException(
+      (body['message'] is List
+          ? (body['message'] as List).join(', ')
+          : body['message'] as String?) ??
+          'Failed to update vehicle (${response.statusCode})',
+      response.statusCode,
+    );
+  }
+
+  Future<void> deactivateBranchVehicle(String vehicleId) async {
+    final response = await http.patch(
+      Uri.parse(
+        '$_url/driver-applications/branch-owner/vehicles/$vehicleId/deactivate',
+      ),
+      headers: await _authHeaders(),
+    );
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      return;
+    }
+
+    final body = _safeDecode(response.body) as Map<String, dynamic>? ?? const {};
+    throw ApiException(
+      (body['message'] is List
+          ? (body['message'] as List).join(', ')
+          : body['message'] as String?) ??
+          'Failed to deactivate vehicle (${response.statusCode})',
+      response.statusCode,
+    );
+  }
+
+  Future<void> activateBranchVehicle(String vehicleId) async {
+    final response = await http.patch(
+      Uri.parse(
+        '$_url/driver-applications/branch-owner/vehicles/$vehicleId/activate',
+      ),
+      headers: await _authHeaders(),
+    );
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      return;
+    }
+
+    final body = _safeDecode(response.body) as Map<String, dynamic>? ?? const {};
+    throw ApiException(
+      (body['message'] is List
+          ? (body['message'] as List).join(', ')
+          : body['message'] as String?) ??
+          'Failed to activate vehicle (${response.statusCode})',
+      response.statusCode,
+    );
+  }
+
+  Future<void> updateBranchDriverManagement(
+    String driverId, {
+    required String availabilityStatus,
+    String? licenseNumber,
+    double? maxLoadWeightKg,
+    int? maxPackageCount,
+  }) async {
+    final response = await http.patch(
+      Uri.parse('$_url/driver-applications/branch-owner/drivers/$driverId/management'),
+      headers: await _authHeaders(),
+      body: json.encode({
+        'availabilityStatus': availabilityStatus,
+        if (licenseNumber != null && licenseNumber.trim().isNotEmpty)
+          'licenseNumber': licenseNumber.trim(),
+        if (maxLoadWeightKg != null) 'maxLoadWeightKg': maxLoadWeightKg,
+        if (maxPackageCount != null) 'maxPackageCount': maxPackageCount,
+      }),
+    );
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      return;
+    }
+
+    final body = _safeDecode(response.body) as Map<String, dynamic>? ?? const {};
+    throw ApiException(
+      (body['message'] is List
+          ? (body['message'] as List).join(', ')
+          : body['message'] as String?) ??
+          'Failed to update driver management (${response.statusCode})',
+      response.statusCode,
+    );
+  }
+
+  Future<void> assignVehicleToDriver(
+    String driverId, {
+    required String vehicleId,
+    String assignmentType = 'PRIMARY',
+  }) async {
+    final response = await http.post(
+      Uri.parse('$_url/driver-applications/branch-owner/drivers/$driverId/assign-vehicle'),
+      headers: await _authHeaders(),
+      body: json.encode({
+        'vehicleId': vehicleId,
+        'assignmentType': assignmentType,
+      }),
+    );
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      return;
+    }
+
+    final body = _safeDecode(response.body) as Map<String, dynamic>? ?? const {};
+    throw ApiException(
+      (body['message'] is List
+          ? (body['message'] as List).join(', ')
+          : body['message'] as String?) ??
+          'Failed to assign vehicle (${response.statusCode})',
+      response.statusCode,
+    );
+  }
+
+  Future<void> unassignVehicleFromDriver(String driverId) async {
+    final response = await http.patch(
+      Uri.parse(
+        '$_url/driver-applications/branch-owner/drivers/$driverId/unassign-vehicle',
+      ),
+      headers: await _authHeaders(),
+    );
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      return;
+    }
+
+    final body = _safeDecode(response.body) as Map<String, dynamic>? ?? const {};
+    throw ApiException(
+      (body['message'] is List
+          ? (body['message'] as List).join(', ')
+          : body['message'] as String?) ??
+          'Failed to unassign vehicle (${response.statusCode})',
+      response.statusCode,
+    );
+  }
+
+  Future<void> deactivateBranchDriver(String driverId) async {
+    final response = await http.patch(
+      Uri.parse('$_url/driver-applications/branch-owner/drivers/$driverId/deactivate'),
+      headers: await _authHeaders(),
+    );
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      return;
+    }
+
+    final body = _safeDecode(response.body) as Map<String, dynamic>? ?? const {};
+    throw ApiException(
+      (body['message'] is List
+          ? (body['message'] as List).join(', ')
+          : body['message'] as String?) ??
+          'Failed to remove driver (${response.statusCode})',
       response.statusCode,
     );
   }
