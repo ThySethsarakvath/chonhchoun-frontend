@@ -26,6 +26,12 @@ String get baseUrl {
 /// socket.io upgrades this http(s) origin to a websocket itself.
 String get socketBaseUrl => baseUrl.replaceAll('/api/v1', '');
 
+String get mqttHost => dotenv.env['MQTT_HOST']?.trim().isNotEmpty == true
+    ? dotenv.env['MQTT_HOST']!.trim()
+    : 'broker.emqx.io';
+
+int get mqttPort => int.tryParse(dotenv.env['MQTT_PORT']?.trim() ?? '') ?? 1883;
+
 /// Base URL for the standalone chatbot (FastAPI RAG) service.
 String get chatbotBaseUrl {
   if (kIsWeb) {

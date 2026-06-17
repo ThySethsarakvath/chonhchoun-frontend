@@ -2,14 +2,16 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../../../global/base_url.dart';
 
-/// Talks to the standalone FastAPI RAG chatbot (`POST /ask`).
 class ChatbotService {
   String get _url => chatbotBaseUrl;
 
   static const _headers = {'Content-Type': 'application/json'};
 
-  /// Sends [question] (optionally scoped to [userId]) and returns the answer.
-  Future<String> ask(String question, {String? userId}) async {
+  Future<String> ask(
+    String question, {
+    String? userId,
+    String? sessionId,
+  }) async {
     final res = await http
         .post(
           Uri.parse('$_url/ask'),
@@ -17,6 +19,8 @@ class ChatbotService {
           body: json.encode({
             'question': question,
             if (userId != null && userId.isNotEmpty) 'user_id': userId,
+            if (sessionId != null && sessionId.isNotEmpty)
+              'session_id': sessionId,
           }),
         )
         .timeout(const Duration(seconds: 60));
@@ -29,5 +33,18 @@ class ChatbotService {
     }
 
     throw Exception('Chatbot error (${res.statusCode})');
+  }
+
+  Future<void> resetSession(String sessionId) async {
+    if (sessionId.isEmpty) return;
+    try {
+      await http
+          .post(
+            Uri.parse('$_url/session/reset'),
+            headers: _headers,
+            body: json.encode({'session_id': sessionId}),
+          )
+          .timeout(const Duration(seconds: 10));
+    } catch (_) {}
   }
 }

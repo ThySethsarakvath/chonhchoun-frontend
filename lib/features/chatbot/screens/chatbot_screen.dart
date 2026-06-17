@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import '../../../shared/colors/app_colors.dart';
 import '../services/chatbot_service.dart';
@@ -31,9 +33,19 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
     ),
   ];
   bool _sending = false;
+  late final String _sessionId;
+
+  @override
+  void initState() {
+    super.initState();
+    final rand = Random().nextInt(0x7fffffff);
+    _sessionId =
+        'sess-${DateTime.now().microsecondsSinceEpoch.toRadixString(16)}-$rand';
+  }
 
   @override
   void dispose() {
+    _service.resetSession(_sessionId);
     _inputCtrl.dispose();
     _scrollCtrl.dispose();
     super.dispose();
@@ -51,7 +63,11 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
     _scrollToBottom();
 
     try {
-      final answer = await _service.ask(text, userId: widget.userId);
+      final answer = await _service.ask(
+        text,
+        userId: widget.userId,
+        sessionId: _sessionId,
+      );
       if (!mounted) return;
       setState(() => _messages.add(_ChatMessage(answer, isUser: false)));
     } catch (e) {

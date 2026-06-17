@@ -4,7 +4,6 @@ import '../../../features/auth/models/user_model.dart';
 import '../../../features/auth/services/user_service.dart';
 import '../../../features/auth/tokens/token_storage.dart';
 import '../../../features/driver_registration/models/vehicle_type.dart';
-import '../models/driver_request.dart';
 import '../widgets/driver_button_widgets.dart';
 import '../widgets/driver_colors.dart';
 import '../widgets/driver_map_widgets.dart';
@@ -14,12 +13,10 @@ import '../widgets/driver_shell_widgets.dart';
 class DriverProfileTab extends StatefulWidget {
   const DriverProfileTab({
     super.key,
-    required this.request,
-    required this.onOpenMap,
+    required this.onOpenRoute,
   });
 
-  final DriverRequest request;
-  final VoidCallback onOpenMap;
+  final VoidCallback onOpenRoute;
 
   @override
   State<DriverProfileTab> createState() => _DriverProfileTabState();
@@ -267,49 +264,9 @@ class _DriverProfileTabState extends State<DriverProfileTab> {
                         width: double.infinity,
                         child: DriverPrimaryButton(
                           label: 'Open Live Map',
-                          onPressed: widget.onOpenMap,
+                          onPressed: widget.onOpenRoute,
                         ),
                       ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 16),
-                DriverSurfaceCard(
-                  child: Row(
-                    children: [
-                      CircleAvatar(
-                        radius: 24,
-                        backgroundColor:
-                            widget.request.accent.withValues(alpha: 0.12),
-                        child: Text(
-                          widget.request.senderInitials,
-                          style: TextStyle(
-                            color: widget.request.accent,
-                            fontWeight: FontWeight.w800,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text(
-                              'Readiness',
-                              style: TextStyle(
-                                color: DriverColors.text,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              'Next package: ${widget.request.title}',
-                              style: const TextStyle(color: DriverColors.muted),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const DriverStatusChip(label: 'Online'),
                     ],
                   ),
                 ),

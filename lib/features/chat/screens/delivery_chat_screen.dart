@@ -1,13 +1,13 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
-import 'package:socket_io_client/socket_io_client.dart' as io;
+import 'package:mqtt_client/mqtt_client.dart';
+import 'package:mqtt_client/mqtt_server_client.dart';
 import '../../../global/base_url.dart';
 import '../../../shared/colors/app_colors.dart';
 import '../../auth/tokens/token_storage.dart';
 import '../models/chat_message.dart';
 import '../services/chat_service.dart';
-
-/// Real-time chat for a single delivery, shared by customer and driver.
-/// Loads history over REST, then streams live messages over socket.io.
 class DeliveryChatScreen extends StatefulWidget {
   final String packageId;
   final String currentUserId;
@@ -31,9 +31,13 @@ class _DeliveryChatScreenState extends State<DeliveryChatScreen> {
   final List<ChatMessage> _messages = [];
   final Set<String> _seenIds = {}; // server ids already rendered (de-dupe)
 
-  io.Socket? _socket;
+  MqttServerClient? _mqtt;
+  String? _token;
   bool _loading = true;
   bool _connected = false;
+
+  String get _messagesTopic => 'chonchoun/chat/${widget.packageId}/messages';
+  String get _outboxTopic => 'chonchoun/chat/${widget.packageId}/outbox';
 
   @override
   void initState() {
@@ -47,6 +51,7 @@ class _DeliveryChatScreenState extends State<DeliveryChatScreen> {
       if (mounted) setState(() => _loading = false);
       return;
     }
+    _token = token;
 
     // 1) Load history
     try {
@@ -63,33 +68,56 @@ class _DeliveryChatScreenState extends State<DeliveryChatScreen> {
     if (mounted) setState(() => _loading = false);
     _scrollToBottom();
 
-    // 2) Connect socket + join the delivery room
-    final socket = io.io(
-      '$socketBaseUrl/chat',
-      io.OptionBuilder()
-          .setTransports(['websocket'])
-          .disableAutoConnect()
-          .setAuth({'token': token})
-          .build(),
-    );
+    await _connectMqtt();
+  }
 
-    socket.onConnect((_) {
+  Future<void> _connectMqtt() async {
+    final clientId =
+        'app-${widget.currentUserId}-${DateTime.now().millisecondsSinceEpoch}';
+    final client = MqttServerClient.withPort(mqttHost, clientId, mqttPort);
+    client.logging(on: false);
+    client.keepAlivePeriod = 20;
+    client.autoReconnect = true;
+    client.onConnected = () {
       if (mounted) setState(() => _connected = true);
-      socket.emit('room:join', {'packageId': widget.packageId});
-    });
-    socket.onDisconnect((_) {
+      client.subscribe(_messagesTopic, MqttQos.atLeastOnce);
+    };
+    client.onDisconnected = () {
       if (mounted) setState(() => _connected = false);
-    });
-    socket.on('chat:message', (data) {
-      if (data is! Map) return;
-      final msg = ChatMessage.fromJson(Map<String, dynamic>.from(data));
-      if (msg.packageId != widget.packageId) return;
-      if (_seenIds.contains(msg.id)) return; // already rendered
+    };
+    client.connectionMessage = MqttConnectMessage()
+        .withClientIdentifier(clientId)
+        .startClean();
+
+    client.updates?.listen(_onMqttUpdates);
+
+    try {
+      await client.connect();
+    } catch (e) {
+      debugPrint('mqtt connect error: $e');
+      client.disconnect();
+      return;
+    }
+    _mqtt = client;
+  }
+
+  void _onMqttUpdates(List<MqttReceivedMessage<MqttMessage>> events) {
+    for (final event in events) {
+      final recv = event.payload as MqttPublishMessage;
+      final payload =
+          MqttPublishPayload.bytesToStringAsString(recv.payload.message);
+      Map<String, dynamic> data;
+      try {
+        data = json.decode(payload) as Map<String, dynamic>;
+      } catch (_) {
+        continue;
+      }
+      final msg = ChatMessage.fromJson(data);
+      if (msg.packageId != widget.packageId) continue;
+      if (_seenIds.contains(msg.id)) continue;
       if (!mounted) return;
       setState(() {
         _seenIds.add(msg.id);
-        // If this is the server echo of a message we sent optimistically,
-        // replace the local placeholder instead of adding a duplicate.
         if (msg.senderId == widget.currentUserId) {
           final i = _messages.indexWhere(
             (m) => m.id.startsWith('local-') && m.text == msg.text,
@@ -102,17 +130,16 @@ class _DeliveryChatScreenState extends State<DeliveryChatScreen> {
         _messages.add(msg);
       });
       _scrollToBottom();
-    });
-
-    socket.connect();
-    _socket = socket;
+    }
   }
 
   void _send() {
     final text = _inputCtrl.text.trim();
-    if (text.isEmpty || _socket == null) return;
-    // Render immediately (optimistic); the server echo will reconcile this
-    // placeholder via its `local-` id in the chat:message handler.
+    final token = _token;
+    if (text.isEmpty || _mqtt == null || token == null) return;
+    if (_mqtt!.connectionStatus?.state != MqttConnectionState.connected) {
+      return;
+    }
     setState(() {
       _messages.add(ChatMessage(
         id: 'local-${DateTime.now().microsecondsSinceEpoch}',
@@ -122,7 +149,9 @@ class _DeliveryChatScreenState extends State<DeliveryChatScreen> {
         createdAt: DateTime.now(),
       ));
     });
-    _socket!.emit('chat:message', {'packageId': widget.packageId, 'text': text});
+    final builder = MqttClientPayloadBuilder();
+    builder.addString(json.encode({'token': token, 'text': text}));
+    _mqtt!.publishMessage(_outboxTopic, MqttQos.atLeastOnce, builder.payload!);
     _inputCtrl.clear();
     _scrollToBottom();
   }
@@ -141,7 +170,7 @@ class _DeliveryChatScreenState extends State<DeliveryChatScreen> {
 
   @override
   void dispose() {
-    _socket?.dispose();
+    _mqtt?.disconnect();
     _inputCtrl.dispose();
     _scrollCtrl.dispose();
     super.dispose();
