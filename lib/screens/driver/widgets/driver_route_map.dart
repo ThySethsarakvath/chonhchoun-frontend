@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 
+import '../../../shared/data/map_data.dart';
 import '../data/driver_map_data.dart';
 import '../models/driver_route.dart';
 import 'driver_colors.dart';
@@ -79,8 +80,8 @@ class _DriverRouteMapState extends State<DriverRouteMap> {
       ),
       children: [
         TileLayer(
-          urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-          userAgentPackageName: 'com.chonhchoun.frontend',
+          urlTemplate: MapConfig.urlTemplate,
+          userAgentPackageName: MapConfig.userAgent,
         ),
         if (plan.geometry.length >= 2)
           PolylineLayer(

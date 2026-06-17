@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:http/http.dart' as http;
+import '../../../shared/data/map_data.dart';
 
 class PickupMapPicker extends StatefulWidget {
   const PickupMapPicker({super.key, required this.initialLocation, this.initialAddress, required this.warehouseLocation});
@@ -91,8 +92,8 @@ class _PickupMapPickerState extends State<PickupMapPicker> {
             ),
             children: [
               TileLayer(
-                urlTemplate: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-                subdomains: const ['a', 'b', 'c'],
+                urlTemplate: MapConfig.urlTemplate,
+                userAgentPackageName: MapConfig.userAgent,
               ),
               MarkerLayer(
                 markers: [
