@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 
 import '../driver_workspace_screen.dart';
-import '../widgets/driver_auth_widgets.dart';
-import '../widgets/driver_button_widgets.dart';
-import '../widgets/driver_colors.dart';
-import '../widgets/driver_shell_widgets.dart';
+import '../../../shared/widgets/driver_auth_widgets.dart';
+import '../../../shared/widgets/driver_button_widgets.dart';
+import '../../../shared/widgets/driver_colors.dart';
+import '../../../shared/widgets/driver_shell_widgets.dart';
 import 'driver_signup_screen.dart';
 
 class DriverLoginScreen extends StatefulWidget {

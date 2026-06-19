@@ -35,18 +35,27 @@ class CompleteRegisterRequest {
   final String setupToken;
   final String password;
   final String confirmPassword;
+  final String? role;
+  final String? vehicleType;
 
   CompleteRegisterRequest({
     required this.setupToken,
     required this.password,
     required this.confirmPassword,
+    this.role,
+    this.vehicleType,
   });
 
-  Map<String, dynamic> toJson() => {
-        'setupToken': setupToken,
-        'password': password,
-        'confirmPassword': confirmPassword,
-      };
+  Map<String, dynamic> toJson() {
+    final data = <String, dynamic>{
+      'setupToken': setupToken,
+      'password': password,
+      'confirmPassword': confirmPassword,
+    };
+    if (role != null) data['role'] = role;
+    if (vehicleType != null) data['vehicleType'] = vehicleType;
+    return data;
+  }
 }
 
 class ForgotPasswordRequest {

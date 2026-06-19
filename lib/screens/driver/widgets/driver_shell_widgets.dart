@@ -298,8 +298,7 @@ class DriverBottomBar extends StatelessWidget {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
-            SizedBox(
-              width: 84,
+            Expanded(
               child: _DriverBottomBarItem(
                 icon: Icons.home_filled,
                 label: 'Home',
@@ -307,22 +306,28 @@ class DriverBottomBar extends StatelessWidget {
                 onTap: () => onSelected(0),
               ),
             ),
-            SizedBox(
-              width: 84,
+            Expanded(
               child: _DriverBottomBarItem(
-                icon: Icons.work_history_rounded,
-                label: 'Deliveries',
+                icon: Icons.route_rounded,
+                label: 'Route',
                 isSelected: selectedIndex == 1,
                 onTap: () => onSelected(1),
               ),
             ),
-            SizedBox(
-              width: 84,
+            Expanded(
+              child: _DriverBottomBarItem(
+                icon: Icons.work_history_rounded,
+                label: 'Deliveries',
+                isSelected: selectedIndex == 2,
+                onTap: () => onSelected(2),
+              ),
+            ),
+            Expanded(
               child: _DriverBottomBarItem(
                 icon: Icons.person_rounded,
                 label: 'Profile',
-                isSelected: selectedIndex == 2,
-                onTap: () => onSelected(2),
+                isSelected: selectedIndex == 3,
+                onTap: () => onSelected(3),
               ),
             ),
           ],
@@ -359,8 +364,20 @@ class _DriverBottomBarItem extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(icon, color: color, size: 20),
-              const SizedBox(height: 2),
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 220),
+                curve: Curves.easeOut,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 18, vertical: 5),
+                decoration: BoxDecoration(
+                  color: isSelected
+                      ? DriverColors.blue.withValues(alpha: 0.12)
+                      : Colors.transparent,
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                child: Icon(icon, color: color, size: 20),
+              ),
+              const SizedBox(height: 3),
               Text(
                 label,
                 style: TextStyle(

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+<<<<<<< HEAD
 import '../../../features/auth/models/user_model.dart';
 import '../../../features/driver_registration/models/vehicle_type.dart';
 import '../data/driver_demo_data.dart';
@@ -7,6 +8,13 @@ import '../models/driver_request.dart';
 import '../widgets/driver_colors.dart';
 import '../widgets/driver_request_widgets.dart';
 import '../widgets/driver_shell_widgets.dart';
+=======
+import '../../../shared/models/driver_request.dart';
+import '../../../shared/widgets/driver_colors.dart';
+import '../../../shared/widgets/driver_request_widgets.dart';
+import '../../../shared/widgets/driver_shell_widgets.dart';
+import '../driver_provider.dart';
+>>>>>>> features/driver
 
 class DriverHomeTab extends StatelessWidget {
   const DriverHomeTab({
@@ -26,6 +34,7 @@ class DriverHomeTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+<<<<<<< HEAD
     final currentVehicle = driverState?.currentVehicle;
     final driverName = driverState?.profile.name.trim().isNotEmpty == true
         ? driverState!.profile.name
@@ -87,92 +96,141 @@ class DriverHomeTab extends StatelessWidget {
                                 Icons.radio_button_checked_rounded,
                                 color: DriverColors.blue,
                                 size: 18,
+=======
+    final provider = DriverScope.of(context);
+    final availableCount = provider.availableRequests.length;
+
+    return RefreshIndicator(
+      onRefresh: () async {
+        if (provider.isOnline) {
+          await provider.fetchAvailableRequests();
+        }
+      },
+      child: ListView(
+        padding: EdgeInsets.zero,
+        children: [
+          DriverHeroSection(
+            subtitle: provider.isOnline ? 'You are Online' : 'You are Offline',
+            name: 'Driver',
+            content: DriverBalanceCard(amount: provider.balance.toStringAsFixed(2)),
+          ),
+          Transform.translate(
+            offset: const Offset(0, -30),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 32),
+              child: Column(
+                children: [
+                  DriverSurfaceCard(
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Driver Status',
+                              style: TextStyle(
+                                color: DriverColors.text,
+                                fontSize: 16,
+                                fontWeight: FontWeight.w700,
+>>>>>>> features/driver
                               ),
-                              SizedBox(width: 10),
-                              Text(
-                                'Where to?',
-                                style: TextStyle(
-                                  color: DriverColors.muted,
-                                  fontSize: 15,
-                                ),
-                              ),
-                              Spacer(),
-                              Icon(
-                                Icons.chevron_right_rounded,
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              provider.isOnline ? 'Receiving requests...' : 'Offline (No requests)',
+                              style: const TextStyle(
                                 color: DriverColors.muted,
+                                fontSize: 13,
                               ),
-                              SizedBox(width: 12),
-                            ],
+                            ),
+                          ],
+                        ),
+                        provider.isLoading
+                            ? const CircularProgressIndicator()
+                            : Switch(
+                                value: provider.isOnline,
+                                activeThumbColor: DriverColors.blue,
+                                onChanged: (val) {
+                                  provider.toggleOnline();
+                                },
+                              ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 22),
+                  if (provider.isOnline) ...[
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            'Available Requests ($availableCount)',
+                            style: const TextStyle(
+                              color: DriverColors.text,
+                              fontSize: 22,
+                              fontWeight: FontWeight.w800,
+                            ),
                           ),
                         ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 22),
-                Row(
-                  children: [
-                    const Expanded(
-                      child: Text(
-                        'Available Requests',
-                        style: TextStyle(
-                          color: DriverColors.text,
-                          fontSize: 22,
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
+                      ],
                     ),
-                    TextButton(
-                      onPressed: onViewAll,
-                      child: const Text(
-                        'View all',
-                        style: TextStyle(
-                          color: DriverColors.blue,
-                          fontWeight: FontWeight.w700,
+                    const SizedBox(height: 12),
+                    if (provider.availableRequests.isEmpty)
+                      const Padding(
+                        padding: EdgeInsets.all(24),
+                        child: Center(
+                          child: Text(
+                            'No available requests in your area.',
+                            style: TextStyle(color: DriverColors.muted),
+                          ),
                         ),
+                      )
+                    else
+                      ...provider.availableRequests.map((req) {
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 12),
+                          child: DriverHomeRequestPreview(
+                            request: req,
+                            onTap: () => onOpenDetail(req),
+                          ),
+                        );
+                      }),
+                  ] else ...[
+                    DriverSurfaceCard(
+                      child: Row(
+                        children: [
+                          Container(
+                            height: 54,
+                            width: 54,
+                            decoration: BoxDecoration(
+                              color: DriverColors.blue.withValues(alpha: 0.09),
+                              borderRadius: BorderRadius.circular(18),
+                            ),
+                            child: const Icon(
+                              Icons.local_shipping_outlined,
+                              color: DriverColors.blue,
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          const Expanded(
+                            child: Text(
+                              'Go online to receive delivery requests',
+                              style: TextStyle(
+                                color: DriverColors.text,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ],
-                ),
-                const SizedBox(height: 8),
-                DriverHomeRequestPreview(
-                  request: requests.first,
-                  onTap: () => onOpenDetail(requests.first),
-                ),
-                const SizedBox(height: 14),
-                DriverSurfaceCard(
-                  child: Row(
-                    children: [
-                      Container(
-                        height: 54,
-                        width: 54,
-                        decoration: BoxDecoration(
-                          color: DriverColors.blue.withValues(alpha: 0.09),
-                          borderRadius: BorderRadius.circular(18),
-                        ),
-                        child: const Icon(
-                          Icons.local_shipping_outlined,
-                          color: DriverColors.blue,
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      const Expanded(
-                        child: Text(
-                          'Complete onboarding to start taking requests',
-                          style: TextStyle(
-                            color: DriverColors.text,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }

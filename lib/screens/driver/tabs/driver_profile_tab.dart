@@ -1,17 +1,14 @@
 import 'package:flutter/material.dart';
 
-import '../../../features/auth/models/user_model.dart';
-import '../../../features/auth/services/user_service.dart';
-import '../../../features/auth/tokens/token_storage.dart';
-import '../../../features/driver_registration/models/vehicle_type.dart';
-import '../models/driver_request.dart';
-import '../widgets/driver_button_widgets.dart';
-import '../widgets/driver_colors.dart';
-import '../widgets/driver_map_widgets.dart';
-import '../widgets/driver_request_widgets.dart';
-import '../widgets/driver_shell_widgets.dart';
+import '../../../shared/models/driver_request.dart';
+import '../../../shared/widgets/driver_button_widgets.dart';
+import '../../../shared/widgets/driver_colors.dart';
+import '../../../shared/widgets/driver_map_widgets.dart';
+import '../../../shared/widgets/driver_request_widgets.dart';
+import '../../../shared/widgets/driver_shell_widgets.dart';
+import '../driver_provider.dart';
 
-class DriverProfileTab extends StatefulWidget {
+class DriverProfileTab extends StatelessWidget {
   const DriverProfileTab({
     super.key,
     required this.request,
@@ -20,7 +17,7 @@ class DriverProfileTab extends StatefulWidget {
     required this.onRefreshDriverState,
   });
 
-  final DriverRequest request;
+  final DriverRequest? request;
   final VoidCallback onOpenMap;
   final DriverStateSnapshot? driverState;
   final Future<void> Function() onRefreshDriverState;
@@ -140,7 +137,6 @@ class _DriverProfileTabState extends State<DriverProfileTab> {
           content: DriverStatusSummary(
             amount: currentVehicle != null
                 ? _driverVehicleHeadline(currentVehicle)
-                : assignedVehicleCode?.isNotEmpty == true
                     ? assignedVehicleCode!
                 : vehicleLabel,
             helperText: currentVehicle?.ownershipType == 'DRIVER_OWNED'
@@ -150,11 +146,6 @@ class _DriverProfileTabState extends State<DriverProfileTab> {
                 : 'Current vehicle',
           ),
         ),
-        Transform.translate(
-          offset: const Offset(0, -30),
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 32),
-            child: Column(
               children: [
                 DriverSurfaceCard(
                   child: Column(
@@ -287,8 +278,8 @@ class _DriverProfileTabState extends State<DriverProfileTab> {
                               color: DriverColors.blue.withValues(alpha: 0.08),
                               borderRadius: BorderRadius.circular(18),
                             ),
-                            child: Icon(
-                              vehicleTypeIcon(vehicleType),
+                            child: const Icon(
+                              Icons.two_wheeler_rounded,
                               color: DriverColors.blue,
                             ),
                           ),
@@ -298,7 +289,7 @@ class _DriverProfileTabState extends State<DriverProfileTab> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  vehicleLabel,
+                                  provider.vehicleType,
                                   style: const TextStyle(
                                     color: DriverColors.text,
                                     fontWeight: FontWeight.w700,
@@ -369,28 +360,6 @@ class _DriverProfileTabState extends State<DriverProfileTab> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const Text(
-                        'Account details',
-                        style: TextStyle(
-                          color: DriverColors.text,
-                          fontWeight: FontWeight.w800,
-                          fontSize: 20,
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      DriverStatLine(label: 'Name', value: profileName),
-                      const SizedBox(height: 12),
-                      DriverStatLine(label: 'Email', value: profileEmail),
-                      const SizedBox(height: 12),
-                      DriverStatLine(label: 'Phone', value: profilePhone),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 16),
-                DriverSurfaceCard(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
                         'Assigned hotspot',
                         style: TextStyle(
                           color: DriverColors.text,
@@ -415,7 +384,7 @@ class _DriverProfileTabState extends State<DriverProfileTab> {
                         width: double.infinity,
                         child: DriverPrimaryButton(
                           label: 'Open Live Map',
-                          onPressed: widget.onOpenMap,
+                          onPressed: onOpenMap,
                         ),
                       ),
                     ],
@@ -427,12 +396,11 @@ class _DriverProfileTabState extends State<DriverProfileTab> {
                     children: [
                       CircleAvatar(
                         radius: 24,
-                        backgroundColor:
-                            widget.request.accent.withValues(alpha: 0.12),
+                        backgroundColor: (request?.accent ?? DriverColors.blue).withValues(alpha: 0.12),
                         child: Text(
-                          widget.request.senderInitials,
+                          request?.senderInitials ?? '?',
                           style: TextStyle(
-                            color: widget.request.accent,
+                            color: request?.accent ?? DriverColors.blue,
                             fontWeight: FontWeight.w800,
                           ),
                         ),
@@ -451,13 +419,16 @@ class _DriverProfileTabState extends State<DriverProfileTab> {
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              'Next package: ${widget.request.title}',
+                              provider.isOnline ? 'Online and ready' : 'Currently Offline',
                               style: const TextStyle(color: DriverColors.muted),
                             ),
                           ],
                         ),
                       ),
-                      const DriverStatusChip(label: 'Online'),
+                      DriverStatusChip(
+                        label: provider.isOnline ? 'Online' : 'Offline',
+                        color: provider.isOnline ? DriverColors.green : DriverColors.muted,
+                      ),
                     ],
                   ),
                 ),

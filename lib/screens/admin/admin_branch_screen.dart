@@ -67,7 +67,7 @@ class _AdminBranchScreenState extends State<AdminBranchScreen> {
               DataColumn(label: Text('សកម្មភាព (Actions)')),
             ],
             rows: _branches.map((branch) => DataRow(cells: [
-              DataCell(Text(branch.code, style: const TextStyle(fontWeight: FontWeight.bold))),
+              DataCell(Text(branch.code ?? '—', style: const TextStyle(fontWeight: FontWeight.bold))),
               DataCell(Text(branch.name)),
               DataCell(Text(branch.address ?? 'N/A')),
               DataCell(Icon(

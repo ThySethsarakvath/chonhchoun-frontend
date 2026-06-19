@@ -4,8 +4,7 @@ import '../features/auth/models/user_model.dart';
 import '../features/auth/services/user_service.dart';
 import '../features/auth/services/auth_service.dart';
 import '../features/auth/tokens/token_storage.dart';
-import '../features/driver_registration/models/vehicle_type.dart';
-import '../features/home/widgets/home_bottom_nav.dart';
+import '../shared/widgets/home_bottom_nav.dart';
 
 class ProfileScreen extends StatefulWidget {
   final UserProfile? profile;
@@ -24,7 +23,7 @@ class ProfileScreen extends StatefulWidget {
 class _ProfileScreenState extends State<ProfileScreen> {
   final _userService = UserService();
   final _authService = AuthService();
-  
+
   UserProfile? _userProfile;
   bool _loading = false;
 
@@ -59,7 +58,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
         setState(() => _loading = false);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error loading profile: ${e.toString().replaceFirst('Exception: ', '')}'),
+            content: Text(
+              'Error loading profile: ${e.toString().replaceFirst('Exception: ', '')}',
+            ),
             backgroundColor: Colors.redAccent,
           ),
         );
@@ -120,7 +121,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
       // Get access token
       final accessToken = await TokenStorage.getAccessToken();
-      
+
       if (accessToken == null || accessToken.isEmpty) {
         if (mounted) {
           Navigator.pop(context); // Close loading dialog
@@ -136,7 +137,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
       // Call logout endpoint
       await _authService.logout(accessToken: accessToken);
-      
+
       // Clear tokens
       await TokenStorage.clearTokens();
 
@@ -186,21 +187,41 @@ class _ProfileScreenState extends State<ProfileScreen> {
   void _handleNavigation(int index) {
     switch (index) {
       case 0:
-        Navigator.pushNamedAndRemoveUntil(context, AppRoutes.customer, (_) => false);
+        Navigator.pushNamedAndRemoveUntil(
+          context,
+          AppRoutes.customer,
+          (_) => false,
+        );
         break;
       case 1:
-        Navigator.pushNamedAndRemoveUntil(context, AppRoutes.customer, (_) => false);
+        Navigator.pushNamedAndRemoveUntil(
+          context,
+          AppRoutes.customer,
+          (_) => false,
+        );
         // TODO: navigate to shipping screen
         break;
       case 2:
-        Navigator.pushNamedAndRemoveUntil(context, AppRoutes.customer, (_) => false);
+        Navigator.pushNamedAndRemoveUntil(
+          context,
+          AppRoutes.customer,
+          (_) => false,
+        );
         // TODO: navigate to chat screen
         break;
       case 3:
-        Navigator.pushNamedAndRemoveUntil(context, AppRoutes.settings, (_) => false);
+        Navigator.pushNamedAndRemoveUntil(
+          context,
+          AppRoutes.settings,
+          (_) => false,
+        );
         break;
       case 4:
-        Navigator.pushNamedAndRemoveUntil(context, AppRoutes.customer, (_) => false);
+        Navigator.pushNamedAndRemoveUntil(
+          context,
+          AppRoutes.customer,
+          (_) => false,
+        );
         // TODO: handle QR code scanner
         break;
     }
@@ -345,21 +366,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   const SizedBox(height: 14),
 
                   _ProfileField(label: 'អុីម៉ែល', value: p?.email ?? '—'),
-                  if (p?.role == 'driver') ...[
-                    const SizedBox(height: 14),
-                    _ProfileField(
-                      label: 'Vehicle type',
-                      value: vehicleTypeLabel(p?.vehicleType),
-                    ),
-                    if (p?.assignedVehicleCode != null &&
-                        p!.assignedVehicleCode!.isNotEmpty) ...[
-                      const SizedBox(height: 14),
-                      _ProfileField(
-                        label: 'Truck code',
-                        value: p.assignedVehicleCode!,
-                      ),
-                    ],
-                  ],
                   const SizedBox(height: 80),
 
                   SizedBox(
@@ -400,7 +406,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 }
 
-
 class _ProfileAvatar extends StatelessWidget {
   final String? avatarUrl;
   const _ProfileAvatar({this.avatarUrl});
@@ -427,12 +432,12 @@ class _ProfileAvatar extends StatelessWidget {
             ? Image.network(
                 avatarUrl!,
                 fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => _defaultIcon(),
+                errorBuilder: (_, _, _) => _defaultIcon(),
               )
             : Image.asset(
                 'assets/images/avatar.png',
                 fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => _defaultIcon(),
+                errorBuilder: (_, _, _) => _defaultIcon(),
               ),
       ),
     );

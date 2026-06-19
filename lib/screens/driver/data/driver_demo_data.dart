@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:latlong2/latlong.dart';
 
+import '../models/driver_earnings.dart';
 import '../models/driver_request.dart';
 
 const driverDisplayName = 'ភ័ក្ត្រ';
@@ -8,6 +9,59 @@ const driverAvailableBalance = '168';
 const driverOverviewRange = 'Dec 14 - Dec 21';
 const driverTotalTime = '42 Hours 32 Minutes';
 const driverTotalDeliveries = '38';
+
+const driverWeeklyEarnings = <DriverDayEarning>[
+  DriverDayEarning(label: 'Mon', amount: 18.40, deliveries: 6),
+  DriverDayEarning(label: 'Tue', amount: 24.10, deliveries: 8),
+  DriverDayEarning(label: 'Wed', amount: 12.75, deliveries: 4),
+  DriverDayEarning(label: 'Thu', amount: 31.60, deliveries: 11),
+  DriverDayEarning(label: 'Fri', amount: 27.30, deliveries: 9),
+  DriverDayEarning(label: 'Sat', amount: 38.95, deliveries: 13),
+  DriverDayEarning(label: 'Sun', amount: 14.50, deliveries: 5),
+];
+
+const driverRecentTransactions = <DriverTransaction>[
+  DriverTransaction(
+    title: 'Cash out to wallet',
+    subtitle: 'ABA · **** 4417',
+    amount: -60.00,
+    time: 'Today, 09:12',
+    icon: Icons.account_balance_wallet_rounded,
+    isPayout: true,
+  ),
+  DriverTransaction(
+    title: 'Documents / Parcel',
+    subtitle: 'Russian Market → Olympic',
+    amount: 4.10,
+    time: 'Today, 08:40',
+    icon: Icons.inventory_2_rounded,
+    isPayout: false,
+  ),
+  DriverTransaction(
+    title: 'Food Items / Groceries',
+    subtitle: 'Toul Kork → Boeung Kak 1',
+    amount: 2.80,
+    time: 'Yesterday, 19:05',
+    icon: Icons.lunch_dining_rounded,
+    isPayout: false,
+  ),
+  DriverTransaction(
+    title: 'Electronics / Gadgets',
+    subtitle: 'Stueng Mean Chey → Sen Sok',
+    amount: 3.50,
+    time: 'Yesterday, 17:22',
+    icon: Icons.devices_other_rounded,
+    isPayout: false,
+  ),
+  DriverTransaction(
+    title: 'Weekend bonus',
+    subtitle: '10+ deliveries on Saturday',
+    amount: 5.00,
+    time: 'Sat, 21:00',
+    icon: Icons.bolt_rounded,
+    isPayout: false,
+  ),
+];
 
 const driverRequests = <DriverRequest>[
   DriverRequest(

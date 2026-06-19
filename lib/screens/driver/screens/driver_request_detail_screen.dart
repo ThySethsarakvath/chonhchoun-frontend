@@ -1,21 +1,23 @@
 import 'package:flutter/material.dart';
 
-import '../models/driver_request.dart';
-import '../widgets/driver_button_widgets.dart';
-import '../widgets/driver_colors.dart';
-import '../widgets/driver_map_widgets.dart';
-import '../widgets/driver_request_widgets.dart';
-import '../widgets/driver_shell_widgets.dart';
+import '../../../shared/models/driver_request.dart';
+import '../../../shared/widgets/driver_button_widgets.dart';
+import '../../../shared/widgets/driver_colors.dart';
+import '../../../shared/widgets/driver_map_widgets.dart';
+import '../../../shared/widgets/driver_request_widgets.dart';
+import '../../../shared/widgets/driver_shell_widgets.dart';
 
 class DriverRequestDetailScreen extends StatelessWidget {
   const DriverRequestDetailScreen({
     super.key,
     required this.request,
     required this.onOpenMap,
+    required this.onAccept,
   });
 
   final DriverRequest request;
   final VoidCallback onOpenMap;
+  final VoidCallback onAccept;
 
   @override
   Widget build(BuildContext context) {
@@ -24,7 +26,7 @@ class DriverRequestDetailScreen extends StatelessWidget {
       bottomNavigationBar: DriverDecisionBar(
         primaryLabel: 'Accept',
         secondaryLabel: 'Reject',
-        onPrimaryPressed: onOpenMap,
+        onPrimaryPressed: onAccept,
         onSecondaryPressed: () => Navigator.of(context).pop(),
       ),
       body: ListView(

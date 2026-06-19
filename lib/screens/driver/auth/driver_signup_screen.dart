@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 
+import '../../../features/auth/services/auth_service.dart';
 import '../driver_workspace_screen.dart';
-import '../widgets/driver_auth_widgets.dart';
-import '../widgets/driver_button_widgets.dart';
-import '../widgets/driver_colors.dart';
-import '../widgets/driver_shell_widgets.dart';
+import '../../../shared/widgets/driver_auth_widgets.dart';
+import '../../../shared/widgets/driver_button_widgets.dart';
+import '../../../shared/widgets/driver_colors.dart';
+import '../../../shared/widgets/driver_shell_widgets.dart';
 import 'driver_login_screen.dart';
 
 class DriverSignupScreen extends StatefulWidget {
@@ -21,8 +22,10 @@ class _DriverSignupScreenState extends State<DriverSignupScreen> {
   final TextEditingController _zoneController = TextEditingController(
     text: 'Phnom Penh',
   );
-  String _selectedVehicle = 'Motorbike';
+  final _service = AuthService();
+  String _selectedVehicle = 'MOTORCYCLE';
   bool _obscurePassword = true;
+  bool _loading = false;
 
   @override
   void dispose() {
@@ -31,6 +34,32 @@ class _DriverSignupScreenState extends State<DriverSignupScreen> {
     _passwordController.dispose();
     _zoneController.dispose();
     super.dispose();
+  }
+
+  Future<void> _submit() async {
+    if (_nameController.text.isEmpty || _phoneController.text.isEmpty || _passwordController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please fill all fields')));
+      return;
+    }
+    setState(() => _loading = true);
+    try {
+      await _service.driverRegister({
+        'name': _nameController.text.trim(),
+        'email': 'driver_${DateTime.now().millisecondsSinceEpoch}@example.com', // dummy email for now since UI doesn't have it
+        'phone': _phoneController.text.trim(),
+        'password': _passwordController.text,
+        'vehicleType': _selectedVehicle,
+      });
+      if (mounted) {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (_) => const DriverWorkspaceScreen()),
+        );
+      }
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
   }
 
   @override
@@ -131,9 +160,9 @@ class _DriverSignupScreenState extends State<DriverSignupScreen> {
                 child: DriverVehicleOptionCard(
                   label: 'Motorbike',
                   icon: Icons.two_wheeler_rounded,
-                  isSelected: _selectedVehicle == 'Motorbike',
+                  isSelected: _selectedVehicle == 'MOTORCYCLE',
                   onTap: () {
-                    setState(() => _selectedVehicle = 'Motorbike');
+                    setState(() => _selectedVehicle = 'MOTORCYCLE');
                   },
                 ),
               ),
@@ -216,18 +245,14 @@ class _DriverSignupScreenState extends State<DriverSignupScreen> {
           const SizedBox(height: 24),
           SizedBox(
             width: double.infinity,
-            child: DriverPrimaryButton(
-              label: 'Create Account',
-              onPressed: () {
-                Navigator.of(context).pushReplacement(
-                  MaterialPageRoute(
-                    builder: (_) => const DriverWorkspaceScreen(),
+            child: _loading
+                ? const Center(child: CircularProgressIndicator())
+                : DriverPrimaryButton(
+                    label: 'Create Account',
+                    onPressed: _submit,
+                    padding: const EdgeInsets.symmetric(vertical: 18),
+                    borderRadius: 18,
                   ),
-                );
-              },
-              padding: const EdgeInsets.symmetric(vertical: 18),
-              borderRadius: 18,
-            ),
           ),
           const SizedBox(height: 12),
           SizedBox(

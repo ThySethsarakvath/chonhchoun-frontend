@@ -12,9 +12,11 @@ import 'screens/driver_request_detail_screen.dart';
 import 'screens/driver_requests_screen.dart';
 import 'tabs/driver_deliveries_tab.dart';
 import 'tabs/driver_home_tab.dart';
+import 'tabs/driver_history_tab.dart';
 import 'tabs/driver_profile_tab.dart';
-import 'widgets/driver_colors.dart';
-import 'widgets/driver_shell_widgets.dart';
+import 'driver_provider.dart';
+import '../../shared/widgets/driver_colors.dart';
+import '../../shared/widgets/driver_shell_widgets.dart';
 
 class DriverWorkspaceScreen extends StatefulWidget {
   const DriverWorkspaceScreen({super.key});
@@ -31,7 +33,17 @@ class _DriverWorkspaceScreenState extends State<DriverWorkspaceScreen> {
   bool _loadingDriverState = true;
   bool _loggingOut = false;
 
-  DriverRequest get _primaryRequest => driverRequests.first;
+  @override
+  void initState() {
+    super.initState();
+    _provider = DriverProvider()..init();
+  }
+
+  @override
+  void dispose() {
+    _provider.dispose();
+    super.dispose();
+  }
 
   @override
   void initState() {
@@ -58,7 +70,7 @@ class _DriverWorkspaceScreenState extends State<DriverWorkspaceScreen> {
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => DriverRequestsScreen(
-          requests: driverRequests,
+          requests: _provider.availableRequests,
           onOpenDetail: _openRequestDetail,
         ),
       ),
@@ -71,6 +83,22 @@ class _DriverWorkspaceScreenState extends State<DriverWorkspaceScreen> {
         builder: (_) => DriverRequestDetailScreen(
           request: request,
           onOpenMap: () => _openMapDetail(request),
+          onAccept: () async {
+            if (request.id != null) {
+              final success = await _provider.acceptRequest(request.id!);
+              if (success && mounted) {
+                Navigator.of(context).pop();
+                setState(() => _currentIndex = 1);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Delivery accepted successfully!')),
+                );
+              } else if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Failed to accept delivery.')),
+                );
+              }
+            }
+          },
         ),
       ),
     );
@@ -79,7 +107,22 @@ class _DriverWorkspaceScreenState extends State<DriverWorkspaceScreen> {
   void _openMapDetail(DriverRequest request) {
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (_) => DriverMapDetailScreen(request: request),
+        builder: (_) => DriverMapDetailScreen(
+          request: request,
+          onAccept: () async {
+            if (request.id != null) {
+              final success = await _provider.acceptRequest(request.id!);
+              if (success && mounted) {
+                Navigator.of(context).pop();
+                Navigator.of(context).pop();
+                setState(() => _currentIndex = 1);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Delivery accepted successfully!')),
+                );
+              }
+            }
+          },
+        ),
       ),
     );
   }
