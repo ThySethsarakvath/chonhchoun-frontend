@@ -5,6 +5,7 @@ import '../models/auth_models.dart';
 import '../widgets/auth_scaffold.dart';
 import '../widgets/auth_header.dart';
 import '../widgets/auth_widgets.dart';
+import '../services/user_service.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -28,17 +29,17 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
-
   static final _emailReg = RegExp(r'^[\w\-.]+@([\w\-]+\.)+[\w]{2,}$');
 
   String? _validateLogin() {
     if (_emailCtrl.text.trim().isEmpty) return 'សូមបញ្ចូលអុីម៉ែលរបស់អ្នក';
-    if (!_emailReg.hasMatch(_emailCtrl.text.trim())) return 'អុីម៉ែលមិនត្រឹមត្រូវ';
+    if (!_emailReg.hasMatch(_emailCtrl.text.trim()))
+      return 'អុីម៉ែលមិនត្រឹមត្រូវ';
     if (_passwordCtrl.text.isEmpty) return 'សូមបញ្ចូលលេខសម្ងាត់';
-    if (_passwordCtrl.text.length < 6) return 'លេខសម្ងាត់ត្រូវតែ 6 តួអក្សរ ឬ ច្រើនជាងនេះ';
+    if (_passwordCtrl.text.length < 6)
+      return 'លេខសម្ងាត់ត្រូវតែ 6 តួអក្សរ ឬ ច្រើនជាងនេះ';
     return null;
   }
-
 
   Future<void> _submit() async {
     final err = _validateLogin();
@@ -49,16 +50,25 @@ class _LoginScreenState extends State<LoginScreen> {
 
     setState(() => _loading = true);
     try {
-      final authResponse = await _service.login(LoginRequest(
-        email: _emailCtrl.text.trim(),
-        password: _passwordCtrl.text,
-      ));
+      // First login call
+      final tokens = await _service.login(
+        LoginRequest(
+          email: _emailCtrl.text.trim(),
+          password: _passwordCtrl.text,
+        ),
+      );
+
+      // Fetch profile with access token
+      final profile = await UserService().getMe(
+        accessToken: tokens.accessToken,
+      );
 
       if (mounted) {
-        Navigator.pushReplacementNamed(
-          context,
-          AppRoutes.homeForRole(authResponse.user.role),
-        );
+        if (profile.role.toLowerCase() == 'driver') {
+          Navigator.pushReplacementNamed(context, AppRoutes.driver);
+        } else {
+          Navigator.pushReplacementNamed(context, AppRoutes.customer);
+        }
       }
     } on ApiException catch (e) {
       if (mounted) showErrorDialog(context, e.message);
@@ -68,7 +78,6 @@ class _LoginScreenState extends State<LoginScreen> {
       if (mounted) setState(() => _loading = false);
     }
   }
-
 
   // ── Forgot password ───────────────────────────────────────────────────────
   // Requires a valid email first, calls /forgot to send OTP,
@@ -149,7 +158,8 @@ class _LoginScreenState extends State<LoginScreen> {
             controller: _passwordCtrl,
             obscure: _obscurePassword,
             showToggle: true,
-            onToggle: () => setState(() => _obscurePassword = !_obscurePassword),
+            onToggle: () =>
+                setState(() => _obscurePassword = !_obscurePassword),
           ),
 
           // ── Forgot password link ─────────────────────────────────────────
@@ -174,11 +184,7 @@ class _LoginScreenState extends State<LoginScreen> {
           const SizedBox(height: 32),
 
           // ── Login button ─────────────────────────────────────────────────
-          AuthButton(
-            label: 'ចូល',
-            onPressed: _submit,
-            loading: _loading,
-          ),
+          AuthButton(label: 'ចូល', onPressed: _submit, loading: _loading),
           const SizedBox(height: 20),
 
           // ── Register link ────────────────────────────────────────────────

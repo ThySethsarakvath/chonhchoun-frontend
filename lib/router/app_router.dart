@@ -8,13 +8,19 @@ import '../features/auth/screens/otp_screen.dart';
 import '../features/auth/screens/set_password_screen.dart';
 import '../features/home/pages/home_screen.dart';
 import '../features/auth/models/user_model.dart';
-import '../screens/avatar_upload_screen.dart';
-import '../screens/setting_screen.dart';
-import '../screens/profile_screen.dart';
+import '../screens/avatar_upload_screen.dart' hide AvatarUploadScreen;
+import '../screens/setting_screen.dart' hide SettingsScreen;
+import '../screens/profile_screen.dart' hide ProfileScreen;
 import '../features/driver_registration/screens/driver_application_screen.dart';
 import '../screens/driver/driver_workspace_screen.dart';
 import '../features/home/pages/admin_main_screen.dart';
 import '../features/branch_owner/screens/branch_owner_main_screen.dart';
+import '../screens/customer/avatar_upload_screen.dart';
+import '../screens/customer/setting_screen.dart';
+import '../screens/customer/profile_screen.dart';
+
+import '../screens/driver/driver_workspace_screen.dart';
+
 abstract class AppRoutes {
   AppRoutes._();
 
@@ -136,6 +142,7 @@ class AppRouter {
          return _fade(const DriverWorkspaceScreen());
       case AppRoutes.driverApplication:
         return _slide(const DriverApplicationScreen());
+        return _fade(const DriverWorkspaceScreen());
       default:
         return _fade(_stub('404 — Page not found'));
     }

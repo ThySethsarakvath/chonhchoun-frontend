@@ -1,17 +1,16 @@
 import 'package:flutter/material.dart';
 
-import 'screens/driver_earnings_screen.dart';
+import '../../shared/models/driver_request.dart';
+import 'screens/driver_map_detail_screen.dart';
+import 'screens/driver_request_detail_screen.dart';
+import 'screens/driver_requests_screen.dart';
 import 'tabs/driver_deliveries_tab.dart';
 import 'tabs/driver_home_tab.dart';
+import 'tabs/driver_history_tab.dart';
 import 'tabs/driver_profile_tab.dart';
-import 'tabs/driver_route_tab.dart';
-import 'widgets/driver_colors.dart';
-import 'widgets/driver_shell_widgets.dart';
-import '../../features/auth/services/user_service.dart';
-import '../../features/auth/tokens/token_storage.dart';
-import '../../features/chat/models/conversation.dart';
-import '../../features/chat/screens/conversations_screen.dart';
-import '../../features/chat/services/conversation_service.dart';
+import 'driver_provider.dart';
+import '../../shared/widgets/driver_colors.dart';
+import '../../shared/widgets/driver_shell_widgets.dart';
 
 class DriverWorkspaceScreen extends StatefulWidget {
   const DriverWorkspaceScreen({super.key});
@@ -21,82 +20,136 @@ class DriverWorkspaceScreen extends StatefulWidget {
 }
 
 class _DriverWorkspaceScreenState extends State<DriverWorkspaceScreen> {
-  int _selectedIndex = 0;
-  String? _driverId;
+  int _currentIndex = 0;
+  late final DriverProvider _provider;
 
   @override
   void initState() {
     super.initState();
-    _loadDriverId();
+    _provider = DriverProvider()..init();
   }
 
-  Future<void> _loadDriverId() async {
-    final token = await TokenStorage.getAccessToken();
-    if (token == null) return;
-    try {
-      final me = await UserService().getMe(accessToken: token);
-      if (mounted) setState(() => _driverId = me.id);
-    } catch (_) {}
+  @override
+  void dispose() {
+    _provider.dispose();
+    super.dispose();
   }
 
-  void _openChats() {
-    final id = _driverId;
-    if (id == null) return;
+  void _openRequests() {
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (_) => ConversationsScreen(
-          currentUserId: id,
-          showAppBar: true,
-          loader: () async {
-            final token = await TokenStorage.getAccessToken();
-            if (token == null) return <Conversation>[];
-            return ConversationService().driverConversations(token);
+        builder: (_) => DriverRequestsScreen(
+          requests: _provider.availableRequests,
+          onOpenDetail: _openRequestDetail,
+        ),
+      ),
+    );
+  }
+
+  void _openRequestDetail(DriverRequest request) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => DriverRequestDetailScreen(
+          request: request,
+          onOpenMap: () => _openMapDetail(request),
+          onAccept: () async {
+            if (request.id != null) {
+              final success = await _provider.acceptRequest(request.id!);
+              if (success && mounted) {
+                Navigator.of(context).pop();
+                setState(() => _currentIndex = 1);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Delivery accepted successfully!')),
+                );
+              } else if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Failed to accept delivery.')),
+                );
+              }
+            }
           },
         ),
       ),
     );
   }
 
-  void _openEarnings() {
+  void _openMapDetail(DriverRequest request) {
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (_) => const DriverEarningsScreen(),
+        builder: (_) => DriverMapDetailScreen(
+          request: request,
+          onAccept: () async {
+            if (request.id != null) {
+              final success = await _provider.acceptRequest(request.id!);
+              if (success && mounted) {
+                Navigator.of(context).pop();
+                Navigator.of(context).pop();
+                setState(() => _currentIndex = 1);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Delivery accepted successfully!')),
+                );
+              }
+            }
+          },
+        ),
       ),
     );
   }
 
-  void _openRoute() => setState(() => _selectedIndex = 1);
+  Widget _buildBottomNav() {
+    return DriverBottomBar(
+      selectedIndex: _currentIndex,
+      onSelected: (index) => setState(() => _currentIndex = index),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: DriverColors.surface,
-      floatingActionButton: _driverId == null
-          ? null
-          : FloatingActionButton(
-              backgroundColor: DriverColors.blue,
-              onPressed: _openChats,
-              child: const Icon(Icons.chat_bubble_rounded, color: Colors.white),
+    return DriverScope(
+      notifier: _provider,
+      child: AnimatedBuilder(
+        animation: _provider,
+        builder: (context, _) {
+          final currentDelivery = _provider.currentDelivery;
+
+          final tabs = [
+            DriverHomeTab(
+              requests: _provider.availableRequests,
+              onViewAll: _openRequests,
+              onOpenDetail: _openRequestDetail,
             ),
-      bottomNavigationBar: DriverBottomBar(
-        selectedIndex: _selectedIndex,
-        onSelected: (index) => setState(() => _selectedIndex = index),
-      ),
-      body: IndexedStack(
-        index: _selectedIndex,
-        children: [
-          DriverHomeTab(
-            onOpenEarnings: _openEarnings,
-            onOpenRoute: _openRoute,
-          ),
-          const DriverRouteTab(),
-          DriverDeliveriesTab(
-            onOpenEarnings: _openEarnings,
-          ),
-          DriverProfileTab(
-            onOpenRoute: _openRoute,
-          ),
-        ],
+            DriverDeliveriesTab(
+              request: currentDelivery,
+              onViewAll: _openRequests,
+              onSeeHistory: () {
+                setState(() => _currentIndex = 2);
+              },
+              onOpenDetail: () {
+                if (currentDelivery != null) {
+                  _openRequestDetail(currentDelivery);
+                }
+              },
+            ),
+            DriverHistoryTab(
+              onOpenDetail: _openRequestDetail,
+            ),
+            DriverProfileTab(
+              request: currentDelivery,
+              onOpenMap: () {
+                if (currentDelivery != null) _openMapDetail(currentDelivery);
+              },
+            ),
+          ];
+
+          return Scaffold(
+            backgroundColor: DriverColors.background,
+            body: IndexedStack(
+              index: _currentIndex,
+              children: tabs,
+            ),
+            bottomNavigationBar: _buildBottomNav(),
+          );
+        },
       ),
     );
   }

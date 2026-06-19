@@ -21,7 +21,10 @@ class HomeService {
         headers: _headers(token),
       );
       if (res.statusCode == 200) {
-        final list = json.decode(res.body) as List<dynamic>;
+        final decoded = json.decode(res.body);
+        final list = decoded is Map && decoded.containsKey('data') 
+            ? decoded['data'] as List<dynamic>
+            : decoded as List<dynamic>;
         return list.take(5).map((e) => DeliveryItem.fromJson(e)).toList();
       }
       return [];
@@ -37,7 +40,10 @@ class HomeService {
         headers: _headers(token),
       );
       if (res.statusCode == 200) {
-        final list = json.decode(res.body) as List<dynamic>;
+        final decoded = json.decode(res.body);
+        final list = decoded is Map && decoded.containsKey('data')
+            ? decoded['data'] as List<dynamic>
+            : decoded as List<dynamic>;
         return list.map((e) => DeliveryItem.fromJson(e)).toList();
       }
       return [];
@@ -46,27 +52,42 @@ class HomeService {
     }
   }
 
+  String _mapItemType(ItemType type) {
+    switch (type) {
+      case ItemType.document: return 'DOCUMENT';
+      case ItemType.food: return 'FOOD';
+      case ItemType.clothing: return 'CLOTHING';
+      case ItemType.electronics: return 'ELECTRONICS';
+      case ItemType.others: return 'OTHER';
+    }
+  }
+
   Future<DeliveryItem> createPackage(CustomerOrder order, String token) async {
     final payload = {
-      'itemName': order.itemName,
-      'size': order.size.name, // S, M, L
-      'weight': order.weight,
-      'itemType': order.itemType.name,
-      'vehicleType': order.vehicleType.name,
-      'serviceType': order.serviceType.name,
-      'itemHandling': order.itemHandling,
-      'driverPickup': order.driverPickup,
-      'pickupAddress': order.pickupAddress,
-      'dropoffAddress': order.dropoffAddress,
-      'pickupLat': order.pickup.latitude,
-      'pickupLng': order.pickup.longitude,
-      'dropoffLat': order.dropoff.latitude,
-      'dropoffLng': order.dropoff.longitude,
-      'price': order.price,
-      'paymentMethod': order.paymentMethod.name,
-      'dropoffContactName': order.dropoffContactName,
-      'dropoffContactNumber': order.dropoffContactNumber,
-      'noteToDriver': order.noteToDriver,
+      'vehicleType': order.vehicleType == VehicleType.tuktuk ? 'CAR' : 'MOTORCYCLE',
+      'package': {
+        'name': order.itemName,
+        'type': _mapItemType(order.itemType),
+        'quantity': 1,
+        'weightKg': order.weight > 0 ? order.weight : 0.1,
+        'note': order.noteToDriver ?? '',
+      },
+      'pickup': {
+        'address': order.pickupAddress.isEmpty ? 'Current Location' : order.pickupAddress,
+        'latitude': order.pickup.latitude,
+        'longitude': order.pickup.longitude,
+      },
+      'dropoff': {
+        'address': order.dropoffAddress.isEmpty ? 'Destination' : order.dropoffAddress,
+        'latitude': order.dropoff.latitude,
+        'longitude': order.dropoff.longitude,
+        'contactName': (order.dropoffContactName == null || order.dropoffContactName!.isEmpty) ? 'Unknown' : order.dropoffContactName,
+        'phone': (order.dropoffContactNumber == null || order.dropoffContactNumber!.isEmpty) ? '012345678' : order.dropoffContactNumber,
+      },
+      'payment': {
+        'payer': 'SENDER',
+        'method': order.paymentMethod == PaymentMethod.online ? 'ABA_QR' : 'CASH',
+      }
     };
 
     final res = await http.post(

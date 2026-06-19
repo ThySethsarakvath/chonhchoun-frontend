@@ -4,8 +4,7 @@ import '../features/auth/models/user_model.dart';
 import '../features/auth/services/user_service.dart';
 import '../features/auth/services/auth_service.dart';
 import '../features/auth/tokens/token_storage.dart';
-import '../features/driver_registration/models/vehicle_type.dart';
-import '../features/home/widgets/home_bottom_nav.dart';
+import '../shared/widgets/home_bottom_nav.dart';
 
 class ProfileScreen extends StatefulWidget {
   final UserProfile? profile;
@@ -367,21 +366,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   const SizedBox(height: 14),
 
                   _ProfileField(label: 'អុីម៉ែល', value: p?.email ?? '—'),
-                  if (p?.role == 'driver') ...[
-                    const SizedBox(height: 14),
-                    _ProfileField(
-                      label: 'Vehicle type',
-                      value: vehicleTypeLabel(p?.vehicleType),
-                    ),
-                    if (p?.assignedVehicleCode != null &&
-                        p!.assignedVehicleCode!.isNotEmpty) ...[
-                      const SizedBox(height: 14),
-                      _ProfileField(
-                        label: 'Truck code',
-                        value: p.assignedVehicleCode!,
-                      ),
-                    ],
-                  ],
                   const SizedBox(height: 80),
 
                   SizedBox(

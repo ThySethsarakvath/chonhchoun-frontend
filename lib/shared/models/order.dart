@@ -36,10 +36,14 @@ class CustomerOrder {
   final bool driverPickup;
   OrderStatus status; // Now mutable for cancellation
   final DateTime createdAt;
+  final DateTime? updatedAt;
   final double price;
   final String? dropoffContactName;
   final String? dropoffContactNumber;
   final String? noteToDriver;
+  final String? driverName;
+  final String? driverPhone;
+  final bool? driverOnline;
 
   CustomerOrder({
     required this.id,
@@ -59,41 +63,50 @@ class CustomerOrder {
     this.driverPickup = false,
     required this.status,
     required this.createdAt,
+    this.updatedAt,
     required this.price,
     this.dropoffContactName,
     this.dropoffContactNumber,
     this.noteToDriver,
+    this.driverName,
+    this.driverPhone,
+    this.driverOnline,
   });
 
   factory CustomerOrder.fromJson(Map<String, dynamic> json) {
+    final created = json['createdAt'] != null ? DateTime.parse(json['createdAt']) : DateTime.now();
     return CustomerOrder(
       id: json['_id'] ?? json['id'] ?? '',
       pickup: LatLng(
-        (json['pickupLat'] ?? 0.0).toDouble(),
-        (json['pickupLng'] ?? 0.0).toDouble(),
+        ((json['pickup'] ?? {})['latitude'] ?? 0.0).toDouble(),
+        ((json['pickup'] ?? {})['longitude'] ?? 0.0).toDouble(),
       ),
       dropoff: LatLng(
-        (json['dropoffLat'] ?? 0.0).toDouble(),
-        (json['dropoffLng'] ?? 0.0).toDouble(),
+        ((json['dropoff'] ?? {})['latitude'] ?? 0.0).toDouble(),
+        ((json['dropoff'] ?? {})['longitude'] ?? 0.0).toDouble(),
       ),
-      pickupAddress: json['pickupAddress'] ?? '',
-      dropoffAddress: json['dropoffAddress'] ?? '',
-      itemName: json['itemName'] ?? '',
-      itemDescription: json['itemDescription'],
-      size: _parseSize(json['size']),
-      weight: (json['weight'] ?? 0.0).toDouble(),
-      itemType: _parseItemType(json['itemType']),
+      pickupAddress: (json['pickup'] ?? {})['address'] ?? '',
+      dropoffAddress: (json['dropoff'] ?? {})['address'] ?? '',
+      itemName: (json['package'] ?? {})['name'] ?? '',
+      itemDescription: (json['package'] ?? {})['note'],
+      size: ItemSize.S,
+      weight: ((json['package'] ?? {})['weightKg'] ?? 0.0).toDouble(),
+      itemType: _parseItemType((json['package'] ?? {})['type']),
       vehicleType: _parseVehicleType(json['vehicleType']),
-      paymentMethod: _parsePaymentMethod(json['paymentMethod']),
-      serviceType: _parseServiceType(json['serviceType']),
-      itemHandling: json['itemHandling'] ?? false,
-      driverPickup: json['driverPickup'] ?? false,
+      paymentMethod: _parsePaymentMethod((json['payment'] ?? {})['method']),
+      serviceType: DeliveryServiceType.express,
+      itemHandling: false,
+      driverPickup: false,
       status: _parseStatus(json['status']),
-      createdAt: json['createdAt'] != null ? DateTime.parse(json['createdAt']) : DateTime.now(),
-      price: (json['price'] ?? 0.0).toDouble(),
-      dropoffContactName: json['dropoffContactName'],
-      dropoffContactNumber: json['dropoffContactNumber'],
-      noteToDriver: json['noteToDriver'],
+      createdAt: created,
+      updatedAt: json['updatedAt'] != null ? DateTime.parse(json['updatedAt']) : created,
+      price: ((json['payment'] ?? {})['amount'] ?? json['estimatedPrice'] ?? 0.0).toDouble(),
+      dropoffContactName: (json['dropoff'] ?? {})['contactName'],
+      dropoffContactNumber: (json['dropoff'] ?? {})['phone'],
+      noteToDriver: (json['package'] ?? {})['note'],
+      driverName: (json['driverId'] ?? {})['name'],
+      driverPhone: (json['driverId'] ?? {})['phone'],
+      driverOnline: (json['driverId'] ?? {})['isOnline'],
     );
   }
 
@@ -141,13 +154,23 @@ class CustomerOrder {
   }
 
   static OrderStatus _parseStatus(String? status) {
-    switch (status) {
-      case 'searching': return OrderStatus.searching;
-      case 'accepted': return OrderStatus.accepted;
-      case 'pickedUp': return OrderStatus.pickedUp;
-      case 'delivered': return OrderStatus.delivered;
-      case 'canceled': return OrderStatus.canceled;
-      default: return OrderStatus.searching;
+    if (status == null) return OrderStatus.searching;
+    switch (status.toUpperCase()) {
+      case 'PENDING':
+      case 'SEARCHING':
+        return OrderStatus.searching;
+      case 'ACCEPTED':
+        return OrderStatus.accepted;
+      case 'PICKED_UP':
+      case 'IN_TRANSIT':
+        return OrderStatus.pickedUp;
+      case 'DELIVERED':
+        return OrderStatus.delivered;
+      case 'CANCELLED':
+      case 'CANCELED':
+        return OrderStatus.canceled;
+      default:
+        return OrderStatus.searching;
     }
   }
 

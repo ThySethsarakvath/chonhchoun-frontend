@@ -59,7 +59,7 @@ class DeliveryItem {
 
   factory DeliveryItem.fromJson(Map<String, dynamic> json) {
     final status = _parseStatus(json['status']);
-    final name = json['itemName'] ?? 'Package';
+    final name = (json['package'] ?? {})['name'] ?? 'Package';
     final id = json['_id'] ?? json['id'] ?? '';
     final shortId = id.toString().length > 8 ? id.toString().substring(0, 8) : id.toString();
     
@@ -83,23 +83,33 @@ class DeliveryItem {
       trackingNumber: "$name - #${shortId.toUpperCase()}",
       status: status,
       date: json['date'] ?? (json['createdAt'] != null ? _formatDate(json['createdAt']) : 'Just now'),
-      origin: json['origin'] ?? json['pickupAddress'] ?? '',
-      destination: json['destination'] ?? json['dropoffAddress'] ?? '',
+      origin: (json['pickup'] ?? {})['address'] ?? '',
+      destination: (json['dropoff'] ?? {})['address'] ?? '',
       checkpoints: checkpoints,
-      dropoffContactName: json['dropoffContactName'],
-      dropoffContactNumber: json['dropoffContactNumber'],
-      noteToDriver: json['noteToDriver'],
+      dropoffContactName: (json['dropoff'] ?? {})['contactName'],
+      dropoffContactNumber: (json['dropoff'] ?? {})['phone'],
+      noteToDriver: (json['package'] ?? {})['note'],
     );
   }
 
   static DeliveryStatus _parseStatus(String? status) {
-    switch (status) {
-      case 'searching': return DeliveryStatus.pending;
-      case 'accepted': return DeliveryStatus.inTransit;
-      case 'pickedUp': return DeliveryStatus.inTransit;
-      case 'delivered': return DeliveryStatus.delivered;
-      case 'canceled': return DeliveryStatus.canceled;
-      default: return DeliveryStatus.pending;
+    if (status == null) return DeliveryStatus.pending;
+    switch (status.toUpperCase()) {
+      case 'PENDING':
+        return DeliveryStatus.pending;
+      case 'ACCEPTED':
+        return DeliveryStatus.inTransit;
+      case 'PICKED_UP':
+      case 'IN_TRANSIT':
+        return DeliveryStatus.inTransit;
+      case 'DELIVERED':
+        return DeliveryStatus.delivered;
+      case 'CANCELLED':
+      case 'CANCELLED_BY_CUSTOMER':
+      case 'CANCELED':
+        return DeliveryStatus.canceled;
+      default:
+        return DeliveryStatus.pending;
     }
   }
 
