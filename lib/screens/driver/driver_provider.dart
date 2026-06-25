@@ -1,6 +1,8 @@
 import 'dart:async';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:image_picker/image_picker.dart';
 import '../../features/auth/tokens/token_storage.dart';
 import '../../shared/services/driver_service.dart';
 import '../../shared/models/driver_request.dart';
@@ -188,7 +190,13 @@ class DriverProvider extends ChangeNotifier {
     }
   }
 
-  Future<bool> updateDeliveryStatus(String status) async {
+  Future<String?> uploadFile(XFile file) async {
+    final token = await TokenStorage.getAccessToken();
+    if (token == null) return null;
+    return _service.uploadFile(file, token);
+  }
+
+  Future<bool> updateDeliveryStatus(String status, {String? podImage}) async {
     if (_currentDelivery == null) return false;
     
     final token = await TokenStorage.getAccessToken();
@@ -199,7 +207,7 @@ class DriverProvider extends ChangeNotifier {
 
     try {
       final packageId = _currentDelivery!.id!;
-      final success = await _service.updatePackageStatus(packageId, status, token);
+      final success = await _service.updatePackageStatus(packageId, status, token, podImage: podImage);
 
       if (success) {
         if (status == 'DELIVERED') {

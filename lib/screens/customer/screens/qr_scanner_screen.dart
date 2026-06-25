@@ -49,7 +49,12 @@ class _QRScannerScreenState extends State<QRScannerScreen>
     setState(() => _isProcessing = true);
     try {
       final token = await TokenStorage.getAccessToken();
-      final url = Uri.parse('$baseUrl/packages/$id');
+      final cleanBaseUrl = baseUrl.endsWith('/api/v1') 
+          ? baseUrl.substring(0, baseUrl.length - 7) 
+          : baseUrl;
+      final url = token != null
+          ? Uri.parse('$baseUrl/packages/$id')
+          : Uri.parse('$cleanBaseUrl/packages/track/$id');
 
       final response = await http.get(
         url,

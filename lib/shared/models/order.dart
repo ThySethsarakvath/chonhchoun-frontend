@@ -44,6 +44,7 @@ class CustomerOrder {
   final String? driverName;
   final String? driverPhone;
   final bool? driverOnline;
+  final List<String>? images;
 
   CustomerOrder({
     required this.id,
@@ -71,6 +72,7 @@ class CustomerOrder {
     this.driverName,
     this.driverPhone,
     this.driverOnline,
+    this.images,
   });
 
   factory CustomerOrder.fromJson(Map<String, dynamic> json) {
@@ -89,12 +91,12 @@ class CustomerOrder {
       dropoffAddress: (json['dropoff'] ?? {})['address'] ?? '',
       itemName: (json['package'] ?? {})['name'] ?? '',
       itemDescription: (json['package'] ?? {})['note'],
-      size: ItemSize.S,
+      size: _parseSize((json['package'] ?? {})['size']),
       weight: ((json['package'] ?? {})['weightKg'] ?? 0.0).toDouble(),
       itemType: _parseItemType((json['package'] ?? {})['type']),
       vehicleType: _parseVehicleType(json['vehicleType']),
       paymentMethod: _parsePaymentMethod((json['payment'] ?? {})['method']),
-      serviceType: DeliveryServiceType.express,
+      serviceType: _parseServiceType(json['serviceType']),
       itemHandling: false,
       driverPickup: false,
       status: _parseStatus(json['status']),
@@ -107,6 +109,9 @@ class CustomerOrder {
       driverName: (json['driverId'] ?? {})['name'],
       driverPhone: (json['driverId'] ?? {})['phone'],
       driverOnline: (json['driverId'] ?? {})['isOnline'],
+      images: (json['package'] ?? {})['images'] != null
+          ? List<String>.from((json['package'] ?? {})['images'])
+          : null,
     );
   }
 

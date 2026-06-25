@@ -71,6 +71,7 @@ class HomeService {
         'quantity': 1,
         'weightKg': order.weight > 0 ? order.weight : 0.1,
         'note': order.noteToDriver ?? '',
+        'images': order.images ?? [],
       },
       'pickup': {
         'address': order.pickupAddress.isEmpty ? 'Current Location' : order.pickupAddress,

@@ -1,4 +1,6 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 
 import '../../../shared/data/driver_demo_data.dart';
 import '../../../shared/models/driver_request.dart';
@@ -8,7 +10,7 @@ import '../../../shared/widgets/driver_request_widgets.dart';
 import '../../../shared/widgets/driver_shell_widgets.dart';
 import '../driver_provider.dart';
 
-class DriverDeliveriesTab extends StatelessWidget {
+class DriverDeliveriesTab extends StatefulWidget {
   const DriverDeliveriesTab({
     super.key,
     required this.request,
@@ -23,6 +25,87 @@ class DriverDeliveriesTab extends StatelessWidget {
   final VoidCallback onOpenDetail;
 
   @override
+  State<DriverDeliveriesTab> createState() => _DriverDeliveriesTabState();
+}
+
+class _DriverDeliveriesTabState extends State<DriverDeliveriesTab> {
+  bool _localLoading = false;
+
+  Future<void> _handleStatusTransition(DriverProvider provider, String nextStatus) async {
+    if (_localLoading || provider.isLoading) return; // Prevent double click
+
+    setState(() {
+      _localLoading = true;
+    });
+
+    try {
+      if (nextStatus == 'DELIVERED') {
+        // Prompt for PoD image using camera
+        final picker = ImagePicker();
+        final XFile? image = await picker.pickImage(
+          source: ImageSource.camera,
+          imageQuality: 80,
+        );
+
+        if (image == null) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Proof of Delivery photo is required.')),
+            );
+          }
+          setState(() {
+            _localLoading = false;
+          });
+          return;
+        }
+
+        // Upload PoD image
+        final File file = File(image.path);
+        final String? url = await provider.uploadFile(file);
+
+        if (url == null) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Failed to upload Proof of Delivery photo. Please try again.')),
+            );
+          }
+          setState(() {
+            _localLoading = false;
+          });
+          return;
+        }
+
+        // Complete delivery with PoD image
+        final success = await provider.updateDeliveryStatus(nextStatus, podImage: url);
+        if (mounted && !success) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Failed to complete delivery status update.')),
+          );
+        }
+      } else {
+        final success = await provider.updateDeliveryStatus(nextStatus);
+        if (mounted && !success) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Failed to update status.')),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('An error occurred: $e')),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _localLoading = false;
+        });
+      }
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     final provider = DriverScope.of(context);
     final currentReq = provider.currentDelivery;
@@ -32,6 +115,8 @@ class DriverDeliveriesTab extends StatelessWidget {
     final hours = totalMinutes ~/ 60;
     final mins = totalMinutes % 60;
     final timeStr = "$hours Hours $mins Minutes";
+
+    final showSpinner = _localLoading || provider.isLoading;
 
     return ListView(
       padding: EdgeInsets.zero,
@@ -91,7 +176,7 @@ class DriverDeliveriesTab extends StatelessWidget {
                         width: double.infinity,
                         child: DriverPrimaryButton(
                           label: 'See Details',
-                          onPressed: onSeeHistory,
+                          onPressed: widget.onSeeHistory,
                         ),
                       ),
                     ],
@@ -124,20 +209,20 @@ class DriverDeliveriesTab extends StatelessWidget {
                       else ...[
                         DriverHomeRequestPreview(
                           request: currentReq,
-                          onTap: onOpenDetail,
+                          onTap: widget.onOpenDetail,
                           showButtons: false,
                         ),
                         const SizedBox(height: 16),
                         SizedBox(
                           width: double.infinity,
-                          child: provider.isLoading 
+                          child: showSpinner
                               ? const Center(child: CircularProgressIndicator())
                               : DriverPrimaryButton(
                                   label: _getNextStatusLabel(currentReq.status ?? 'ACCEPTED'),
                                   onPressed: () {
                                     final next = _getNextStatus(currentReq.status ?? 'ACCEPTED');
                                     if (next != null) {
-                                      provider.updateDeliveryStatus(next);
+                                      _handleStatusTransition(provider, next);
                                     }
                                   },
                                 ),
@@ -147,7 +232,7 @@ class DriverDeliveriesTab extends StatelessWidget {
                       Align(
                         alignment: Alignment.centerRight,
                         child: TextButton(
-                          onPressed: onViewAll,
+                          onPressed: widget.onViewAll,
                           child: const Text(
                             'Open request queue',
                             style: TextStyle(

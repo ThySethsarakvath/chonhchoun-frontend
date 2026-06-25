@@ -11,6 +11,7 @@ import '../features/auth/models/user_model.dart';
 import '../screens/customer/avatar_upload_screen.dart';
 import '../screens/customer/setting_screen.dart';
 import '../screens/customer/profile_screen.dart';
+import '../screens/customer/screens/customer_order_detail_screen.dart';
 
 import '../screens/driver/driver_workspace_screen.dart';
 
@@ -78,6 +79,12 @@ class AppRouter {
   AppRouter._();
 
   static Route<dynamic> onGenerateRoute(RouteSettings settings) {
+    final name = settings.name ?? '';
+    if (name.startsWith('/track/')) {
+      final packageId = name.substring(7);
+      return _fade(CustomerOrderDetailScreen(packageId: packageId, fromQR: true));
+    }
+
     switch (settings.name) {
       case AppRoutes.landing:
         return _fade(const LandingPage());

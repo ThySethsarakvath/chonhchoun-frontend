@@ -247,6 +247,17 @@ class _CustomerBookingScreenState extends State<CustomerBookingScreen> {
               .map((c) => LatLng(c[1].toDouble(), c[0].toDouble()))
               .toList();
         });
+
+        if (_routePoints.isNotEmpty) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            _mapController.fitCamera(
+              CameraFit.bounds(
+                bounds: LatLngBounds.fromPoints(_routePoints),
+                padding: const EdgeInsets.fromLTRB(50, 180, 50, 220),
+              ),
+            );
+          });
+        }
       }
     } catch (e) {
       debugPrint("Routing error: $e");

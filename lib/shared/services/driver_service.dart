@@ -1,5 +1,9 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:http/http.dart' as http;
+import 'package:http_parser/http_parser.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:path/path.dart';
 import '../../global/base_url.dart';
 
 class DriverService {
@@ -59,16 +63,49 @@ class DriverService {
     }
   }
 
-  Future<bool> updatePackageStatus(String packageId, String status, String token) async {
+  Future<bool> updatePackageStatus(String packageId, String status, String token, {String? podImage}) async {
     try {
+      final Map<String, dynamic> bodyMap = {'status': status};
+      if (podImage != null) {
+        bodyMap['podImage'] = podImage;
+      }
       final res = await http.patch(
         Uri.parse('$_url/packages/$packageId/status'),
         headers: _headers(token),
-        body: json.encode({'status': status}),
+        body: json.encode(bodyMap),
       );
       return res.statusCode == 200 || res.statusCode == 201;
     } catch (_) {
       return false;
+    }
+  }
+
+  Future<String?> uploadFile(XFile file, String token) async {
+    try {
+      final uri = Uri.parse('$_url/packages/upload');
+      final bytes = await file.readAsBytes();
+      final filename = file.name;
+      final ext = extension(filename).toLowerCase().replaceAll('.', '');
+      final mimeSub = ext == 'jpg' ? 'jpeg' : ext;
+      
+      final req = http.MultipartRequest('POST', uri)
+        ..headers['Authorization'] = 'Bearer $token'
+        ..files.add(http.MultipartFile.fromBytes(
+          'file',
+          bytes,
+          filename: filename,
+          contentType: MediaType('image', mimeSub),
+        ));
+        
+      final streamed = await req.send();
+      final res = await http.Response.fromStream(streamed);
+      if (res.statusCode == 200 || res.statusCode == 201) {
+        final body = json.decode(res.body) as Map<String, dynamic>;
+        return body['url'] as String?;
+      }
+      return null;
+    } catch (_) {
+      return null;
     }
   }
 

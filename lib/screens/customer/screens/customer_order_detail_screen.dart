@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_map/flutter_map.dart';
@@ -65,7 +66,12 @@ class _CustomerOrderDetailScreenState extends State<CustomerOrderDetailScreen> {
     if (id == null || !mounted) return;
     try {
       final token = await TokenStorage.getAccessToken();
-      final url = Uri.parse('$baseUrl/packages/$id');
+      final cleanBaseUrl = baseUrl.endsWith('/api/v1') 
+          ? baseUrl.substring(0, baseUrl.length - 7) 
+          : baseUrl;
+      final url = token != null
+          ? Uri.parse('$baseUrl/packages/$id')
+          : Uri.parse('$cleanBaseUrl/packages/track/$id');
       final response = await http.get(url, headers: {
         'Content-Type': 'application/json',
         if (token != null) 'Authorization': 'Bearer $token',
@@ -83,7 +89,12 @@ class _CustomerOrderDetailScreenState extends State<CustomerOrderDetailScreen> {
     setState(() => _isLoadingPackage = true);
     try {
       final token = await TokenStorage.getAccessToken();
-      final url = Uri.parse('$baseUrl/packages/${widget.packageId}');
+      final cleanBaseUrl = baseUrl.endsWith('/api/v1') 
+          ? baseUrl.substring(0, baseUrl.length - 7) 
+          : baseUrl;
+      final url = token != null
+          ? Uri.parse('$baseUrl/packages/${widget.packageId}')
+          : Uri.parse('$cleanBaseUrl/packages/track/${widget.packageId}');
       final response = await http.get(url, headers: {
         'Content-Type': 'application/json',
         if (token != null) 'Authorization': 'Bearer $token',
@@ -137,10 +148,19 @@ class _CustomerOrderDetailScreenState extends State<CustomerOrderDetailScreen> {
     });
   }
 
+  String _buildShareUrl(String trackingId) {
+    String baseDomain = 'https://chonhchoun.app';
+    if (kIsWeb || Uri.base.scheme.startsWith('http')) {
+      final baseStr = Uri.base.toString().split('/#/').first.split('/track').first;
+      baseDomain = baseStr.endsWith('/') ? baseStr.substring(0, baseStr.length - 1) : baseStr;
+    }
+    return '$baseDomain/#/track/$trackingId';
+  }
+
   void _shareTrackingLink() {
     final trackingId = _currentOrderNullable?.id ?? widget.packageId ?? '';
     if (trackingId.isEmpty) return;
-    final link = 'https://chonhchoun.app/track/$trackingId';
+    final link = _buildShareUrl(trackingId);
     Share.share(
       'Track my package on Chonhchoun:\n$link',
       subject: 'Chonhchoun Delivery Tracking',
@@ -150,7 +170,7 @@ class _CustomerOrderDetailScreenState extends State<CustomerOrderDetailScreen> {
   void _copyTrackingLink() {
     final trackingId = _currentOrderNullable?.id ?? widget.packageId ?? '';
     if (trackingId.isEmpty) return;
-    final link = 'https://chonhchoun.app/track/$trackingId';
+    final link = _buildShareUrl(trackingId);
     Clipboard.setData(ClipboardData(text: link));
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Tracking link copied to clipboard')),
@@ -583,6 +603,10 @@ class _CustomerOrderDetailScreenState extends State<CustomerOrderDetailScreen> {
 
   Widget _buildShareCard() {
     final trackingId = _currentOrderNullable?.id ?? widget.packageId ?? '';
+    final fullUrl = _buildShareUrl(trackingId);
+    final displayUrl = fullUrl.replaceFirst('https://', '').replaceFirst('http://', '');
+    final shortDisplay = displayUrl.length > 40 ? '${displayUrl.substring(0, 40)}...' : displayUrl;
+
     return AppSurfaceCard(
       child: Row(
         children: [
@@ -602,7 +626,7 @@ class _CustomerOrderDetailScreenState extends State<CustomerOrderDetailScreen> {
                 const Text('Share Tracking Link',
                     style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
                 Text(
-                  'chonhchoun.app/track/${trackingId.length > 12 ? trackingId.substring(0, 12) : trackingId}...',
+                  shortDisplay,
                   style: const TextStyle(fontSize: 11, color: AppColors.muted),
                 ),
               ],

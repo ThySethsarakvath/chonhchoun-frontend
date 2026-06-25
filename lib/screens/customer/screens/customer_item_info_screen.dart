@@ -1,10 +1,14 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:latlong2/latlong.dart' hide Path;
 import 'package:geolocator/geolocator.dart';
+import 'package:image_picker/image_picker.dart';
 import 'pickup_map_picker.dart';
 import '../../../shared/colors/app_colors.dart';
 import '../../../shared/models/order.dart';
 import '../../../shared/widgets/app_shell_widgets.dart';
+import '../../../features/auth/tokens/token_storage.dart';
+import '../../../shared/services/driver_service.dart';
 
 class CustomerItemInfoScreen extends StatefulWidget {
   const CustomerItemInfoScreen({
@@ -45,6 +49,118 @@ class _CustomerItemInfoScreenState extends State<CustomerItemInfoScreen> {
   final TextEditingController _noteController = TextEditingController();
   String? _customPickupAddress;
   LatLng? _customPickupLatLng;
+
+  // Multi-image state
+  final List<File> _selectedImages = [];
+  bool _isUploading = false;
+
+  Future<void> _pickImages() async {
+    try {
+      final picker = ImagePicker();
+      final List<XFile> images = await picker.pickMultiImage(imageQuality: 80);
+      if (images.isNotEmpty) {
+        setState(() {
+          _selectedImages.addAll(images.map((e) => File(e.path)));
+        });
+      }
+    } catch (e) {
+      debugPrint("Error picking images: $e");
+    }
+  }
+
+  Widget _buildPhotoSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text("Package Photos", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+        const SizedBox(height: 8),
+        if (_selectedImages.isEmpty)
+          GestureDetector(
+            onTap: _pickImages,
+            child: Container(
+              width: double.infinity,
+              height: 54,
+              decoration: BoxDecoration(borderRadius: BorderRadius.circular(12)),
+              child: CustomPaint(
+                painter: _DottedPainter(),
+                child: const Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.camera_alt_outlined, size: 20, color: AppColors.blue),
+                    SizedBox(width: 12),
+                    Text("Add photos (optional)", style: TextStyle(color: AppColors.muted, fontWeight: FontWeight.w500)),
+                  ],
+                ),
+              ),
+            ),
+          )
+        else
+          SizedBox(
+            height: 90,
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              itemCount: _selectedImages.length + 1,
+              itemBuilder: (context, index) {
+                if (index == _selectedImages.length) {
+                  return GestureDetector(
+                    onTap: _pickImages,
+                    child: Container(
+                      width: 80,
+                      height: 80,
+                      margin: const EdgeInsets.only(right: 8, top: 8, bottom: 8),
+                      decoration: BoxDecoration(
+                        color: AppColors.surface,
+                        border: Border.all(color: AppColors.line),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(Icons.add_a_photo_outlined, color: AppColors.blue),
+                    ),
+                  );
+                }
+
+                final file = _selectedImages[index];
+                return Stack(
+                  children: [
+                    Container(
+                      width: 80,
+                      height: 80,
+                      margin: const EdgeInsets.only(right: 8, top: 8, bottom: 8),
+                      decoration: BoxDecoration(
+                        border: Border.all(color: AppColors.line),
+                        borderRadius: BorderRadius.circular(12),
+                        image: DecorationImage(
+                          image: FileImage(file),
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                    ),
+                    Positioned(
+                      top: 4,
+                      right: 4,
+                      child: GestureDetector(
+                        onTap: () {
+                          setState(() {
+                            _selectedImages.removeAt(index);
+                          });
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.all(4),
+                          decoration: const BoxDecoration(
+                            color: Colors.black54,
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(Icons.close, size: 12, color: Colors.white),
+                        ),
+                      ),
+                    ),
+                  ],
+                );
+              },
+            ),
+          ),
+      ],
+    );
+  }
 
   double _calculateDistanceFee(double distanceInKm) {
     if (distanceInKm <= 1.0) {
@@ -230,23 +346,7 @@ class _CustomerItemInfoScreenState extends State<CustomerItemInfoScreen> {
               ],
             ),
             const SizedBox(height: 24),
-            // RESTORED PHOTO UPLOAD
-            Container(
-              width: double.infinity,
-              height: 54,
-              decoration: BoxDecoration(borderRadius: BorderRadius.circular(12)),
-              child: CustomPaint(
-                painter: _DottedPainter(),
-                child: const Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.camera_alt_outlined, size: 20, color: AppColors.blue),
-                    SizedBox(width: 12),
-                    Text("Add photo (optional)", style: TextStyle(color: AppColors.muted, fontWeight: FontWeight.w500)),
-                  ],
-                ),
-              ),
-            ),
+            _buildPhotoSection(),
           ],
         ),
       ),
@@ -486,49 +586,95 @@ class _CustomerItemInfoScreenState extends State<CustomerItemInfoScreen> {
           ),
           const SizedBox(height: 12),
           ElevatedButton(
-            onPressed: () {
-              try {
-                final order = CustomerOrder(
-                  id: "ORDER-${DateTime.now().millisecondsSinceEpoch}",
-                  pickup: _driverPickup ? (_customPickupLatLng ?? widget.userLocation) : widget.pickup,
-                  dropoff: widget.dropoff,
-                  pickupAddress: widget.pickupAddress,
-                  dropoffAddress: widget.dropoffAddress,
-                  itemName: _itemNameController.text.trim().isEmpty ? "កញ្ចប់អីវ៉ាន់" : _itemNameController.text.trim(),
-                  size: _selectedSize,
-                  weight: double.tryParse(_weightController.text) ?? 1.0,
-                  itemType: _selectedType,
-                  vehicleType: _selectedVehicle,
-                  paymentMethod: _selectedPayment,
-                  serviceType: widget.serviceType,
-                  itemHandling: _itemHandling,
-                  driverPickup: _driverPickup,
-                  status: OrderStatus.searching,
-                  createdAt: DateTime.now(),
-                  price: _totalPrice,
-                  dropoffContactName: _contactNameController.text.trim(),
-                  dropoffContactNumber: _contactPhoneController.text.trim(),
-                  noteToDriver: _noteController.text.trim(),
-                );
-                
-                widget.onOrderCreated(order);
-                
-                // Navigate back to the very first screen (Home)
-                Navigator.of(context).popUntil((route) => route.isFirst);
-              } catch (e) {
-                debugPrint("Booking Error: $e");
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text("Error creating order: $e")),
-                );
-              }
-            },
+            onPressed: _isUploading
+                ? null
+                : () async {
+                    if (_itemNameController.text.trim().isEmpty) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text("Please enter an item name")),
+                      );
+                      return;
+                    }
+
+                    setState(() {
+                      _isUploading = true;
+                    });
+
+                    try {
+                      final token = await TokenStorage.getAccessToken();
+                      if (token == null) {
+                        throw Exception("Session expired. Please log in again.");
+                      }
+
+                      final List<String> imageUrls = [];
+                      final service = DriverService();
+
+                      for (final imgFile in _selectedImages) {
+                        final url = await service.uploadFile(imgFile, token);
+                        if (url != null) {
+                          imageUrls.add(url);
+                        } else {
+                          throw Exception("Failed to upload one of the package photos.");
+                        }
+                      }
+
+                      final order = CustomerOrder(
+                        id: "ORDER-${DateTime.now().millisecondsSinceEpoch}",
+                        pickup: _driverPickup ? (_customPickupLatLng ?? widget.userLocation) : widget.pickup,
+                        dropoff: widget.dropoff,
+                        pickupAddress: widget.pickupAddress,
+                        dropoffAddress: widget.dropoffAddress,
+                        itemName: _itemNameController.text.trim(),
+                        size: _selectedSize,
+                        weight: double.tryParse(_weightController.text) ?? 1.0,
+                        itemType: _selectedType,
+                        vehicleType: _selectedVehicle,
+                        paymentMethod: _selectedPayment,
+                        serviceType: widget.serviceType,
+                        itemHandling: _itemHandling,
+                        driverPickup: _driverPickup,
+                        status: OrderStatus.searching,
+                        createdAt: DateTime.now(),
+                        price: _totalPrice,
+                        dropoffContactName: _contactNameController.text.trim(),
+                        dropoffContactNumber: _contactPhoneController.text.trim(),
+                        noteToDriver: _noteController.text.trim(),
+                        images: imageUrls,
+                      );
+
+                      widget.onOrderCreated(order);
+
+                      // Navigate back to the very first screen (Home)
+                      if (mounted) {
+                        Navigator.of(context).popUntil((route) => route.isFirst);
+                      }
+                    } catch (e) {
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text(e.toString())),
+                        );
+                      }
+                    } finally {
+                      if (mounted) {
+                        setState(() {
+                          _isUploading = false;
+                        });
+                      }
+                    }
+                  },
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.blue,
               minimumSize: const Size(double.infinity, 54),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
               elevation: 0,
             ),
-            child: const Text("Confirm & Book Now", style: TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.bold)),
+            child: _isUploading
+                ? const SizedBox(
+                    height: 20,
+                    width: 20,
+                    child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                  )
+                : const Text("Confirm & Book Now", style: TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.bold)),
           ),
         ],
       ),
