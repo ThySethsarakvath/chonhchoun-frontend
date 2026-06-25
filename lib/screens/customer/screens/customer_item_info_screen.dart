@@ -610,7 +610,7 @@ class _CustomerItemInfoScreenState extends State<CustomerItemInfoScreen> {
                       final service = DriverService();
 
                       for (final imgFile in _selectedImages) {
-                        final url = await service.uploadFile(imgFile, token);
+                        final url = await service.uploadFile(XFile(imgFile.path), token);
                         if (url != null) {
                           imageUrls.add(url);
                         } else {

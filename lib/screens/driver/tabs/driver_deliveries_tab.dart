@@ -60,8 +60,7 @@ class _DriverDeliveriesTabState extends State<DriverDeliveriesTab> {
         }
 
         // Upload PoD image
-        final File file = File(image.path);
-        final String? url = await provider.uploadFile(file);
+        final String? url = await provider.uploadFile(image);
 
         if (url == null) {
           if (mounted) {
