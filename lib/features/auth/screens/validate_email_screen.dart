@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../../../router/app_router.dart';
-import '../widgets/auth_scaffold.dart';
 import '../widgets/auth_widgets.dart';
 
 class ValidateEmailScreen extends StatelessWidget {
@@ -70,7 +69,9 @@ class ValidateEmailScreen extends StatelessWidget {
                   Container(
                     width: double.infinity,
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 14),
+                      horizontal: 16,
+                      vertical: 14,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(10),
@@ -88,10 +89,7 @@ class ValidateEmailScreen extends StatelessWidget {
                   const SizedBox(height: 40),
 
                   // ── Next button ─────────────────────────────────────────
-                  AuthButton(
-                    label: 'បន្ទាប់',
-                    onPressed: () => _next(context),
-                  ),
+                  AuthButton(label: 'បន្ទាប់', onPressed: () => _next(context)),
                   const SizedBox(height: 40),
                 ],
               ),

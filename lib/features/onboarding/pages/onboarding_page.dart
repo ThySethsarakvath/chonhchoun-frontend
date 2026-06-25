@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import '../models/onboarding_model.dart';
-import '../services/onboarding_service.dart';
-import '../widgets/onboarding_slide_widget.dart';
-import '../widgets/dot_indicator.dart';
+import '../../../shared/models/onboarding_model.dart';
+import '../../../shared/services/onboarding_service.dart';
+import '../../../shared/widgets/onboarding_slide_widget.dart';
+import '../../../shared/widgets/dot_indicator.dart';
 
 class OnboardingPage extends StatefulWidget {
   final VoidCallback onFinished;

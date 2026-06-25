@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../router/app_router.dart';
-import '../features/home/widgets/home_bottom_nav.dart';
+import '../../router/app_router.dart';
+import '../../shared/widgets/home_bottom_nav.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -10,7 +10,7 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
-  int _navIndex = 3; // Settings tab index
+  final int _navIndex = 3; // Settings tab index
 
   void _handleNavigation(int index) {
     switch (index) {

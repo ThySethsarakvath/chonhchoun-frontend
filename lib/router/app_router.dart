@@ -9,12 +9,14 @@ import '../features/auth/screens/set_password_screen.dart';
 import '../features/home/pages/home_screen.dart';
 import '../features/auth/models/user_model.dart';
 import '../screens/avatar_upload_screen.dart';
-import '../screens/setting_screen.dart';
+import '../screens/customer/setting_screen.dart';
 import '../screens/profile_screen.dart';
 import '../features/driver_registration/screens/driver_application_screen.dart';
-// import '../screens/driver/driver_workspace_screen.dart';
+import '../screens/driver/driver_workspace_screen.dart';
 import '../features/home/pages/admin_main_screen.dart';
 import '../features/branch_owner/screens/branch_owner_main_screen.dart';
+import '../screens/customer/screens/customer_order_detail_screen.dart';
+
 abstract class AppRoutes {
   AppRoutes._();
 
@@ -96,6 +98,12 @@ class AppRouter {
   AppRouter._();
 
   static Route<dynamic> onGenerateRoute(RouteSettings settings) {
+    final name = settings.name ?? '';
+    if (name.startsWith('/track/')) {
+      final packageId = name.substring(7);
+      return _fade(CustomerOrderDetailScreen(packageId: packageId, fromQR: true));
+    }
+
     switch (settings.name) {
       case AppRoutes.landing:
         return _fade(const LandingPage());
@@ -120,10 +128,12 @@ class AppRouter {
         return _slide(AvatarUploadScreen(args: args));
       case AppRoutes.profile:
         final args = settings.arguments as ProfileArgs?;
-        return _fade(ProfileScreen(
-          profile: args?.profile,
-          source: args?.source ?? ProfileSource.home,
-        ));
+        return _fade(
+          ProfileScreen(
+            profile: args?.profile,
+            source: args?.source ?? ProfileSource.home,
+          ),
+        );
       case AppRoutes.settings:
         return _fade(const SettingsScreen());
       case AppRoutes.customer:
@@ -133,7 +143,7 @@ class AppRouter {
       case AppRoutes.branchOwner:
         return _fade(const BranchOwnerMainScreen());
       case AppRoutes.driver:
-        return _fade(_stub('Driver Workspace'));
+        return _fade(const DriverWorkspaceScreen());
       case AppRoutes.driverApplication:
         return _slide(const DriverApplicationScreen());
       default:
@@ -143,8 +153,8 @@ class AppRouter {
 
   static PageRouteBuilder<dynamic> _fade(Widget page) {
     return PageRouteBuilder(
-      pageBuilder: (_, __, ___) => page,
-      transitionsBuilder: (_, anim, __, child) =>
+      pageBuilder: (_, _, _) => page,
+      transitionsBuilder: (_, anim, _, child) =>
           FadeTransition(opacity: anim, child: child),
       transitionDuration: const Duration(milliseconds: 350),
     );
@@ -152,10 +162,12 @@ class AppRouter {
 
   static PageRouteBuilder<dynamic> _slide(Widget page) {
     return PageRouteBuilder(
-      pageBuilder: (_, __, ___) => page,
-      transitionsBuilder: (_, anim, __, child) {
-        final tween = Tween(begin: const Offset(1, 0), end: Offset.zero)
-            .chain(CurveTween(curve: Curves.easeInOut));
+      pageBuilder: (_, _, _) => page,
+      transitionsBuilder: (_, anim, _, child) {
+        final tween = Tween(
+          begin: const Offset(1, 0),
+          end: Offset.zero,
+        ).chain(CurveTween(curve: Curves.easeInOut));
         return SlideTransition(position: anim.drive(tween), child: child);
       },
       transitionDuration: const Duration(milliseconds: 300),

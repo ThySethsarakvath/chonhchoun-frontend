@@ -1,10 +1,10 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import '../../../router/app_router.dart';
-import '../features/auth/services/user_service.dart';
-import '../features/auth/widgets/auth_widgets.dart';
-import '../features/auth/widgets/auth_scaffold.dart';
+import '../../router/app_router.dart';
+import '../../features/auth/services/user_service.dart';
+import '../../features/auth/widgets/auth_widgets.dart';
+import '../../features/auth/widgets/auth_scaffold.dart';
 
 class AvatarUploadScreen extends StatefulWidget {
   final AvatarUploadArgs args;
@@ -68,12 +68,31 @@ class _AvatarUploadScreenState extends State<AvatarUploadScreen> {
 
   void _skip() => _goHome();
 
-  void _goHome() {
-    Navigator.pushNamedAndRemoveUntil(
-      context,
-      AppRoutes.customer,
-      (_) => false,
-    );
+  Future<void> _goHome() async {
+    setState(() => _uploading = true);
+    try {
+      final profile = await _userService.getMe(accessToken: widget.args.accessToken);
+      if (mounted) {
+        if (profile.role.toLowerCase() == 'driver') {
+          Navigator.pushNamedAndRemoveUntil(
+            context,
+            AppRoutes.driver,
+            (_) => false,
+          );
+          return;
+        }
+      }
+    } catch (_) {} finally {
+      if (mounted) setState(() => _uploading = false);
+    }
+
+    if (mounted) {
+      Navigator.pushNamedAndRemoveUntil(
+        context,
+        AppRoutes.customer,
+        (_) => false,
+      );
+    }
   }
 
   @override
