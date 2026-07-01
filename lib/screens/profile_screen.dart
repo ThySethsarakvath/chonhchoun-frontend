@@ -6,6 +6,11 @@ import '../features/auth/services/auth_service.dart';
 import '../features/auth/tokens/token_storage.dart';
 import '../shared/widgets/home_bottom_nav.dart';
 
+const _profileRequestAccent = Color(0xFF5B6C8F);
+const _profileRequestDark = Color(0xFF32435C);
+const _profileRequestSurface = Color(0xFFF7F8FB);
+const _profileRequestBorder = Color(0xFFE2E7F0);
+
 class ProfileScreen extends StatefulWidget {
   final UserProfile? profile;
   final ProfileSource source;
@@ -23,6 +28,10 @@ class ProfileScreen extends StatefulWidget {
 class _ProfileScreenState extends State<ProfileScreen> {
   final _userService = UserService();
   final _authService = AuthService();
+<<<<<<< HEAD
+=======
+  static final _phoneReg = RegExp(r'^(\+?855|0)[0-9]{8,9}$');
+>>>>>>> 8d511ca (Split admin driver requests from vehicle management)
 
   UserProfile? _userProfile;
   bool _loading = false;
@@ -65,6 +74,192 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
         );
       }
+    }
+  }
+
+  Future<void> _openEditProfileSheet() async {
+    final profile = _userProfile;
+    if (profile == null) return;
+
+    final nameCtrl = TextEditingController(text: profile.name);
+    final phoneCtrl = TextEditingController(
+      text: profile.phone == null || profile.phone!.isEmpty
+          ? ''
+          : _formatPhone(profile.phone),
+    );
+    String? errorText;
+    bool saving = false;
+
+    final updatedProfile = await showModalBottomSheet<UserProfile>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) {
+        return StatefulBuilder(
+          builder: (context, setSheetState) {
+            Future<void> submit() async {
+              final name = nameCtrl.text.trim();
+              final phone = phoneCtrl.text.trim();
+
+              if (name.length < 2) {
+                setSheetState(() => errorText = 'Please enter a valid name.');
+                return;
+              }
+              if (phone.isEmpty) {
+                setSheetState(
+                  () => errorText = 'Please enter your phone number.',
+                );
+                return;
+              }
+              if (!_phoneReg.hasMatch(phone)) {
+                setSheetState(
+                  () => errorText =
+                      'Phone number must be a valid Cambodian number.',
+                );
+                return;
+              }
+
+              setSheetState(() {
+                saving = true;
+                errorText = null;
+              });
+
+              try {
+                final accessToken = await TokenStorage.getAccessToken();
+                if (accessToken == null || accessToken.isEmpty) {
+                  throw Exception('Please log in again.');
+                }
+
+                final updated = await _userService.updateProfile(
+                  accessToken: accessToken,
+                  name: name,
+                  phone: phone,
+                );
+                if (!mounted) return;
+                Navigator.pop(sheetContext, updated);
+              } catch (e) {
+                setSheetState(() {
+                  saving = false;
+                  errorText = e.toString().replaceFirst('Exception: ', '');
+                });
+              }
+            }
+
+            return Padding(
+              padding: EdgeInsets.only(
+                left: 16,
+                right: 16,
+                top: 16,
+                bottom: MediaQuery.of(sheetContext).viewInsets.bottom + 16,
+              ),
+              child: Container(
+                padding: const EdgeInsets.all(20),
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Center(
+                      child: Container(
+                        width: 42,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFD5DDE8),
+                          borderRadius: BorderRadius.circular(99),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 18),
+                    const Text(
+                      'Edit Profile',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w800,
+                        color: Color(0xFF1E2D3D),
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    const Text(
+                      'Update your name and phone number.',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Color(0xFF667085),
+                      ),
+                    ),
+                    const SizedBox(height: 18),
+                    _EditField(
+                      label: 'Full name',
+                      controller: nameCtrl,
+                      hintText: 'Enter your full name',
+                    ),
+                    const SizedBox(height: 14),
+                    _EditField(
+                      label: 'Phone number',
+                      controller: phoneCtrl,
+                      hintText: 'Enter your phone number',
+                      keyboardType: TextInputType.phone,
+                    ),
+                    if (errorText != null) ...[
+                      const SizedBox(height: 12),
+                      Text(
+                        errorText!,
+                        style: const TextStyle(
+                          fontSize: 12.5,
+                          color: Colors.redAccent,
+                        ),
+                      ),
+                    ],
+                    const SizedBox(height: 18),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: saving ? null : submit,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: _profileRequestDark,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                        ),
+                        child: saving
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2.2,
+                                  color: Colors.white,
+                                ),
+                              )
+                            : const Text(
+                                'Save Changes',
+                                style: TextStyle(fontWeight: FontWeight.w700),
+                              ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+
+    nameCtrl.dispose();
+    phoneCtrl.dispose();
+
+    if (updatedProfile != null && mounted) {
+      setState(() => _userProfile = updatedProfile);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Profile updated successfully.'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
     }
   }
 
@@ -301,9 +496,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   Align(
                     alignment: Alignment.centerRight,
                     child: GestureDetector(
-                      onTap: () {
-                        /* TODO: navigate to edit profile */
-                      },
+                      onTap: _openEditProfileSheet,
                       child: Container(
                         width: 36,
                         height: 36,
@@ -366,6 +559,32 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   const SizedBox(height: 14),
 
                   _ProfileField(label: 'អុីម៉ែល', value: p?.email ?? '—'),
+<<<<<<< HEAD
+=======
+                  if (p?.role == 'customer') ...[
+                    const SizedBox(height: 18),
+                    _DriverRequestActionCard(
+                      onTap: () {
+                        Navigator.pushNamed(context, AppRoutes.becomeDriver);
+                      },
+                    ),
+                  ],
+                  if (p?.role == 'driver') ...[
+                    const SizedBox(height: 14),
+                    _ProfileField(
+                      label: 'Vehicle type',
+                      value: vehicleTypeLabel(p?.vehicleType),
+                    ),
+                    if (p?.assignedVehicleCode != null &&
+                        p!.assignedVehicleCode!.isNotEmpty) ...[
+                      const SizedBox(height: 14),
+                      _ProfileField(
+                        label: 'Truck code',
+                        value: p.assignedVehicleCode!,
+                      ),
+                    ],
+                  ],
+>>>>>>> 8d511ca (Split admin driver requests from vehicle management)
                   const SizedBox(height: 80),
 
                   SizedBox(
@@ -495,4 +714,161 @@ class _ProfileField extends StatelessWidget {
       ],
     );
   }
+<<<<<<< HEAD
 }
+=======
+}
+
+class _EditField extends StatelessWidget {
+  final String label;
+  final String hintText;
+  final TextEditingController controller;
+  final TextInputType keyboardType;
+
+  const _EditField({
+    required this.label,
+    required this.hintText,
+    required this.controller,
+    this.keyboardType = TextInputType.text,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w700,
+            color: _profileRequestDark,
+          ),
+        ),
+        const SizedBox(height: 8),
+        TextField(
+          controller: controller,
+          keyboardType: keyboardType,
+          decoration: InputDecoration(
+            hintText: hintText,
+            filled: true,
+            fillColor: _profileRequestSurface,
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 14,
+            ),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(14),
+              borderSide: const BorderSide(color: _profileRequestBorder),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(14),
+              borderSide: const BorderSide(color: _profileRequestBorder),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(14),
+              borderSide: const BorderSide(color: _profileRequestAccent),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _DriverRequestActionCard extends StatelessWidget {
+  final VoidCallback onTap;
+
+  const _DriverRequestActionCard({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: _profileRequestBorder),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x120F172A),
+            blurRadius: 16,
+            offset: Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'ស្នើសុំក្លាយជាអ្នកបើកបរ',
+                  style: TextStyle(
+                    color: _profileRequestDark,
+                    fontSize: 17,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                const Text(
+                  'ប្រសិនបើអ្នកចង់ធ្វើការជាភ្នាក់ងារដឹកជញ្ជូន អ្នកអាចផ្ញើសំណើទៅសាខាពីទីនេះបាន។',
+                  style: TextStyle(
+                    color: Color(0xFF667085),
+                    fontSize: 12.5,
+                    height: 1.4,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextButton(
+                  onPressed: onTap,
+                  style: TextButton.styleFrom(
+                    backgroundColor: _profileRequestSurface,
+                    foregroundColor: _profileRequestDark,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 10,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: const Text(
+                    'បើកសំណើ',
+                    style: TextStyle(fontWeight: FontWeight.w700),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 12),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(16),
+            child: Image.asset(
+              'assets/images/driver_agent_request.png',
+              width: 84,
+              height: 84,
+              fit: BoxFit.cover,
+              errorBuilder: (_, __, ___) => Container(
+                width: 84,
+                height: 84,
+                decoration: BoxDecoration(
+                  color: _profileRequestSurface,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: const Icon(
+                  Icons.delivery_dining_rounded,
+                  color: _profileRequestAccent,
+                  size: 36,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+>>>>>>> 8d511ca (Split admin driver requests from vehicle management)

@@ -99,7 +99,7 @@ String reviewVehicleTypeLabel(String? value) {
 String deliveryCategoryLabel(String? value) {
   if (value == driverOwnMotorcycleType) return 'City Express';
   if (value == driverTruckType || value == driverLargeTruckType) {
-    return 'Province Warehouse Route';
+    return 'Warehouse Route';
   }
   return 'Unassigned';
 }

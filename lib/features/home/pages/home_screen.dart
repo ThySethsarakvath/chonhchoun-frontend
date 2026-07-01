@@ -20,6 +20,8 @@ import '../../../screens/customer/screens/customer_order_detail_screen.dart';
 import '../../auth/services/user_service.dart';
 import '../../auth/models/user_model.dart';
 import '../../auth/tokens/token_storage.dart';
+import '../../branch_logistics/models/branch_logistics_models.dart';
+import '../../branch_logistics/services/branch_logistics_service.dart';
 import '../../../router/app_router.dart';
 import '../../chatbot/screens/chatbot_screen.dart';
 import '../../chat/screens/conversations_screen.dart';
@@ -34,14 +36,24 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+<<<<<<< HEAD
   final HomeService _service = HomeService();
   final UserService _userService = UserService();
   final TextEditingController _searchCtrl = TextEditingController();
+=======
+  final _service = HomeService();
+  final _userService = UserService();
+  final _branchLogisticsService = BranchLogisticsService();
+  final _searchCtrl = TextEditingController();
+
+  int _navIndex = 0;
+>>>>>>> 8d511ca (Split admin driver requests from vehicle management)
 
   List<PromoBanner> _banners = [];
   List<DeliveryItem> _recent = [];
   List<DeliveryItem> _history = [];
   UserProfile? _userProfile;
+  List<BranchLogisticsShipment> _branchLogisticsShipments = [];
   bool _loading = true;
   int _navIndex = 0;
   Timer? _pollTimer;
@@ -307,9 +319,16 @@ class _HomeScreenState extends State<HomeScreen> {
 
       final results = await Future.wait([
         _service.fetchBanners(),
+<<<<<<< HEAD
         _service.fetchRecentDeliveries(accessToken),
         _service.fetchDeliveryHistory(accessToken),
         _userService.getMe(accessToken: accessToken).then<UserProfile?>((v) => v).catchError((_) => null),
+=======
+        _service.fetchRecentDeliveries(),
+        _service.fetchDeliveryHistory(),
+        _userService.getMe(accessToken: accessToken).catchError((_) => null),
+        _branchLogisticsService.listCustomerShipments().catchError((_) => const <BranchLogisticsShipment>[]),
+>>>>>>> 8d511ca (Split admin driver requests from vehicle management)
       ]);
 
       if (mounted) {
@@ -318,6 +337,7 @@ class _HomeScreenState extends State<HomeScreen> {
           _recent = List<DeliveryItem>.from(results[1] as List);
           _history = List<DeliveryItem>.from(results[2] as List);
           _userProfile = results[3] as UserProfile?;
+          _branchLogisticsShipments = results[4] as List<BranchLogisticsShipment>;
           _loading = false;
         });
       }
@@ -408,6 +428,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ? const Center(
                 child: CircularProgressIndicator(color: Color(0xFF2C5F8A)),
               )
+<<<<<<< HEAD
             : IndexedStack(
                 index: _navIndex,
                 children: [
@@ -415,11 +436,151 @@ class _HomeScreenState extends State<HomeScreen> {
                   _buildShippingView(),
                   _buildMessagesView(),
                 ],
+=======
+            : RefreshIndicator(
+                color: const Color(0xFF2C5F8A),
+                onRefresh: _loadData,
+                child: CustomScrollView(
+                  slivers: [
+                    SliverToBoxAdapter(
+                      child: Stack(
+                        clipBehavior: Clip.none,
+                        children: [
+                          Container(
+                            height: bluePanelHeight,
+                            decoration: const BoxDecoration(
+                              gradient: LinearGradient(
+                                begin: Alignment.topCenter,
+                                end: Alignment.bottomCenter,
+                                colors: [Color(0xFF1E4D73), Color(0xFF2C6B9E)],
+                              ),
+                            ),
+                          ),
+                          Positioned(
+                            bottom: 0,
+                            left: 0,
+                            right: 0,
+                            child: Image.asset(
+                              'assets/images/footer.png',
+                              fit: BoxFit.fitWidth,
+                              alignment: Alignment.bottomCenter,
+                              errorBuilder: (_, __, ___) =>
+                                  const SizedBox(height: 60),
+                            ),
+                          ),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              SizedBox(
+                                height: MediaQuery.of(context).padding.top + 8,
+                              ),
+
+                              Builder(
+                                builder: (drawerContext) => HomeAppBar(
+                                  city: _city,
+                                  userLocation: _userLocation,
+                                  onMenuTap: () => AppDrawerController.of(
+                                    drawerContext,
+                                  )?.open(),
+                                  onProfileTap: () {
+                                    Navigator.pushNamed(
+                                      context,
+                                      AppRoutes.profile,
+                                      arguments: ProfileArgs(
+                                        profile: _userProfile,
+                                        source: ProfileSource.home,
+                                      ),
+                                    );
+                                  }, 
+                                  avatarUrl: avatarUrl,
+                                ),
+                              ),
+
+                              const SizedBox(height: 14),
+
+                              // Search bar
+                              _SearchBar(controller: _searchCtrl),
+                              const SizedBox(height: 16),
+
+                              // Promo banners
+                              if (_banners.isNotEmpty)
+                                PromoBannerCarousel(banners: _banners),
+
+                              const SizedBox(height: 16),
+                            ],
+                          ),
+                          Positioned(
+                            bottom: -52,
+                            left: 0,
+                            right: 0,
+                            child: QuickNavGrid(items: _quickNavItems),
+                          ),
+                        ],
+                      ),
+                    ),
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(20, 72, 20, 24),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            SectionHeader(
+                              title: 'ការដឹកជញ្ជូនថ្មីៗ',
+                              onLinkTap: () {
+                                /* TODO */
+                              },
+                            ),
+                            const SizedBox(height: 12),
+                            if (_recent.isEmpty)
+                              _EmptyState(message: 'មិនមានការដឹកជញ្ជូនថ្មីៗទេ')
+                            else
+                              ...(_recent.map(
+                                (item) => DeliveryCard(
+                                  item: item,
+                                  showTracking: true,
+                                  onTap: () {
+                                    /* TODO: navigate to detail */
+                                  },
+                                ),
+                              )),
+
+                            const SizedBox(height: 24),
+                            _buildBranchLogisticsSection(),
+                            const SizedBox(height: 24),
+                            SectionHeader(
+                              title: 'ការជញ្ជូនកន្លងទៅ',
+                              onLinkTap: () {
+                                /* TODO */
+                              },
+                            ),
+                            const SizedBox(height: 12),
+                            if (_history.isEmpty)
+                              _EmptyState(message: 'មិនមានការជញ្ជូនកន្លងទៅទេ')
+                            else
+                              ...(_history.map(
+                                (item) => DeliveryCard(
+                                  item: item,
+                                  showTracking: false,
+                                  onTap: () {
+                                    /* TODO: navigate to detail */
+                                  },
+                                ),
+                              )),
+
+                            const SizedBox(height: 16),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+>>>>>>> 8d511ca (Split admin driver requests from vehicle management)
               ),
       ),
     );
   }
 
+<<<<<<< HEAD
   Widget _buildHomeView(double bluePanelHeight, String avatarUrl) {
     return RefreshIndicator(
       color: const Color(0xFF2C5F8A),
@@ -610,6 +771,135 @@ class _HomeScreenState extends State<HomeScreen> {
         return ConversationService().customerConversations(token);
       },
     );
+=======
+  Widget _buildBranchLogisticsSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SectionHeader(
+          title: 'My Branch Logistics Tickets',
+          onLinkTap: () {},
+        ),
+        const SizedBox(height: 12),
+        if (_branchLogisticsShipments.isEmpty)
+          const _EmptyState(message: 'No branch logistics ticket yet')
+        else
+          ..._branchLogisticsShipments.take(4).map((shipment) {
+            final status = _customerShipmentStatusLabel(shipment.status);
+            final stockId = _stockIdLabel(shipment.notes);
+            final route =
+                '${shipment.senderBranch?.name ?? '-'} -> ${shipment.receiverBranch?.name ?? '-'}';
+
+            return Container(
+              margin: const EdgeInsets.only(bottom: 12),
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(18),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          shipment.ticketNumber,
+                          style: const TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w700,
+                            color: Color(0xFF1E3A5F),
+                          ),
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFEFF6FF),
+                          borderRadius: BorderRadius.circular(999),
+                        ),
+                        child: Text(
+                          status,
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                            color: Color(0xFF1D4ED8),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    shipment.itemDescription,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      color: Color(0xFF475569),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    'Package ID: $stockId',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF334155),
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    route,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: Color(0xFF64748B),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }),
+      ],
+    );
+  }
+
+  String _customerShipmentStatusLabel(String status) {
+    switch (status) {
+      case 'CREATED':
+        return 'Waiting for Driver';
+      case 'ASSIGNED':
+        return 'Assigned to Driver';
+      case 'RECEIVED_AT_SENDER_WAREHOUSE':
+        return 'Collected from Branch';
+      case 'IN_TRANSIT':
+        return 'Delivering';
+      case 'RECEIVED_AT_RECEIVER_WAREHOUSE':
+        return 'Arrived at Branch';
+      case 'READY_FOR_PICKUP':
+        return 'Ready for Pickup';
+      case 'COMPLETED':
+        return 'Completed';
+      case 'CANCELLED':
+        return 'Cancelled';
+      default:
+        return status;
+    }
+  }
+
+  String _stockIdLabel(String? notes) {
+    final match = RegExp(r'Stock ID:\s*([A-Z0-9\-]+)', caseSensitive: false)
+        .firstMatch(notes ?? '');
+    return match?.group(1) ?? '-';
+>>>>>>> 8d511ca (Split admin driver requests from vehicle management)
   }
 }
 
@@ -714,6 +1004,105 @@ class _EmptyState extends StatelessWidget {
           message,
           style: const TextStyle(fontSize: 13, color: Color(0xFF8BA4C8)),
         ),
+      ),
+    );
+  }
+}
+
+class _DriverRequestCard extends StatelessWidget {
+  final VoidCallback onTap;
+
+  const _DriverRequestCard({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFF1D7AF3), Color(0xFF155EEF)],
+        ),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF155EEF).withOpacity(0.18),
+            blurRadius: 22,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'ចង់ក្លាយជាអ្នកបើកបរ?',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                const Text(
+                  'ផ្ញើសំណើទៅសាខា ដើម្បីឲ្យក្រុមការងារពិនិត្យ និងអនុម័តគណនីរបស់អ្នកជាភ្នាក់ងារដឹកជញ្ជូន។',
+                  style: TextStyle(
+                    color: Color(0xFFDCEBFF),
+                    fontSize: 12.5,
+                    height: 1.4,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextButton(
+                  onPressed: onTap,
+                  style: TextButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    foregroundColor: const Color(0xFF155EEF),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 10,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: const Text(
+                    'បំពេញសំណើ',
+                    style: TextStyle(fontWeight: FontWeight.w700),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 12),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(16),
+            child: Image.asset(
+              'assets/images/driver_agent_request.png',
+              width: 86,
+              height: 86,
+              fit: BoxFit.cover,
+              errorBuilder: (_, __, ___) => Container(
+                width: 86,
+                height: 86,
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.16),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: const Icon(
+                  Icons.delivery_dining_rounded,
+                  color: Colors.white,
+                  size: 36,
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

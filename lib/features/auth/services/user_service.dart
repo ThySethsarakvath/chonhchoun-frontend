@@ -8,6 +8,38 @@ import '../models/user_model.dart';
 class UserService {
   String get _url => baseUrl;
 
+  Future<UserProfile> updateProfile({
+    required String accessToken,
+    required String name,
+    required String phone,
+  }) async {
+    final uri = Uri.parse('$_url/users/me');
+    final res = await http.patch(
+      uri,
+      headers: {
+        'Authorization': 'Bearer $accessToken',
+        'Content-Type': 'application/json',
+      },
+      body: json.encode({
+        'name': name,
+        'phone': phone,
+      }),
+    );
+    final body = json.decode(res.body) as Map<String, dynamic>;
+    if (res.statusCode == 200) {
+      return UserProfile.fromJson(body);
+    }
+
+    final message = body['message'];
+    throw Exception(
+      message is List
+          ? message.join(', ')
+          : message as String? ??
+              body['error'] as String? ??
+              'Failed to update profile (${res.statusCode})',
+    );
+  }
+
   Future<Map<String, dynamic>> uploadAvatar({
     required File imageFile,
     required String accessToken,

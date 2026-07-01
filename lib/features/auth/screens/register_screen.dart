@@ -150,15 +150,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
             linkText: 'ចូលគណនី',
             onTap: () => Navigator.pop(context),
           ),
-          const SizedBox(height: 10),
-          AuthLinkRow(
-            prefix: 'Want to work as a driver? ',
-            linkText: 'Apply to a branch',
-            onTap: () => Navigator.pushNamed(
-              context,
-              AppRoutes.driverApplication,
-            ),
-          ),
         ],
       ),
     );

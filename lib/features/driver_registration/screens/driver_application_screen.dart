@@ -270,6 +270,10 @@ class _DriverApplicationScreenState extends State<DriverApplicationScreen> {
             onChanged: (value) => setState(() => _selectedBranchId = value),
           ),
           const SizedBox(height: 16),
+          _DriverFlowHintCard(
+            usesOwnVehicle: _usesOwnVehicle,
+          ),
+          const SizedBox(height: 16),
           DriverApplicationVehicleChoice(
             selectedValue: _vehicleChoice,
             selectedOwnVehicleType: _usesOwnVehicle ? _ownVehicleType : null,
@@ -341,7 +345,9 @@ class _DriverApplicationScreenState extends State<DriverApplicationScreen> {
           ],
           const SizedBox(height: 24),
           AuthButton(
-            label: 'Submit application',
+            label: _usesOwnVehicle
+                ? 'Start City Express Request'
+                : 'Submit Branch Driver Request',
             onPressed: _submit,
             loading: _submitting,
           ),
@@ -352,6 +358,61 @@ class _DriverApplicationScreenState extends State<DriverApplicationScreen> {
             onTap: () => Navigator.pushReplacementNamed(
               context,
               AppRoutes.register,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _DriverFlowHintCard extends StatelessWidget {
+  final bool usesOwnVehicle;
+
+  const _DriverFlowHintCard({
+    required this.usesOwnVehicle,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: usesOwnVehicle
+            ? const Color(0xFFECFDF5)
+            : const Color(0xFFFFF7ED),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: usesOwnVehicle
+              ? const Color(0xFFA7F3D0)
+              : const Color(0xFFFED7AA),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            usesOwnVehicle ? 'City Express flow' : 'Branch logistics flow',
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+              color: usesOwnVehicle
+                  ? const Color(0xFF047857)
+                  : const Color(0xFF9A3412),
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            usesOwnVehicle
+                ? 'Use your own motorbike for in-city delivery. Keep the form simple and submit your rider documents.'
+                : 'Apply to a branch first. After branch approval, the branch owner can assign a truck and manage your logistics work.',
+            style: TextStyle(
+              fontSize: 13,
+              height: 1.4,
+              color: usesOwnVehicle
+                  ? const Color(0xFF065F46)
+                  : const Color(0xFF9A3412),
             ),
           ),
         ],

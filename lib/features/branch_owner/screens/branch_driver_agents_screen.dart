@@ -9,22 +9,6 @@ class BranchDriverAgentsScreen extends StatelessWidget {
   final String? error;
   final BranchDriverManagementOverview? overview;
   final Future<void> Function() onRefresh;
-  final Future<void> Function({
-    required String code,
-    required String vehicleType,
-    String? plateNumber,
-    double? maxWeightKg,
-    int? maxPackageCount,
-  }) onCreateVehicle;
-  final Future<void> Function(
-    ManagedVehicle vehicle, {
-    String? plateNumber,
-    String? status,
-    double? maxWeightKg,
-    int? maxPackageCount,
-  }) onUpdateVehicle;
-  final Future<void> Function(ManagedVehicle vehicle) onActivateVehicle;
-  final Future<void> Function(ManagedVehicle vehicle) onDeactivateVehicle;
   final Future<void> Function(
     ManagedDriver driver, {
     required String availabilityStatus,
@@ -45,10 +29,6 @@ class BranchDriverAgentsScreen extends StatelessWidget {
     required this.error,
     required this.overview,
     required this.onRefresh,
-    required this.onCreateVehicle,
-    required this.onUpdateVehicle,
-    required this.onActivateVehicle,
-    required this.onDeactivateVehicle,
     required this.onUpdateDriverManagement,
     required this.onAssignVehicle,
     required this.onUnassignVehicle,
@@ -73,6 +53,15 @@ class BranchDriverAgentsScreen extends StatelessWidget {
     }
 
     final data = overview;
+    final branchDrivers = data?.drivers
+            .where(
+              (driver) => driver.isActive && !_isCityExpressDriver(driver),
+            )
+            .toList() ??
+        const <ManagedDriver>[];
+    final readyBranchDrivers = branchDrivers
+        .where((driver) => driver.availabilityStatus == 'AVAILABLE')
+        .length;
     if (data == null) {
       return BranchOwnerMessageCard(
         title: 'Driver management is not ready',
@@ -90,19 +79,19 @@ class BranchDriverAgentsScreen extends StatelessWidget {
           runSpacing: 16,
           children: [
             BranchOwnerStatCard(
-              label: 'Drivers',
-              value: '${data.summary.totalDrivers}',
+              label: 'Branch Drivers',
+              value: '${branchDrivers.length}',
               icon: Icons.groups_rounded,
               color: const Color(0xFF1D4ED8),
             ),
             BranchOwnerStatCard(
-              label: 'Available',
-              value: '${data.summary.availableDrivers}',
+              label: 'Route Ready',
+              value: '$readyBranchDrivers',
               icon: Icons.flash_on_rounded,
               color: const Color(0xFF15803D),
             ),
             BranchOwnerStatCard(
-              label: 'City Express Riders',
+              label: 'City Express',
               value: '${data.summary.ownVehicleDrivers}',
               icon: Icons.two_wheeler_rounded,
               color: const Color(0xFF0F766E),
@@ -116,6 +105,15 @@ class BranchDriverAgentsScreen extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 18),
+        BranchOwnerFeatureListCard(
+          title: 'How this is split',
+          items: const [
+            'City Express riders use their own motorbike for in-city delivery.',
+            'Branch owners manage branch logistics drivers for province and branch-to-branch delivery.',
+            'Only branch logistics drivers and branch vehicles appear in the tables below.',
+          ],
+        ),
+        const SizedBox(height: 18),
         _DriverManagementTable(
           overview: data,
           onUpdateDriverManagement: onUpdateDriverManagement,
@@ -126,10 +124,6 @@ class BranchDriverAgentsScreen extends StatelessWidget {
         const SizedBox(height: 18),
         _VehicleManagementTable(
           overview: data,
-          onCreateVehicle: onCreateVehicle,
-          onUpdateVehicle: onUpdateVehicle,
-          onActivateVehicle: onActivateVehicle,
-          onDeactivateVehicle: onDeactivateVehicle,
         ),
       ],
     );
@@ -162,21 +156,24 @@ class _DriverManagementTable extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final activeDrivers = overview.drivers.where((driver) => driver.isActive).toList();
+    final activeDrivers = overview.drivers
+        .where((driver) => driver.isActive && !_isCityExpressDriver(driver))
+        .toList();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const _SectionHeader(
-          title: 'Driver Management',
+          title: 'Branch Logistics Drivers',
           subtitle:
-              'Manage City Express riders and Province Warehouse Route drivers in one place. Driver-owned motorcycles stay with their rider, while branch vehicles support branch-to-branch province operations.',
+              'Manage truck and branch-logistics drivers for province delivery and branch-to-branch package movement. City Express motorbike riders are handled outside this table.',
         ),
         const SizedBox(height: 12),
         if (activeDrivers.isEmpty)
           const BranchOwnerMessageCard(
-            title: 'No active drivers',
-            description: 'Approved active drivers will appear here.',
+            title: 'No branch logistics drivers',
+            description:
+                'Approved branch truck drivers will appear here after branch approval.',
           )
         else
           _TableFrame(
@@ -225,7 +222,7 @@ class _DriverManagementTable extends StatelessWidget {
                                 title: driver.name,
                                 subtitle: isCityExpressDriver
                                     ? 'City express rider'
-                                    : 'Province warehouse route',
+                                    : 'Branch logistics driver',
                                 icon: Icons.person_rounded,
                               ),
                             ),
@@ -525,29 +522,9 @@ class _DriverManagementTable extends StatelessWidget {
 
 class _VehicleManagementTable extends StatelessWidget {
   final BranchDriverManagementOverview overview;
-  final Future<void> Function({
-    required String code,
-    required String vehicleType,
-    String? plateNumber,
-    double? maxWeightKg,
-    int? maxPackageCount,
-  }) onCreateVehicle;
-  final Future<void> Function(
-    ManagedVehicle vehicle, {
-    String? plateNumber,
-    String? status,
-    double? maxWeightKg,
-    int? maxPackageCount,
-  }) onUpdateVehicle;
-  final Future<void> Function(ManagedVehicle vehicle) onActivateVehicle;
-  final Future<void> Function(ManagedVehicle vehicle) onDeactivateVehicle;
 
   const _VehicleManagementTable({
     required this.overview,
-    required this.onCreateVehicle,
-    required this.onUpdateVehicle,
-    required this.onActivateVehicle,
-    required this.onDeactivateVehicle,
   });
 
   @override
@@ -581,28 +558,7 @@ class _VehicleManagementTable extends StatelessWidget {
               child: _SectionHeader(
                 title: 'Vehicle Management',
                 subtitle:
-                    'Add and update branch-owned vehicles for Province Warehouse Route work between branches and provinces.',
-              ),
-            ),
-            const SizedBox(width: 12),
-            Padding(
-              padding: const EdgeInsets.only(top: 2),
-              child: FilledButton.icon(
-                onPressed: () => _showAddVehicleDialog(context),
-                icon: const Icon(Icons.add_rounded, size: 16),
-                label: const Text('Add Vehicle'),
-                style: FilledButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 14,
-                    vertical: 10,
-                  ),
-                  textStyle: const TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                  ),
-                  visualDensity: VisualDensity.compact,
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                ),
+                    'These company vehicles are created and managed by admin. Branch owners can view them here and assign available vehicles to branch drivers.',
               ),
             ),
           ],
@@ -610,10 +566,20 @@ class _VehicleManagementTable extends StatelessWidget {
         const SizedBox(height: 12),
         if (vehicles.isEmpty)
           const BranchOwnerMessageCard(
-            title: 'No vehicles yet',
-            description: 'Add a branch vehicle to start managing assignments.',
+            title: 'No company vehicles assigned yet',
+            description:
+                'Ask admin to create and assign a company vehicle for this branch before driver assignment can start.',
           )
         else
+          const Padding(
+            padding: EdgeInsets.only(bottom: 12),
+            child: BranchOwnerMessageCard(
+              title: 'Admin-managed vehicles',
+              description:
+                  'Vehicle creation, editing, activation, and deactivation are handled by admin. Branch owners can only view assigned vehicles and use them for driver assignment.',
+            ),
+          ),
+        if (vehicles.isNotEmpty)
           _TableFrame(
             child: LayoutBuilder(
               builder: (context, constraints) => SingleChildScrollView(
@@ -643,7 +609,7 @@ class _VehicleManagementTable extends StatelessWidget {
                         DataColumn(label: _TableHeading('Ownership')),
                         DataColumn(label: _TableHeading('Assigned Driver')),
                         DataColumn(label: _TableHeading('Status')),
-                        DataColumn(label: _TableHeading('Actions')),
+                        DataColumn(label: _TableHeading('Branch Use')),
                       ],
                       rows: vehicles.map((vehicle) {
                         final assignedDriver = assignedDriverByVehicle[vehicle.id] ?? '-';
@@ -693,20 +659,22 @@ class _VehicleManagementTable extends StatelessWidget {
                             DataCell(_SecondaryTableText(assignedDriver)),
                             DataCell(_StatusPill(status: vehicleStatus)),
                             DataCell(
-                              _ActionButtons(
-                                primaryLabel: 'Edit',
-                                onPrimary: () =>
-                                    _showEditVehicleDialog(
-                                      context,
-                                      vehicle,
-                                      isAssigned: isAssigned,
-                                    ),
-                                secondaryLabel:
-                                    vehicle.isActive ? 'Deactivate' : 'Activate',
-                                onSecondary: () => vehicle.isActive
-                                    ? onDeactivateVehicle(vehicle)
-                                    : onActivateVehicle(vehicle),
-                                secondaryIsDestructive: vehicle.isActive,
+                              _SoftPill(
+                                label: isAssigned
+                                    ? 'Assigned to driver'
+                                    : vehicle.isActive
+                                        ? 'Ready for assignment'
+                                        : 'Waiting on admin',
+                                foreground: isAssigned
+                                    ? const Color(0xFF1D4ED8)
+                                    : vehicle.isActive
+                                        ? const Color(0xFF166534)
+                                        : const Color(0xFF475569),
+                                background: isAssigned
+                                    ? const Color(0xFFDBEAFE)
+                                    : vehicle.isActive
+                                        ? const Color(0xFFDCFCE7)
+                                        : const Color(0xFFE2E8F0),
                               ),
                             ),
                           ],
@@ -722,267 +690,6 @@ class _VehicleManagementTable extends StatelessWidget {
     );
   }
 
-  Future<void> _showAddVehicleDialog(BuildContext context) async {
-    final codeCtrl = TextEditingController();
-    final plateCtrl = TextEditingController();
-    final weightCtrl = TextEditingController();
-    final packageCtrl = TextEditingController();
-    var vehicleType = driverTruckType;
-
-    void applyDefaults() {
-      final preset = vehicleCapacityPresetFor(vehicleType);
-      weightCtrl.text = preset?.maxWeightKg?.toStringAsFixed(0) ?? '';
-      packageCtrl.text = preset?.maxPackageCount?.toString() ?? '';
-    }
-
-    applyDefaults();
-
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) => StatefulBuilder(
-        builder: (context, setState) => AlertDialog(
-          title: const Text('Add Vehicle'),
-          content: SizedBox(
-            width: 380,
-            child: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  TextField(
-                    controller: codeCtrl,
-                    decoration: const InputDecoration(labelText: 'Vehicle code'),
-                  ),
-                  const SizedBox(height: 12),
-                  DropdownButtonFormField<String>(
-                    value: vehicleType,
-                    decoration: const InputDecoration(labelText: 'Vehicle type'),
-                    items: branchVehicleTypeOptions
-                        .map(
-                          (option) => DropdownMenuItem<String>(
-                            value: option.value,
-                            child: Text(option.label),
-                          ),
-                        )
-                        .toList(),
-                    onChanged: (value) {
-                      if (value != null) {
-                        setState(() {
-                          vehicleType = value;
-                          applyDefaults();
-                        });
-                      }
-                    },
-                  ),
-                  const SizedBox(height: 12),
-                  TextField(
-                    controller: plateCtrl,
-                    decoration: const InputDecoration(labelText: 'Plate number'),
-                  ),
-                  const SizedBox(height: 12),
-                  TextField(
-                    controller: weightCtrl,
-                    keyboardType:
-                        const TextInputType.numberWithOptions(decimal: true),
-                    decoration: const InputDecoration(labelText: 'Capacity kg'),
-                  ),
-                  const SizedBox(height: 12),
-                  TextField(
-                    controller: packageCtrl,
-                    keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(labelText: 'Capacity packages'),
-                  ),
-                  const SizedBox(height: 8),
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: Text(
-                      vehicleCapacityPresetFor(vehicleType)?.sourceLabel ??
-                          'No preset default',
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: Color(0xFF64748B),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(dialogContext, false),
-              child: const Text('Cancel'),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.pop(dialogContext, true),
-              child: const Text('Create'),
-            ),
-          ],
-        ),
-      ),
-    );
-
-    if (confirmed == true) {
-      await onCreateVehicle(
-        code: codeCtrl.text.trim(),
-        vehicleType: vehicleType,
-        plateNumber: plateCtrl.text.trim(),
-        maxWeightKg: double.tryParse(weightCtrl.text.trim()),
-        maxPackageCount: int.tryParse(packageCtrl.text.trim()),
-      );
-    }
-  }
-
-  Future<void> _showEditVehicleDialog(
-    BuildContext context,
-    ManagedVehicle vehicle,
-    {
-    required bool isAssigned,
-  }) async {
-    final plateCtrl = TextEditingController(text: vehicle.plateNumber ?? '');
-    final weightCtrl = TextEditingController(
-      text: vehicle.maxWeightKg?.toStringAsFixed(vehicle.maxWeightKg! % 1 == 0 ? 0 : 1) ?? '',
-    );
-    final packageCtrl = TextEditingController(
-      text: vehicle.maxPackageCount?.toString() ?? '',
-    );
-    var status = isAssigned ? 'IN_USE' : vehicle.status;
-
-    await showDialog<void>(
-      context: context,
-      builder: (dialogContext) => StatefulBuilder(
-        builder: (context, setState) => AlertDialog(
-          title: Text('Edit ${vehicle.code}'),
-          content: SizedBox(
-            width: 380,
-            child: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  TextField(
-                    controller: plateCtrl,
-                    decoration: const InputDecoration(labelText: 'Plate number'),
-                  ),
-                  const SizedBox(height: 12),
-                  if (isAssigned)
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 14,
-                      ),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF8FAFC),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: const Color(0xFFE2E8F0)),
-                      ),
-                      child: const Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Status',
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                              color: Color(0xFF64748B),
-                            ),
-                          ),
-                          SizedBox(height: 6),
-                          Text(
-                            'In use',
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w700,
-                              color: Color(0xFF1E293B),
-                            ),
-                          ),
-                          SizedBox(height: 4),
-                          Text(
-                            'This vehicle is assigned to a driver. Unassign it first to change the status.',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Color(0xFF64748B),
-                            ),
-                          ),
-                        ],
-                      ),
-                    )
-                  else
-                    DropdownButtonFormField<String>(
-                      value: status,
-                      decoration: const InputDecoration(labelText: 'Status'),
-                      items: const [
-                        DropdownMenuItem(value: 'AVAILABLE', child: Text('Available')),
-                        DropdownMenuItem(
-                          value: 'UNAVAILABLE',
-                          child: Text('Unavailable'),
-                        ),
-                        DropdownMenuItem(
-                          value: 'MAINTENANCE',
-                          child: Text('Maintenance'),
-                        ),
-                      ],
-                      onChanged: (value) {
-                        if (value != null) setState(() => status = value);
-                      },
-                    ),
-                  const SizedBox(height: 12),
-                  TextField(
-                    controller: weightCtrl,
-                    keyboardType:
-                        const TextInputType.numberWithOptions(decimal: true),
-                    decoration: const InputDecoration(labelText: 'Capacity kg'),
-                  ),
-                  const SizedBox(height: 12),
-                  TextField(
-                    controller: packageCtrl,
-                    keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(labelText: 'Capacity packages'),
-                  ),
-                  const SizedBox(height: 10),
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: TextButton(
-                      onPressed: () {
-                        final preset = vehicleCapacityPresetFor(vehicle.type);
-                        setState(() {
-                          weightCtrl.text =
-                              preset?.maxWeightKg?.toStringAsFixed(0) ?? '';
-                          packageCtrl.text =
-                              preset?.maxPackageCount?.toString() ?? '';
-                        });
-                      },
-                      child: const Text('Reset to default'),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(dialogContext),
-              child: const Text('Cancel'),
-            ),
-            FilledButton(
-              onPressed: () async {
-                await onUpdateVehicle(
-                  vehicle,
-                  plateNumber: plateCtrl.text.trim(),
-                  status: status,
-                  maxWeightKg: double.tryParse(weightCtrl.text.trim()),
-                  maxPackageCount: int.tryParse(packageCtrl.text.trim()),
-                );
-                if (context.mounted) {
-                  Navigator.pop(dialogContext);
-                }
-              },
-              child: const Text('Save'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 }
 
 class _SectionHeader extends StatelessWidget {

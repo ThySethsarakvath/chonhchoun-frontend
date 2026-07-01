@@ -111,6 +111,70 @@ class DriverApplicationService {
     );
   }
 
+  Future<void> submitCustomerApplication({
+    required String branchId,
+    String? vehicleType,
+    String? plateNumber,
+    File? avatarFile,
+    required File cvFile,
+    required File nationalIdFile,
+    File? drivingLicenseFile,
+  }) async {
+    final token = await TokenStorage.getAccessToken();
+    final request = http.MultipartRequest(
+      'POST',
+      Uri.parse('$_url/driver-applications/me'),
+    )
+      ..headers['Authorization'] = 'Bearer $token'
+      ..fields.addAll({
+        'branchId': branchId,
+        if (vehicleType != null) 'vehicleType': vehicleType,
+        if (plateNumber != null && plateNumber.trim().isNotEmpty)
+          'plateNumber': plateNumber.trim(),
+      })
+      ..files.addAll([
+        if (avatarFile != null)
+          await http.MultipartFile.fromPath(
+            'avatar',
+            avatarFile.path,
+            contentType: _mediaTypeForFile(avatarFile),
+          ),
+        await http.MultipartFile.fromPath(
+          'cv',
+          cvFile.path,
+          contentType: _mediaTypeForFile(cvFile),
+        ),
+        await http.MultipartFile.fromPath(
+          'nationalId',
+          nationalIdFile.path,
+          contentType: _mediaTypeForFile(nationalIdFile),
+        ),
+        if (drivingLicenseFile != null)
+          await http.MultipartFile.fromPath(
+            'drivingLicense',
+            drivingLicenseFile.path,
+            contentType: _mediaTypeForFile(drivingLicenseFile),
+          ),
+      ]);
+
+    final streamed = await request.send();
+    final response = await http.Response.fromStream(streamed);
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      return;
+    }
+
+    final body = _safeDecode(response.body) as Map<String, dynamic>? ?? const {};
+    final message = body['message'];
+    throw ApiException(
+      message is List
+          ? message.join(', ')
+          : message as String? ??
+              body['error'] as String? ??
+              'Driver request submission failed (${response.statusCode})',
+      response.statusCode,
+    );
+  }
+
   Future<Map<String, String>> _authHeaders() async {
     final token = await TokenStorage.getAccessToken();
     return {

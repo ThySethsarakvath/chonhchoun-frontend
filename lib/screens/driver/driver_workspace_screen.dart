@@ -10,7 +10,7 @@ import 'models/driver_request.dart';
 import 'screens/driver_map_detail_screen.dart';
 import 'screens/driver_request_detail_screen.dart';
 import 'screens/driver_requests_screen.dart';
-import 'tabs/driver_deliveries_tab.dart';
+import 'tabs/driver_branch_logistics_tab.dart';
 import 'tabs/driver_home_tab.dart';
 import 'tabs/driver_history_tab.dart';
 import 'tabs/driver_profile_tab.dart';
@@ -225,11 +225,7 @@ class _DriverWorkspaceScreenState extends State<DriverWorkspaceScreen> {
             driverState: _driverState,
             loadingDriverState: _loadingDriverState,
           ),
-          DriverDeliveriesTab(
-            request: _primaryRequest,
-            onViewAll: _openRequests,
-            onOpenDetail: () => _openRequestDetail(_primaryRequest),
-          ),
+          const DriverBranchLogisticsTab(),
           DriverProfileTab(
             request: _primaryRequest,
             onOpenMap: () => _openMapDetail(_primaryRequest),

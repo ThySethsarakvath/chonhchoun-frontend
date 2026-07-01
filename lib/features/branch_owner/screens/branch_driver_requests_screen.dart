@@ -30,6 +30,13 @@ class BranchDriverRequestsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final branchApprovalApplications = applications.where((application) {
+      return application.vehicleType == null ||
+          application.vehicleType == driverBranchTruckChoice ||
+          application.vehicleType == driverTruckType ||
+          application.vehicleType == driverLargeTruckType;
+    }).toList();
+
     if (loading) {
       return const BranchOwnerLoadingCard(
         message: 'Loading driver requests...',
@@ -45,11 +52,11 @@ class BranchDriverRequestsScreen extends StatelessWidget {
       );
     }
 
-    if (applications.isEmpty) {
+    if (branchApprovalApplications.isEmpty) {
       return BranchOwnerMessageCard(
-        title: 'No driver requests yet',
+        title: 'No branch driver requests yet',
         description:
-            'New driver applications sent to your branch will appear here.',
+            'Branch truck and branch-logistics driver applications will appear here for approval.',
         actionLabel: 'Refresh',
         onAction: onRefresh,
       );
@@ -59,12 +66,12 @@ class BranchDriverRequestsScreen extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const BranchOwnerSectionCard(
-          title: 'Driver Requests',
+          title: 'Branch Driver Requests',
           description:
-              'Review documents, approve city express riders with their own motorcycles, or reject requests. Branch vehicles can still be assigned later for branch-driver roles.',
+              'Review only branch logistics truck-driver requests here. City Express motorbike riders use their own vehicle and are not part of branch-owner approval.',
         ),
         const SizedBox(height: 14),
-        ...applications.map(
+        ...branchApprovalApplications.map(
           (application) => Padding(
             padding: const EdgeInsets.only(bottom: 14),
             child: _DriverApplicationCard(
@@ -142,13 +149,13 @@ class _DriverApplicationCardState extends State<_DriverApplicationCard> {
   Widget build(BuildContext context) {
     final application = widget.application;
     final isPending = application.status == 'pending';
-    final isOwnVehicleApplication =
-        application.vehicleType != null &&
-        application.vehicleType != driverBranchTruckChoice;
-    final effectiveVehicleType =
-        isOwnVehicleApplication
-            ? application.vehicleType
-            : driverBranchTruckChoice;
+    final effectiveVehicleType = application.vehicleType == null
+        ? driverBranchTruckChoice
+        : application.vehicleType;
+    final isBranchVehicleRequest =
+        effectiveVehicleType == driverBranchTruckChoice ||
+        effectiveVehicleType == driverTruckType ||
+        effectiveVehicleType == driverLargeTruckType;
 
     return Container(
       width: double.infinity,
@@ -195,23 +202,13 @@ class _DriverApplicationCardState extends State<_DriverApplicationCard> {
             const SizedBox(height: 10),
             _InfoChip(label: 'Plate: ${application.plateNumber!}'),
           ],
-          if (isPending &&
-              application.vehicleType == driverOwnMotorcycleType) ...[
+          if (isPending && isBranchVehicleRequest) ...[
             const SizedBox(height: 12),
-            const Text(
-              'Approving this request keeps the rider on their own motorbike for city express delivery.',
-              style: TextStyle(
-                fontSize: 12,
-                color: Color(0xFF047857),
-                height: 1.4,
-              ),
-            ),
-          ],
-          if (isPending && !isOwnVehicleApplication) ...[
-            const SizedBox(height: 12),
-            const Text(
-              'Approve first, then assign an existing branch vehicle later from Driver Management.',
-              style: TextStyle(
+            Text(
+              effectiveVehicleType == driverLargeTruckType
+                  ? 'This applicant wants to work as a branch large-truck driver. Approve here first, then assign the branch vehicle from Driver Management.'
+                  : 'This applicant wants to work as a branch truck driver. Approve here first, then assign the branch vehicle from Driver Management.',
+              style: const TextStyle(
                 fontSize: 12,
                 color: Color(0xFF64748B),
               ),
@@ -245,15 +242,13 @@ class _DriverApplicationCardState extends State<_DriverApplicationCard> {
               children: [
                 FilledButton.icon(
                   onPressed: () => widget.onApprove(
-                    isOwnVehicleApplication ? null : driverTruckType,
+                    effectiveVehicleType == driverLargeTruckType
+                        ? driverLargeTruckType
+                        : driverTruckType,
                     assignedVehicleCode: null,
                   ),
                   icon: const Icon(Icons.check_circle_outline_rounded),
-                  label: Text(
-                    application.vehicleType == driverOwnMotorcycleType
-                        ? 'Approve City Express'
-                        : 'Approve',
-                  ),
+                  label: const Text('Approve Branch Driver'),
                 ),
                 const SizedBox(width: 10),
                 OutlinedButton.icon(

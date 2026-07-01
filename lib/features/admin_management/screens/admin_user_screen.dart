@@ -88,6 +88,73 @@ class _AdminUserScreenState extends State<AdminUserScreen> {
     return '${value.day.toString().padLeft(2, '0')} ${monthNames[value.month - 1]} ${value.year}';
   }
 
+  String _roleLabel(String role) {
+    switch (role) {
+      case 'customer':
+        return 'Customer';
+      case 'driver':
+        return 'Driver';
+      case 'branch_owner':
+        return 'Branch Owner';
+      case 'admin':
+        return 'Admin';
+      default:
+        return role;
+    }
+  }
+
+  String _friendlyUpgradeError(ApiException error, AdminUser user) {
+    final message = error.message.toLowerCase();
+
+    if (message.contains('only customer accounts can be upgraded')) {
+      return '${user.name} cannot be upgraded because this account is currently ${_roleLabel(user.role)}, not Customer.';
+    }
+
+    if (message.contains('a branch already exists for this branch owner')) {
+      return '${user.name} already has a branch assigned. Please downgrade or reassign that branch first.';
+    }
+
+    if (message.contains('user not found')) {
+      return 'This user record could not be found anymore. Refresh the user list and try again.';
+    }
+
+    if (message.contains('invalid user id')) {
+      return 'This user cannot be upgraded because the selected account ID is invalid.';
+    }
+
+    if (message.contains('forbidden') || error.statusCode == 403) {
+      return 'Only an admin account can upgrade a user to Branch Owner.';
+    }
+
+    if (message.contains('unauthorized') || error.statusCode == 401) {
+      return 'Your admin session expired. Please sign in again and retry the upgrade.';
+    }
+
+    return 'Unable to upgrade ${user.name} to Branch Owner. ${error.message}';
+  }
+
+  String _friendlyDowngradeError(ApiException error, AdminUser user) {
+    final message = error.message.toLowerCase();
+
+    if (message.contains('only branch owner accounts can be downgraded')) {
+      return '${user.name} cannot be downgraded because this account is currently ${_roleLabel(user.role)}, not Branch Owner.';
+    }
+
+    if (message.contains('user not found')) {
+      return 'This user record could not be found anymore. Refresh the user list and try again.';
+    }
+
+    if (message.contains('forbidden') || error.statusCode == 403) {
+      return 'Only an admin account can downgrade a Branch Owner.';
+    }
+
+    if (message.contains('unauthorized') || error.statusCode == 401) {
+      return 'Your admin session expired. Please sign in again and retry the downgrade.';
+    }
+
+    return 'Unable to downgrade ${user.name}. ${error.message}';
+  }
+
   Future<void> _openUpgradeDialog(AdminUser user) async {
     final phoneCtrl = TextEditingController(text: user.phone ?? '');
     final addressCtrl = TextEditingController();
@@ -165,7 +232,7 @@ class _AdminUserScreenState extends State<AdminUserScreen> {
                     longitude == null) {
                   showErrorDialog(
                     dialogContext,
-                    'Please complete all branch owner fields.',
+                    'Please complete all branch owner fields: phone, address, latitude, and longitude.',
                   );
                   return;
                 }
@@ -203,9 +270,14 @@ class _AdminUserScreenState extends State<AdminUserScreen> {
         );
       }
     } on ApiException catch (e) {
-      if (mounted) showErrorDialog(context, e.message);
+      if (mounted) showErrorDialog(context, _friendlyUpgradeError(e, user));
     } catch (_) {
-      if (mounted) showErrorDialog(context, 'Unable to upgrade user.');
+      if (mounted) {
+        showErrorDialog(
+          context,
+          'Unable to upgrade ${user.name} right now. Please verify the account is still a Customer and does not already own a branch.',
+        );
+      }
     } finally {
       if (mounted) {
         setState(() => _upgradingUserId = null);
@@ -404,9 +476,14 @@ class _AdminUserScreenState extends State<AdminUserScreen> {
         );
       }
     } on ApiException catch (e) {
-      if (mounted) showErrorDialog(context, e.message);
+      if (mounted) showErrorDialog(context, _friendlyDowngradeError(e, user));
     } catch (_) {
-      if (mounted) showErrorDialog(context, 'Unable to downgrade user.');
+      if (mounted) {
+        showErrorDialog(
+          context,
+          'Unable to downgrade ${user.name} right now. Please try again after refreshing the user list.',
+        );
+      }
     } finally {
       if (mounted) {
         setState(() => _upgradingUserId = null);

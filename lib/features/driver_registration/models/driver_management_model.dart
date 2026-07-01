@@ -33,6 +33,9 @@ class ManagedVehicle {
   final String? plateNumber;
   final String? type;
   final String ownershipType;
+  final String? branchId;
+  final String? branchName;
+  final String? branchCode;
   final String? ownerDriverId;
   final String? ownerDriverName;
   final double? maxWeightKg;
@@ -48,6 +51,9 @@ class ManagedVehicle {
     this.plateNumber,
     this.type,
     required this.ownershipType,
+    this.branchId,
+    this.branchName,
+    this.branchCode,
     this.ownerDriverId,
     this.ownerDriverName,
     this.maxWeightKg,
@@ -69,6 +75,9 @@ class ManagedVehicle {
       plateNumber: json['plateNumber'] as String?,
       type: json['type'] as String?,
       ownershipType: json['ownershipType'] as String? ?? 'COMPANY',
+      branchId: json['branchId'] as String?,
+      branchName: json['branchName'] as String?,
+      branchCode: json['branchCode'] as String?,
       ownerDriverId: json['ownerDriverId'] as String?,
       ownerDriverName: json['ownerDriverName'] as String?,
       maxWeightKg: weight is num ? weight.toDouble() : null,

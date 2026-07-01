@@ -52,16 +52,20 @@ class BranchOwnerSidebar extends StatelessWidget {
           label: Text('Branch Info'),
         ),
         NavigationRailDestination(
-          icon: Icon(Icons.show_chart_outlined),
-          label: Text('Sales'),
-        ),
-        NavigationRailDestination(
-          icon: Icon(Icons.local_shipping_outlined),
+          icon: Icon(Icons.groups_outlined),
           label: Text('Driver Management'),
         ),
         NavigationRailDestination(
-          icon: Icon(Icons.assignment_turned_in_outlined),
-          label: Text('Driver Requests'),
+          icon: Icon(Icons.inventory_2_outlined),
+          label: Text('Packages'),
+        ),
+        NavigationRailDestination(
+          icon: Icon(Icons.local_shipping_outlined),
+          label: Text('Branch Logistics'),
+        ),
+        NavigationRailDestination(
+          icon: Icon(Icons.account_balance_wallet_outlined),
+          label: Text('Branch Wallet'),
         ),
       ],
     );

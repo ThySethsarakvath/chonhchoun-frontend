@@ -22,7 +22,7 @@ class BranchOwnerOverviewSection extends StatelessWidget {
         const BranchOwnerSectionHero(
           title: 'Welcome to your branch workspace',
           description:
-              'Use this portal to monitor branch operations, review performance, manage drivers, and approve branch-level driver requests.',
+              'Use this portal to monitor branch operations, handle branch-to-branch shipments, and track wallet activity clearly.',
           icon: Icons.storefront_rounded,
         ),
         const SizedBox(height: 20),
@@ -37,13 +37,13 @@ class BranchOwnerOverviewSection extends StatelessWidget {
               color: const Color(0xFF15803D),
             ),
             BranchOwnerStatCard(
-              label: 'Driver Management',
+              label: 'Driver Handling',
               value: driverAgentCountLabel,
               icon: Icons.local_shipping_rounded,
               color: const Color(0xFF1D4ED8),
             ),
             BranchOwnerStatCard(
-              label: 'Pending Requests',
+              label: 'Driver Requests',
               value: pendingRequestsLabel,
               icon: Icons.assignment_late_rounded,
               color: const Color(0xFFB45309),
@@ -54,7 +54,7 @@ class BranchOwnerOverviewSection extends StatelessWidget {
         const BranchOwnerSectionCard(
           title: 'What this portal is for',
           description:
-              'This workspace is focused on branch-owner operations. Branch identity and profile control stay under admin, while branch owners focus on branch performance, driver visibility, and request approvals.',
+              'This workspace is focused on branch-owner operations. Branch identity and profile control stay under admin, while branch owners focus on logistics tickets, payments, and daily branch performance.',
         ),
       ],
     );

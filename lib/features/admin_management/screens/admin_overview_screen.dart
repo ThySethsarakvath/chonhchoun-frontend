@@ -3,10 +3,13 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 
 import '../../../global/base_url.dart';
+import '../../auth/services/auth_service.dart';
 import '../models/admin_user_model.dart';
 import '../models/branch_model.dart';
+import '../models/revenue_sharing_model.dart';
 import '../services/admin_user_service.dart';
 import '../services/branch_service.dart';
+import '../services/revenue_sharing_service.dart';
 
 class AdminOverviewScreen extends StatefulWidget {
   const AdminOverviewScreen({super.key});
@@ -20,10 +23,13 @@ class _AdminOverviewScreenState extends State<AdminOverviewScreen> {
 
   final _userService = AdminUserService();
   final _branchService = BranchService();
+  final _revenueSharingService = RevenueSharingService();
 
   List<AdminUser> _users = [];
   List<Branch> _branches = [];
+  RevenueSharingConfig? _revenueSharingConfig;
   bool _loading = true;
+  String? _loadError;
 
   @override
   void initState() {
@@ -32,26 +38,161 @@ class _AdminOverviewScreenState extends State<AdminOverviewScreen> {
   }
 
   Future<void> _loadDashboard() async {
-    setState(() => _loading = true);
+    setState(() {
+      _loading = true;
+      _loadError = null;
+    });
 
     try {
-      final results = await Future.wait([
-        _userService.getUsers(),
-        _branchService.getAllBranches(),
-      ]);
+      final users = await _userService.getUsers();
+      final branches = await _branchService.getAllBranches();
+      RevenueSharingConfig? revenueSharingConfig;
+      String? revenueSharingError;
+
+      try {
+        revenueSharingConfig = await _revenueSharingService.getCurrentConfig();
+      } on ApiException catch (e) {
+        revenueSharingError = e.message;
+      } catch (e) {
+        revenueSharingError = e.toString().replaceFirst('Exception: ', '');
+      }
 
       if (!mounted) return;
 
       setState(() {
-        _users = results[0] as List<AdminUser>;
-        _branches = results[1] as List<Branch>;
+        _users = users;
+        _branches = branches;
+        _revenueSharingConfig = revenueSharingConfig;
+        _loadError = revenueSharingError;
       });
-    } catch (_) {
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _loadError = e.message;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _loadError = e.toString().replaceFirst('Exception: ', '');
+      });
     } finally {
       if (mounted) {
         setState(() => _loading = false);
       }
     }
+  }
+
+  Future<void> _showRevenueSharingDialog() async {
+    final current = _revenueSharingConfig;
+    if (current == null) return;
+
+    final senderCtrl =
+        TextEditingController(text: current.senderBranchPercent.toString());
+    final receiverCtrl =
+        TextEditingController(text: current.receiverBranchPercent.toString());
+    final companyCtrl =
+        TextEditingController(text: current.companyPercent.toString());
+    final noteCtrl = TextEditingController(text: current.note ?? '');
+
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Update Revenue Sharing'),
+        content: SizedBox(
+          width: 420,
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: senderCtrl,
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(
+                    labelText: 'Sender branch %',
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: receiverCtrl,
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(
+                    labelText: 'Receiver branch %',
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: companyCtrl,
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(
+                    labelText: 'Company/admin %',
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: noteCtrl,
+                  maxLines: 3,
+                  decoration: const InputDecoration(
+                    labelText: 'Version note',
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () async {
+              final sender = int.tryParse(senderCtrl.text.trim()) ?? -1;
+              final receiver = int.tryParse(receiverCtrl.text.trim()) ?? -1;
+              final company = int.tryParse(companyCtrl.text.trim()) ?? -1;
+              if (sender + receiver + company != 100) {
+                if (!mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Revenue sharing must total 100%.'),
+                    backgroundColor: Color(0xFFD32F2F),
+                  ),
+                );
+                return;
+              }
+
+              try {
+                await _revenueSharingService.createVersion(
+                  RevenueSharingUpdateRequest(
+                    senderBranchPercent: sender,
+                    receiverBranchPercent: receiver,
+                    companyPercent: company,
+                    note: noteCtrl.text.trim(),
+                  ),
+                );
+                if (!mounted) return;
+                Navigator.pop(dialogContext);
+                await _loadDashboard();
+                if (!mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Revenue sharing rule updated successfully.'),
+                  ),
+                );
+              } on ApiException catch (e) {
+                if (!mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(e.message),
+                    backgroundColor: const Color(0xFFD32F2F),
+                  ),
+                );
+              }
+            },
+            child: const Text('Save version'),
+          ),
+        ],
+      ),
+    );
   }
 
   String _resolvedLogoPath(Branch branch) {
@@ -208,6 +349,25 @@ class _AdminOverviewScreenState extends State<AdminOverviewScreen> {
               child: ListView(
                 padding: const EdgeInsets.all(24),
                 children: [
+                  if (_loadError != null) ...[
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFFF7ED),
+                        borderRadius: BorderRadius.circular(18),
+                        border: Border.all(color: const Color(0xFFFED7AA)),
+                      ),
+                      child: Text(
+                        _loadError!,
+                        style: const TextStyle(
+                          fontSize: 13,
+                          color: Color(0xFF9A3412),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                  ],
                   const Text(
                     'Overview',
                     style: TextStyle(
@@ -225,6 +385,13 @@ class _AdminOverviewScreenState extends State<AdminOverviewScreen> {
                     ),
                   ),
                   const SizedBox(height: 20),
+                  if (_revenueSharingConfig != null) ...[
+                    _RevenueSharingCard(
+                      config: _revenueSharingConfig!,
+                      onEdit: _showRevenueSharingDialog,
+                    ),
+                    const SizedBox(height: 20),
+                  ],
                   Wrap(
                     spacing: 16,
                     runSpacing: 16,
@@ -369,6 +536,154 @@ class _AdminOverviewScreenState extends State<AdminOverviewScreen> {
     );
   }
 
+}
+
+class _RevenueSharingCard extends StatelessWidget {
+  final RevenueSharingConfig config;
+  final Future<void> Function() onEdit;
+
+  const _RevenueSharingCard({
+    required this.config,
+    required this.onEdit,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(22),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.blueGrey.withOpacity(0.08),
+            blurRadius: 24,
+            offset: const Offset(0, 12),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Revenue Sharing Rule',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF1E3A5F),
+                      ),
+                    ),
+                    SizedBox(height: 4),
+                    Text(
+                      'Admin controls the active shipment revenue-sharing version here.',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Color(0xFF64748B),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              OutlinedButton.icon(
+                onPressed: onEdit,
+                icon: const Icon(Icons.edit_rounded),
+                label: const Text('Update Rule'),
+              ),
+            ],
+          ),
+          const SizedBox(height: 18),
+          Wrap(
+            spacing: 14,
+            runSpacing: 14,
+            children: [
+              _RulePill(
+                label: 'Sender Branch',
+                value: '${config.senderBranchPercent}%',
+                color: const Color(0xFF1D4ED8),
+              ),
+              _RulePill(
+                label: 'Receiver Branch',
+                value: '${config.receiverBranchPercent}%',
+                color: const Color(0xFF7C3AED),
+              ),
+              _RulePill(
+                label: 'Company/Admin',
+                value: '${config.companyPercent}%',
+                color: const Color(0xFF15803D),
+              ),
+              _RulePill(
+                label: 'Version',
+                value: 'v${config.version}',
+                color: const Color(0xFFB45309),
+              ),
+            ],
+          ),
+          if (config.note != null && config.note!.trim().isNotEmpty) ...[
+            const SizedBox(height: 14),
+            Text(
+              'Note: ${config.note!}',
+              style: const TextStyle(
+                fontSize: 13,
+                color: Color(0xFF475569),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _RulePill extends StatelessWidget {
+  final String label;
+  final String value;
+  final Color color;
+
+  const _RulePill({
+    required this.label,
+    required this.value,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 170,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.10),
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 12,
+              color: color,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            value,
+            style: const TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.w800,
+              color: Color(0xFF1E3A5F),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 class _OverviewStatCard extends StatelessWidget {

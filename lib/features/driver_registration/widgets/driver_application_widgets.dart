@@ -14,7 +14,7 @@ class DriverApplicationHeader extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Driver Application',
+          'Driver Signup',
           style: TextStyle(
             fontSize: 24,
             fontWeight: FontWeight.w700,
@@ -23,7 +23,7 @@ class DriverApplicationHeader extends StatelessWidget {
         ),
         SizedBox(height: 8),
         Text(
-          'Apply as a driver in a few simple steps. Choose whether you will use your own vehicle or need one from the branch.',
+          'Choose the path that fits your work: City Express with your own motorbike, or branch logistics driving with branch approval.',
           style: TextStyle(fontSize: 13, color: Color(0xFF6B7A8D)),
         ),
       ],
@@ -93,7 +93,7 @@ class DriverBranchDropdown extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Branch',
+          'Base branch',
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 fontWeight: FontWeight.w600,
                 color: const Color(0xFF1E2D3D),
@@ -114,7 +114,7 @@ class DriverBranchDropdown extends StatelessWidget {
               borderSide: const BorderSide(color: Color(0xFFDDE3EE)),
             ),
           ),
-          hint: Text(loading ? 'Loading branches...' : 'Select a branch'),
+          hint: Text(loading ? 'Loading branches...' : 'Select a base branch'),
           items: branches
               .map(
                 (branch) => DropdownMenuItem<String>(
@@ -233,9 +233,9 @@ class DriverApplicationVehicleChoice extends StatelessWidget {
         const SizedBox(height: 8),
         _VehicleChoiceTile(
           selected: selectedValue != driverBranchTruckChoice,
-          title: 'Use my own vehicle',
+          title: 'City Express with my motorbike',
           subtitle:
-              'Pick this if you already have your own motorcycle or truck.',
+              'Start with your own motorcycle for city delivery. No branch vehicle assignment is needed.',
           icon: Icons.two_wheeler_rounded,
           onTap: () => onChanged(
             selectedOwnVehicleType ?? driverOwnMotorcycleType,
@@ -254,8 +254,9 @@ class DriverApplicationVehicleChoice extends StatelessWidget {
         const SizedBox(height: 10),
         _VehicleChoiceTile(
           selected: selectedValue == driverBranchTruckChoice,
-          title: 'Need a branch vehicle',
-          subtitle: 'Pick this if the branch should assign a company truck.',
+          title: 'Apply for branch logistics truck work',
+          subtitle:
+              'Choose this if you want branch-to-branch or province delivery with a branch vehicle after approval.',
           icon: Icons.local_shipping_rounded,
           onTap: () => onChanged(driverBranchTruckChoice),
         ),
