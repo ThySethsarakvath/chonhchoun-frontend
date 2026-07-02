@@ -7,8 +7,12 @@ import '../../../shared/widgets/driver_map_widgets.dart';
 import '../../../shared/widgets/driver_request_widgets.dart';
 import '../../../shared/widgets/driver_shell_widgets.dart';
 import '../driver_provider.dart';
+import '../../../features/auth/models/user_model.dart';
+import '../../../features/auth/services/user_service.dart';
+import '../../../features/auth/tokens/token_storage.dart';
+import '../../../features/driver_registration/models/vehicle_type.dart';
 
-class DriverProfileTab extends StatelessWidget {
+class DriverProfileTab extends StatefulWidget {
   const DriverProfileTab({
     super.key,
     required this.request,
@@ -20,7 +24,7 @@ class DriverProfileTab extends StatelessWidget {
   final DriverRequest? request;
   final VoidCallback onOpenMap;
   final DriverStateSnapshot? driverState;
-  final Future<void> Function() onRefreshDriverState;
+  final VoidCallback onRefreshDriverState;
 
   @override
   State<DriverProfileTab> createState() => _DriverProfileTabState();
@@ -51,7 +55,7 @@ class _DriverProfileTabState extends State<DriverProfileTab> {
         setState(() => _loadingProfile = false);
       }
     }
-    await widget.onRefreshDriverState();
+    widget.onRefreshDriverState();
   }
 
   Future<void> _updateAvailabilityStatus(String availabilityStatus) async {
@@ -66,7 +70,7 @@ class _DriverProfileTabState extends State<DriverProfileTab> {
       );
       if (!mounted) return;
       setState(() => _profile = profile);
-      await widget.onRefreshDriverState();
+      widget.onRefreshDriverState();
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -92,6 +96,7 @@ class _DriverProfileTabState extends State<DriverProfileTab> {
 
   @override
   Widget build(BuildContext context) {
+    final provider = DriverScope.of(context);
     final profile = _profile;
     final driverState = widget.driverState;
     final currentVehicle = driverState?.currentVehicle;
@@ -137,8 +142,9 @@ class _DriverProfileTabState extends State<DriverProfileTab> {
           content: DriverStatusSummary(
             amount: currentVehicle != null
                 ? _driverVehicleHeadline(currentVehicle)
+                : assignedVehicleCode?.isNotEmpty == true
                     ? assignedVehicleCode!
-                : vehicleLabel,
+                    : vehicleLabel,
             helperText: currentVehicle?.ownershipType == 'DRIVER_OWNED'
                 ? 'Your own vehicle'
                 : assignedVehicleCode?.isNotEmpty == true
@@ -146,6 +152,11 @@ class _DriverProfileTabState extends State<DriverProfileTab> {
                 : 'Current vehicle',
           ),
         ),
+        Transform.translate(
+          offset: const Offset(0, -30),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 32),
+            child: Column(
               children: [
                 DriverSurfaceCard(
                   child: Column(
@@ -384,7 +395,7 @@ class _DriverProfileTabState extends State<DriverProfileTab> {
                         width: double.infinity,
                         child: DriverPrimaryButton(
                           label: 'Open Live Map',
-                          onPressed: onOpenMap,
+                          onPressed: widget.onOpenMap,
                         ),
                       ),
                     ],
@@ -396,11 +407,11 @@ class _DriverProfileTabState extends State<DriverProfileTab> {
                     children: [
                       CircleAvatar(
                         radius: 24,
-                        backgroundColor: (request?.accent ?? DriverColors.blue).withValues(alpha: 0.12),
+                        backgroundColor: (widget.request?.accent ?? DriverColors.blue).withValues(alpha: 0.12),
                         child: Text(
-                          request?.senderInitials ?? '?',
+                          widget.request?.senderInitials ?? '?',
                           style: TextStyle(
-                            color: request?.accent ?? DriverColors.blue,
+                            color: widget.request?.accent ?? DriverColors.blue,
                             fontWeight: FontWeight.w800,
                           ),
                         ),

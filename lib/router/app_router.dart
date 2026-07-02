@@ -15,16 +15,11 @@ import '../features/driver_registration/screens/driver_application_screen.dart';
 import '../screens/driver/driver_workspace_screen.dart';
 import '../features/home/pages/admin_main_screen.dart';
 import '../features/branch_owner/screens/branch_owner_main_screen.dart';
-<<<<<<< HEAD
 import '../screens/customer/avatar_upload_screen.dart';
 import '../screens/customer/setting_screen.dart';
 import '../screens/customer/profile_screen.dart';
-
 import '../screens/driver/driver_workspace_screen.dart';
-
-=======
 import '../features/home/pages/customer_driver_request_screen.dart';
->>>>>>> 8d511ca (Split admin driver requests from vehicle management)
 abstract class AppRoutes {
   AppRoutes._();
 
@@ -147,12 +142,8 @@ class AppRouter {
          return _fade(const DriverWorkspaceScreen());
       case AppRoutes.driverApplication:
         return _slide(const DriverApplicationScreen());
-<<<<<<< HEAD
-        return _fade(const DriverWorkspaceScreen());
-=======
       case AppRoutes.becomeDriver:
         return _slide(const CustomerDriverRequestScreen());
->>>>>>> 8d511ca (Split admin driver requests from vehicle management)
       default:
         return _fade(_stub('404 — Page not found'));
     }

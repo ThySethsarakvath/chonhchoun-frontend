@@ -73,14 +73,13 @@ class _AvatarUploadScreenState extends State<AvatarUploadScreen> {
     try {
       final profile = await _userService.getMe(accessToken: widget.args.accessToken);
       if (mounted) {
-        if (profile.role.toLowerCase() == 'driver') {
-          Navigator.pushNamedAndRemoveUntil(
-            context,
-            AppRoutes.driver,
-            (_) => false,
-          );
-          return;
-        }
+        final route = AppRoutes.homeForRole(profile.role.toLowerCase());
+        Navigator.pushNamedAndRemoveUntil(
+          context,
+          route,
+          (_) => false,
+        );
+        return;
       }
     } catch (_) {} finally {
       if (mounted) setState(() => _uploading = false);

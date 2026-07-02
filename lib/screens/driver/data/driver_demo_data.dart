@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:latlong2/latlong.dart';
 
 import '../models/driver_earnings.dart';
-import '../models/driver_request.dart';
+import '../../../shared/models/driver_request.dart';
 
 const driverDisplayName = 'ភ័ក្ត្រ';
 const driverAvailableBalance = '168';

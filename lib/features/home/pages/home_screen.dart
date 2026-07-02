@@ -36,18 +36,10 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-<<<<<<< HEAD
   final HomeService _service = HomeService();
   final UserService _userService = UserService();
+  final BranchLogisticsService _branchLogisticsService = BranchLogisticsService();
   final TextEditingController _searchCtrl = TextEditingController();
-=======
-  final _service = HomeService();
-  final _userService = UserService();
-  final _branchLogisticsService = BranchLogisticsService();
-  final _searchCtrl = TextEditingController();
-
-  int _navIndex = 0;
->>>>>>> 8d511ca (Split admin driver requests from vehicle management)
 
   List<PromoBanner> _banners = [];
   List<DeliveryItem> _recent = [];
@@ -127,7 +119,7 @@ class _HomeScreenState extends State<HomeScreen> {
         desiredAccuracy: LocationAccuracy.high,
       );
 
-      // Reverse geocode using Nominatim (OpenStreetMap) – free, no API key needed
+      // Reverse geocode using Nominatim (OpenStreetMap) â€“ free, no API key needed
       final url = Uri.parse(
         'https://nominatim.openstreetmap.org/reverse?format=json&lat=${position.latitude}&lon=${position.longitude}&accept-language=km',
       );
@@ -319,16 +311,10 @@ class _HomeScreenState extends State<HomeScreen> {
 
       final results = await Future.wait([
         _service.fetchBanners(),
-<<<<<<< HEAD
         _service.fetchRecentDeliveries(accessToken),
         _service.fetchDeliveryHistory(accessToken),
         _userService.getMe(accessToken: accessToken).then<UserProfile?>((v) => v).catchError((_) => null),
-=======
-        _service.fetchRecentDeliveries(),
-        _service.fetchDeliveryHistory(),
-        _userService.getMe(accessToken: accessToken).catchError((_) => null),
         _branchLogisticsService.listCustomerShipments().catchError((_) => const <BranchLogisticsShipment>[]),
->>>>>>> 8d511ca (Split admin driver requests from vehicle management)
       ]);
 
       if (mounted) {
@@ -428,7 +414,6 @@ class _HomeScreenState extends State<HomeScreen> {
             ? const Center(
                 child: CircularProgressIndicator(color: Color(0xFF2C5F8A)),
               )
-<<<<<<< HEAD
             : IndexedStack(
                 index: _navIndex,
                 children: [
@@ -436,151 +421,11 @@ class _HomeScreenState extends State<HomeScreen> {
                   _buildShippingView(),
                   _buildMessagesView(),
                 ],
-=======
-            : RefreshIndicator(
-                color: const Color(0xFF2C5F8A),
-                onRefresh: _loadData,
-                child: CustomScrollView(
-                  slivers: [
-                    SliverToBoxAdapter(
-                      child: Stack(
-                        clipBehavior: Clip.none,
-                        children: [
-                          Container(
-                            height: bluePanelHeight,
-                            decoration: const BoxDecoration(
-                              gradient: LinearGradient(
-                                begin: Alignment.topCenter,
-                                end: Alignment.bottomCenter,
-                                colors: [Color(0xFF1E4D73), Color(0xFF2C6B9E)],
-                              ),
-                            ),
-                          ),
-                          Positioned(
-                            bottom: 0,
-                            left: 0,
-                            right: 0,
-                            child: Image.asset(
-                              'assets/images/footer.png',
-                              fit: BoxFit.fitWidth,
-                              alignment: Alignment.bottomCenter,
-                              errorBuilder: (_, __, ___) =>
-                                  const SizedBox(height: 60),
-                            ),
-                          ),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              SizedBox(
-                                height: MediaQuery.of(context).padding.top + 8,
-                              ),
-
-                              Builder(
-                                builder: (drawerContext) => HomeAppBar(
-                                  city: _city,
-                                  userLocation: _userLocation,
-                                  onMenuTap: () => AppDrawerController.of(
-                                    drawerContext,
-                                  )?.open(),
-                                  onProfileTap: () {
-                                    Navigator.pushNamed(
-                                      context,
-                                      AppRoutes.profile,
-                                      arguments: ProfileArgs(
-                                        profile: _userProfile,
-                                        source: ProfileSource.home,
-                                      ),
-                                    );
-                                  }, 
-                                  avatarUrl: avatarUrl,
-                                ),
-                              ),
-
-                              const SizedBox(height: 14),
-
-                              // Search bar
-                              _SearchBar(controller: _searchCtrl),
-                              const SizedBox(height: 16),
-
-                              // Promo banners
-                              if (_banners.isNotEmpty)
-                                PromoBannerCarousel(banners: _banners),
-
-                              const SizedBox(height: 16),
-                            ],
-                          ),
-                          Positioned(
-                            bottom: -52,
-                            left: 0,
-                            right: 0,
-                            child: QuickNavGrid(items: _quickNavItems),
-                          ),
-                        ],
-                      ),
-                    ),
-                    SliverToBoxAdapter(
-                      child: Padding(
-                        padding: const EdgeInsets.fromLTRB(20, 72, 20, 24),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            SectionHeader(
-                              title: 'ការដឹកជញ្ជូនថ្មីៗ',
-                              onLinkTap: () {
-                                /* TODO */
-                              },
-                            ),
-                            const SizedBox(height: 12),
-                            if (_recent.isEmpty)
-                              _EmptyState(message: 'មិនមានការដឹកជញ្ជូនថ្មីៗទេ')
-                            else
-                              ...(_recent.map(
-                                (item) => DeliveryCard(
-                                  item: item,
-                                  showTracking: true,
-                                  onTap: () {
-                                    /* TODO: navigate to detail */
-                                  },
-                                ),
-                              )),
-
-                            const SizedBox(height: 24),
-                            _buildBranchLogisticsSection(),
-                            const SizedBox(height: 24),
-                            SectionHeader(
-                              title: 'ការជញ្ជូនកន្លងទៅ',
-                              onLinkTap: () {
-                                /* TODO */
-                              },
-                            ),
-                            const SizedBox(height: 12),
-                            if (_history.isEmpty)
-                              _EmptyState(message: 'មិនមានការជញ្ជូនកន្លងទៅទេ')
-                            else
-                              ...(_history.map(
-                                (item) => DeliveryCard(
-                                  item: item,
-                                  showTracking: false,
-                                  onTap: () {
-                                    /* TODO: navigate to detail */
-                                  },
-                                ),
-                              )),
-
-                            const SizedBox(height: 16),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
->>>>>>> 8d511ca (Split admin driver requests from vehicle management)
               ),
       ),
     );
   }
 
-<<<<<<< HEAD
   Widget _buildHomeView(double bluePanelHeight, String avatarUrl) {
     return RefreshIndicator(
       color: const Color(0xFF2C5F8A),
@@ -681,6 +526,8 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     )),
                   const SizedBox(height: 24),
+                  _buildBranchLogisticsSection(),
+                  const SizedBox(height: 24),
                   SectionHeader(
                     title: 'ការជញ្ជូនកន្លងទៅ',
                     onLinkTap: () => setState(() => _navIndex = 1),
@@ -771,7 +618,8 @@ class _HomeScreenState extends State<HomeScreen> {
         return ConversationService().customerConversations(token);
       },
     );
-=======
+  }
+
   Widget _buildBranchLogisticsSection() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -899,7 +747,6 @@ class _HomeScreenState extends State<HomeScreen> {
     final match = RegExp(r'Stock ID:\s*([A-Z0-9\-]+)', caseSensitive: false)
         .firstMatch(notes ?? '');
     return match?.group(1) ?? '-';
->>>>>>> 8d511ca (Split admin driver requests from vehicle management)
   }
 }
 

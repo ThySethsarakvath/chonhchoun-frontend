@@ -5,6 +5,7 @@ import '../features/auth/services/user_service.dart';
 import '../features/auth/services/auth_service.dart';
 import '../features/auth/tokens/token_storage.dart';
 import '../shared/widgets/home_bottom_nav.dart';
+import '../features/driver_registration/models/vehicle_type.dart';
 
 const _profileRequestAccent = Color(0xFF5B6C8F);
 const _profileRequestDark = Color(0xFF32435C);
@@ -28,10 +29,7 @@ class ProfileScreen extends StatefulWidget {
 class _ProfileScreenState extends State<ProfileScreen> {
   final _userService = UserService();
   final _authService = AuthService();
-<<<<<<< HEAD
-=======
   static final _phoneReg = RegExp(r'^(\+?855|0)[0-9]{8,9}$');
->>>>>>> 8d511ca (Split admin driver requests from vehicle management)
 
   UserProfile? _userProfile;
   bool _loading = false;
@@ -269,18 +267,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
       builder: (_) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: const Text(
-          'ចាកចេញ',
+          'áž…áž¶áž€áž…áŸáž‰',
           style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
         ),
         content: const Text(
-          'តើអ្នកពិតជាចង់ចាកចេញមែនទេ?',
+          'ážáž¾áž¢áŸ’áž“áž€áž–áž·ážáž‡áž¶áž…áž„áŸ‹áž…áž¶áž€áž…áŸáž‰áž˜áŸ‚áž“áž‘áŸ?',
           style: TextStyle(fontSize: 14, color: Color(0xFF4A5568)),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: const Text(
-              'បោះបង់',
+              'áž”áŸ„áŸ‡áž”áž„áŸ‹',
               style: TextStyle(color: Color(0xFF8BA4C8)),
             ),
           ),
@@ -290,7 +288,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               await _performLogout();
             },
             child: const Text(
-              'ចាកចេញ',
+              'áž…áž¶áž€áž…áŸáž‰',
               style: TextStyle(
                 color: Colors.redAccent,
                 fontWeight: FontWeight.w700,
@@ -457,7 +455,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 children: [
                   Center(
                     child: Text(
-                      'អំពីអ្នក',
+                      'áž¢áŸ†áž–áž¸áž¢áŸ’áž“áž€',
                       style: const TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.w800,
@@ -535,17 +533,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       Expanded(
                         flex: 3,
                         child: _ProfileField(
-                          label: 'ឈ្មោះ',
-                          value: p?.name ?? '—',
+                          label: 'ážˆáŸ’áž˜áŸ„áŸ‡',
+                          value: p?.name ?? 'â€”',
                         ),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
                         flex: 2,
                         child: _ProfileField(
-                          label: 'ភេទ',
+                          label: 'áž—áŸáž‘',
                           value:
-                              'ប្រុស', // TODO: add gender to UserProfile when backend supports it
+                              'áž”áŸ’ážšáž»ážŸ', // TODO: add gender to UserProfile when backend supports it
                         ),
                       ),
                     ],
@@ -553,14 +551,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   const SizedBox(height: 14),
 
                   _ProfileField(
-                    label: 'លេខទូរស័ព្ទ',
+                    label: 'áž›áŸážáž‘áž¼ážšážŸáŸáž–áŸ’áž‘',
                     value: _formatPhone(p?.phone),
                   ),
                   const SizedBox(height: 14),
 
-                  _ProfileField(label: 'អុីម៉ែល', value: p?.email ?? '—'),
-<<<<<<< HEAD
-=======
+                  _ProfileField(label: 'áž¢áž»áž¸áž˜áŸ‰áŸ‚áž›', value: p?.email ?? 'â€”'),
                   if (p?.role == 'customer') ...[
                     const SizedBox(height: 18),
                     _DriverRequestActionCard(
@@ -584,7 +580,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ),
                     ],
                   ],
->>>>>>> 8d511ca (Split admin driver requests from vehicle management)
                   const SizedBox(height: 80),
 
                   SizedBox(
@@ -601,7 +596,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ),
                       ),
                       child: const Text(
-                        'ចាកចេញ',
+                        'áž…áž¶áž€áž…áŸáž‰',
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w700,
@@ -619,7 +614,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   String _formatPhone(String? raw) {
-    if (raw == null || raw.isEmpty) return '—';
+    if (raw == null || raw.isEmpty) return 'â€”';
     if (raw.startsWith('+855')) return '0${raw.substring(4)}';
     return raw;
   }
@@ -666,7 +661,7 @@ class _ProfileAvatar extends StatelessWidget {
       const Icon(Icons.person_rounded, size: 56, color: Color(0xFF2C5F8A));
 }
 
-// ── Read-only profile field ───────────────────────────────────────────────────
+// â”€â”€ Read-only profile field â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 class _ProfileField extends StatelessWidget {
   final String label;
@@ -714,9 +709,6 @@ class _ProfileField extends StatelessWidget {
       ],
     );
   }
-<<<<<<< HEAD
-}
-=======
 }
 
 class _EditField extends StatelessWidget {
@@ -805,7 +797,7 @@ class _DriverRequestActionCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text(
-                  'ស្នើសុំក្លាយជាអ្នកបើកបរ',
+                  'ážŸáŸ’áž“áž¾ážŸáž»áŸ†áž€áŸ’áž›áž¶áž™áž‡áž¶áž¢áŸ’áž“áž€áž”áž¾áž€áž”ážš',
                   style: TextStyle(
                     color: _profileRequestDark,
                     fontSize: 17,
@@ -814,7 +806,7 @@ class _DriverRequestActionCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 6),
                 const Text(
-                  'ប្រសិនបើអ្នកចង់ធ្វើការជាភ្នាក់ងារដឹកជញ្ជូន អ្នកអាចផ្ញើសំណើទៅសាខាពីទីនេះបាន។',
+                  'áž”áŸ’ážšážŸáž·áž“áž”áž¾áž¢áŸ’áž“áž€áž…áž„áŸ‹áž’áŸ’ážœáž¾áž€áž¶ážšáž‡áž¶áž—áŸ’áž“áž¶áž€áŸ‹áž„áž¶ážšážŠáž¹áž€áž‡áž‰áŸ’áž‡áž¼áž“ áž¢áŸ’áž“áž€áž¢áž¶áž…áž•áŸ’áž‰áž¾ážŸáŸ†ážŽáž¾áž‘áŸ…ážŸáž¶ážáž¶áž–áž¸áž‘áž¸áž“áŸáŸ‡áž”áž¶áž“áŸ”',
                   style: TextStyle(
                     color: Color(0xFF667085),
                     fontSize: 12.5,
@@ -836,7 +828,7 @@ class _DriverRequestActionCard extends StatelessWidget {
                     ),
                   ),
                   child: const Text(
-                    'បើកសំណើ',
+                    'áž”áž¾áž€ážŸáŸ†ážŽáž¾',
                     style: TextStyle(fontWeight: FontWeight.w700),
                   ),
                 ),
@@ -871,4 +863,3 @@ class _DriverRequestActionCard extends StatelessWidget {
     );
   }
 }
->>>>>>> 8d511ca (Split admin driver requests from vehicle management)

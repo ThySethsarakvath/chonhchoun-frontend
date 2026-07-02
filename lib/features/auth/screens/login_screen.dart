@@ -64,11 +64,8 @@ class _LoginScreenState extends State<LoginScreen> {
       );
 
       if (mounted) {
-        if (profile.role.toLowerCase() == 'driver') {
-          Navigator.pushReplacementNamed(context, AppRoutes.driver);
-        } else {
-          Navigator.pushReplacementNamed(context, AppRoutes.customer);
-        }
+        final route = AppRoutes.homeForRole(profile.role.toLowerCase());
+        Navigator.pushReplacementNamed(context, route);
       }
     } on ApiException catch (e) {
       if (mounted) showErrorDialog(context, e.message);

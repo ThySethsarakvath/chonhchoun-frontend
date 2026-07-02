@@ -71,7 +71,14 @@ class DriverBalanceCard extends StatelessWidget {
 }
 
 class DriverStatusSummary extends StatelessWidget {
-  const DriverStatusSummary({super.key});
+  final String amount;
+  final String helperText;
+
+  const DriverStatusSummary({
+    super.key,
+    required this.amount,
+    required this.helperText,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -82,20 +89,20 @@ class DriverStatusSummary extends StatelessWidget {
         color: DriverColors.softBlue,
         borderRadius: BorderRadius.circular(20),
       ),
-      child: const Row(
+      child: Row(
         children: [
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Driver status',
-                  style: TextStyle(color: DriverColors.text, fontSize: 13),
+                  helperText,
+                  style: const TextStyle(color: DriverColors.text, fontSize: 13),
                 ),
-                SizedBox(height: 8),
+                const SizedBox(height: 8),
                 Text(
-                  'Ready for pickups',
-                  style: TextStyle(
+                  amount,
+                  style: const TextStyle(
                     color: DriverColors.text,
                     fontSize: 24,
                     fontWeight: FontWeight.w700,

@@ -6,7 +6,7 @@ import '../../features/auth/services/user_service.dart';
 import '../../features/auth/tokens/token_storage.dart';
 import '../../router/app_router.dart';
 import 'data/driver_demo_data.dart';
-import 'models/driver_request.dart';
+import '../../shared/models/driver_request.dart';
 import 'screens/driver_map_detail_screen.dart';
 import 'screens/driver_request_detail_screen.dart';
 import 'screens/driver_requests_screen.dart';
@@ -26,6 +26,7 @@ class DriverWorkspaceScreen extends StatefulWidget {
 }
 
 class _DriverWorkspaceScreenState extends State<DriverWorkspaceScreen> {
+  late DriverProvider _provider;
   final AuthService _authService = AuthService();
   final UserService _userService = UserService();
   int _selectedIndex = 0;
@@ -37,18 +38,13 @@ class _DriverWorkspaceScreenState extends State<DriverWorkspaceScreen> {
   void initState() {
     super.initState();
     _provider = DriverProvider()..init();
+    _loadDriverState();
   }
 
   @override
   void dispose() {
     _provider.dispose();
     super.dispose();
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    _loadDriverState();
   }
 
   Future<void> _loadDriverState() async {
@@ -67,10 +63,11 @@ class _DriverWorkspaceScreenState extends State<DriverWorkspaceScreen> {
   }
 
   void _openRequests() {
+    final provider = DriverScope.of(context);
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => DriverRequestsScreen(
-          requests: _provider.availableRequests,
+          requests: provider?.availableRequests ?? [],
           onOpenDetail: _openRequestDetail,
         ),
       ),
@@ -85,10 +82,11 @@ class _DriverWorkspaceScreenState extends State<DriverWorkspaceScreen> {
           onOpenMap: () => _openMapDetail(request),
           onAccept: () async {
             if (request.id != null) {
-              final success = await _provider.acceptRequest(request.id!);
+              final provider = DriverScope.of(context);
+              final success = await provider?.acceptRequest(request.id!) ?? false;
               if (success && mounted) {
                 Navigator.of(context).pop();
-                setState(() => _currentIndex = 1);
+                setState(() => _selectedIndex = 1);
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text('Delivery accepted successfully!')),
                 );
@@ -111,11 +109,12 @@ class _DriverWorkspaceScreenState extends State<DriverWorkspaceScreen> {
           request: request,
           onAccept: () async {
             if (request.id != null) {
-              final success = await _provider.acceptRequest(request.id!);
+              final provider = DriverScope.of(context);
+              final success = await provider?.acceptRequest(request.id!) ?? false;
               if (success && mounted) {
                 Navigator.of(context).pop();
                 Navigator.of(context).pop();
-                setState(() => _currentIndex = 1);
+                setState(() => _selectedIndex = 1);
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text('Delivery accepted successfully!')),
                 );
@@ -181,18 +180,22 @@ class _DriverWorkspaceScreenState extends State<DriverWorkspaceScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: DriverColors.surface,
-      appBar: AppBar(
+    final primaryRequest = driverRequests.isNotEmpty ? driverRequests.first : null;
+
+    return DriverScope(
+      notifier: _provider,
+      child: Scaffold(
         backgroundColor: DriverColors.surface,
-        elevation: 0,
-        title: const Text(
-          'Driver Portal',
-          style: TextStyle(
-            color: DriverColors.text,
-            fontWeight: FontWeight.w700,
+        appBar: AppBar(
+          backgroundColor: DriverColors.surface,
+          elevation: 0,
+          title: const Text(
+            'Driver Portal',
+            style: TextStyle(
+              color: DriverColors.text,
+              fontWeight: FontWeight.w700,
+            ),
           ),
-        ),
         actions: [
           TextButton.icon(
             onPressed: _loggingOut ? null : _confirmLogout,
@@ -227,13 +230,17 @@ class _DriverWorkspaceScreenState extends State<DriverWorkspaceScreen> {
           ),
           const DriverBranchLogisticsTab(),
           DriverProfileTab(
-            request: _primaryRequest,
-            onOpenMap: () => _openMapDetail(_primaryRequest),
+            request: primaryRequest,
+            onOpenMap: () {
+              if (primaryRequest != null) {
+                _openMapDetail(primaryRequest);
+              }
+            },
             driverState: _driverState,
             onRefreshDriverState: _loadDriverState,
           ),
         ],
       ),
-    );
+    ));
   }
 }

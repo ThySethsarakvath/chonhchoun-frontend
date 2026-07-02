@@ -1,20 +1,13 @@
 import 'package:flutter/material.dart';
 
-<<<<<<< HEAD
 import '../../../features/auth/models/user_model.dart';
 import '../../../features/driver_registration/models/vehicle_type.dart';
 import '../data/driver_demo_data.dart';
-import '../models/driver_request.dart';
-import '../widgets/driver_colors.dart';
-import '../widgets/driver_request_widgets.dart';
-import '../widgets/driver_shell_widgets.dart';
-=======
 import '../../../shared/models/driver_request.dart';
 import '../../../shared/widgets/driver_colors.dart';
 import '../../../shared/widgets/driver_request_widgets.dart';
 import '../../../shared/widgets/driver_shell_widgets.dart';
 import '../driver_provider.dart';
->>>>>>> features/driver
 
 class DriverHomeTab extends StatelessWidget {
   const DriverHomeTab({
@@ -34,7 +27,8 @@ class DriverHomeTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-<<<<<<< HEAD
+    final provider = DriverScope.of(context);
+    final availableCount = provider.availableRequests.length;
     final currentVehicle = driverState?.currentVehicle;
     final driverName = driverState?.profile.name.trim().isNotEmpty == true
         ? driverState!.profile.name
@@ -50,56 +44,6 @@ class DriverHomeTab extends StatelessWidget {
             ? '${deliveryCategoryLabel(currentVehicle.type)} | ${currentVehicle.status.replaceAll('_', ' ')}'
             : 'No active vehicle assigned';
 
-    return ListView(
-      padding: EdgeInsets.zero,
-      children: [
-        DriverHeroSection(
-          subtitle: 'Welcome Back',
-          name: driverName,
-          content: DriverStatusSummary(
-            amount: heroAmount,
-            helperText: heroHelper,
-          ),
-        ),
-        Transform.translate(
-          offset: const Offset(0, -30),
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 32),
-            child: Column(
-              children: [
-                DriverSurfaceCard(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Would you like to specify direction for deliveries?',
-                        style: TextStyle(
-                          color: DriverColors.text,
-                          fontSize: 13,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      const SizedBox(height: 14),
-                      InkWell(
-                        onTap: onViewAll,
-                        borderRadius: BorderRadius.circular(16),
-                        child: Ink(
-                          height: 54,
-                          decoration: BoxDecoration(
-                            color: DriverColors.surface,
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          child: const Row(
-                            children: [
-                              SizedBox(width: 16),
-                              Icon(
-                                Icons.radio_button_checked_rounded,
-                                color: DriverColors.blue,
-                                size: 18,
-=======
-    final provider = DriverScope.of(context);
-    final availableCount = provider.availableRequests.length;
-
     return RefreshIndicator(
       onRefresh: () async {
         if (provider.isOnline) {
@@ -110,9 +54,12 @@ class DriverHomeTab extends StatelessWidget {
         padding: EdgeInsets.zero,
         children: [
           DriverHeroSection(
-            subtitle: provider.isOnline ? 'You are Online' : 'You are Offline',
-            name: 'Driver',
-            content: DriverBalanceCard(amount: provider.balance.toStringAsFixed(2)),
+            subtitle: provider.isOnline ? 'Online' : 'Offline',
+            name: driverName,
+            content: DriverStatusSummary(
+              amount: heroAmount,
+              helperText: heroHelper,
+            ),
           ),
           Transform.translate(
             offset: const Offset(0, -30),
@@ -133,7 +80,6 @@ class DriverHomeTab extends StatelessWidget {
                                 color: DriverColors.text,
                                 fontSize: 16,
                                 fontWeight: FontWeight.w700,
->>>>>>> features/driver
                               ),
                             ),
                             const SizedBox(height: 4),
