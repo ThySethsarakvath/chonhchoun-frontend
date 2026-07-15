@@ -14,6 +14,7 @@ import 'branch_logistics_list_screen.dart';
 import 'branch_owner_overview_screen.dart';
 import 'branch_sales_screen.dart';
 import 'branch_wallet_screen.dart';
+import '../../dispatch_receipt/screens/dispatch_receipt_main_screen.dart';
 import '../widgets/branch_owner_content_widgets.dart';
 import '../widgets/branch_owner_sidebar.dart';
 
@@ -198,6 +199,10 @@ class _BranchOwnerMainScreenState extends State<BranchOwnerMainScreen> {
       _BranchOwnerSectionData(
         title: 'Branch Wallet',
         content: const BranchWalletScreen(),
+      ),
+      _BranchOwnerSectionData(
+        title: 'Dispatch Receipts',
+        content: const DispatchReceiptMainScreen(),
       ),
     ];
 

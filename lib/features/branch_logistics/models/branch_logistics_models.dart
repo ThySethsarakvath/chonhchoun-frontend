@@ -273,6 +273,7 @@ class BranchLogisticsShipment {
   final BranchLogisticsAssignedDriverRef? assignedDriver;
   final BranchLogisticsAssignedVehicleRef? assignedVehicle;
   final DateTime? assignedAt;
+  final String? dispatchReceiptId;
 
   const BranchLogisticsShipment({
     required this.id,
@@ -308,6 +309,7 @@ class BranchLogisticsShipment {
     required this.assignedDriver,
     required this.assignedVehicle,
     required this.assignedAt,
+    required this.dispatchReceiptId,
   });
 
   factory BranchLogisticsShipment.fromJson(Map<String, dynamic> json) {
@@ -378,6 +380,7 @@ class BranchLogisticsShipment {
       assignedAt: json['assignedAt'] is String
           ? DateTime.tryParse(json['assignedAt'] as String)
           : null,
+      dispatchReceiptId: json['dispatchReceiptId'] as String?,
     );
   }
 

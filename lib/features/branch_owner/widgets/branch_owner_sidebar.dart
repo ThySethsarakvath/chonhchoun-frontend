@@ -67,6 +67,10 @@ class BranchOwnerSidebar extends StatelessWidget {
           icon: Icon(Icons.account_balance_wallet_outlined),
           label: Text('Branch Wallet'),
         ),
+        NavigationRailDestination(
+          icon: Icon(Icons.receipt_long_outlined),
+          label: Text('Dispatch Receipts'),
+        ),
       ],
     );
   }
