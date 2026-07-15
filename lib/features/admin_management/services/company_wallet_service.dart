@@ -5,10 +5,10 @@ import 'package:http/http.dart' as http;
 import '../../../global/base_url.dart';
 import '../../auth/services/auth_service.dart';
 import '../../auth/tokens/token_storage.dart';
-import '../models/branch_wallet_models.dart';
+import '../models/company_wallet_model.dart';
 
-class BranchWalletService {
-  String get _baseApi => '$baseUrl/branch-wallet';
+class CompanyWalletService {
+  String get _baseApi => '$baseUrl/company-wallet';
 
   Future<Map<String, String>> _getHeaders() async {
     final token = await TokenStorage.getAccessToken();
@@ -18,42 +18,28 @@ class BranchWalletService {
     };
   }
 
-  Future<BranchWalletView> getMyWallet() async {
+  Future<CompanyWalletSummary> getCompanyWalletSummary() async {
     final res = await http.get(
-      Uri.parse('$_baseApi/me'),
+      Uri.parse('$_baseApi/summary'),
       headers: await _getHeaders(),
     );
     final body = json.decode(res.body) as Map<String, dynamic>;
 
     if (res.statusCode == 200) {
-      return BranchWalletView.fromJson(body);
-    }
-
-    throw ApiException(_messageFromBody(body, 'Failed to load wallet'), res.statusCode);
-  }
-
-  Future<BranchWalletSummary> getMyWalletSummary() async {
-    final res = await http.get(
-      Uri.parse('$_baseApi/me/summary'),
-      headers: await _getHeaders(),
-    );
-    final body = json.decode(res.body) as Map<String, dynamic>;
-
-    if (res.statusCode == 200) {
-      return BranchWalletSummary.fromJson(body);
+      return CompanyWalletSummary.fromJson(body);
     }
 
     throw ApiException(
-      _messageFromBody(body, 'Failed to load wallet summary'),
+      _messageFromBody(body, 'Failed to load company wallet summary'),
       res.statusCode,
     );
   }
 
-  Future<List<BranchWalletTransaction>> getMyTransactions({
+  Future<List<CompanyWalletTransaction>> getCompanyTransactions({
     String? dateFrom,
     String? dateTo,
   }) async {
-    final uri = Uri.parse('$_baseApi/me/transactions').replace(
+    final uri = Uri.parse('$_baseApi/transactions').replace(
       queryParameters: {
         if (dateFrom != null && dateFrom.isNotEmpty) 'dateFrom': dateFrom,
         if (dateTo != null && dateTo.isNotEmpty) 'dateTo': dateTo,
@@ -67,11 +53,15 @@ class BranchWalletService {
 
     if (res.statusCode == 200 && body is List) {
       return body
-          .map((item) => BranchWalletTransaction.fromJson(item as Map<String, dynamic>))
+          .map(
+            (item) => CompanyWalletTransaction.fromJson(
+              item as Map<String, dynamic>,
+            ),
+          )
           .toList();
     }
 
-    throw ApiException('Failed to load wallet transactions', res.statusCode);
+    throw ApiException('Failed to load company wallet transactions', res.statusCode);
   }
 
   String _messageFromBody(Map<String, dynamic> body, String fallback) {

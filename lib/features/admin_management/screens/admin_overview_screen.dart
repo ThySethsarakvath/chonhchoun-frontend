@@ -6,9 +6,11 @@ import '../../../global/base_url.dart';
 import '../../auth/services/auth_service.dart';
 import '../models/admin_user_model.dart';
 import '../models/branch_model.dart';
+import '../models/company_wallet_model.dart';
 import '../models/revenue_sharing_model.dart';
 import '../services/admin_user_service.dart';
 import '../services/branch_service.dart';
+import '../services/company_wallet_service.dart';
 import '../services/revenue_sharing_service.dart';
 
 class AdminOverviewScreen extends StatefulWidget {
@@ -24,12 +26,20 @@ class _AdminOverviewScreenState extends State<AdminOverviewScreen> {
   final _userService = AdminUserService();
   final _branchService = BranchService();
   final _revenueSharingService = RevenueSharingService();
+  final _companyWalletService = CompanyWalletService();
 
   List<AdminUser> _users = [];
   List<Branch> _branches = [];
   RevenueSharingConfig? _revenueSharingConfig;
+  CompanyWalletSummary? _companyWalletSummary;
+  List<CompanyWalletTransaction> _companyTransactions = const [];
   bool _loading = true;
   String? _loadError;
+  String? _companyFinanceError;
+  DateTime _selectedMonth = DateTime(
+    DateTime.now().year,
+    DateTime.now().month,
+  );
 
   @override
   void initState() {
@@ -48,6 +58,9 @@ class _AdminOverviewScreenState extends State<AdminOverviewScreen> {
       final branches = await _branchService.getAllBranches();
       RevenueSharingConfig? revenueSharingConfig;
       String? revenueSharingError;
+      CompanyWalletSummary? companyWalletSummary;
+      List<CompanyWalletTransaction> companyTransactions = const [];
+      String? companyFinanceError;
 
       try {
         revenueSharingConfig = await _revenueSharingService.getCurrentConfig();
@@ -57,13 +70,34 @@ class _AdminOverviewScreenState extends State<AdminOverviewScreen> {
         revenueSharingError = e.toString().replaceFirst('Exception: ', '');
       }
 
+      try {
+        final monthRange = _selectedMonthRange;
+        final financeResults = await Future.wait([
+          _companyWalletService.getCompanyWalletSummary(),
+          _companyWalletService.getCompanyTransactions(
+            dateFrom: monthRange.start.toIso8601String(),
+            dateTo: monthRange.end.toIso8601String(),
+          ),
+        ]);
+        companyWalletSummary = financeResults[0] as CompanyWalletSummary;
+        companyTransactions =
+            financeResults[1] as List<CompanyWalletTransaction>;
+      } on ApiException catch (e) {
+        companyFinanceError = e.message;
+      } catch (e) {
+        companyFinanceError = e.toString().replaceFirst('Exception: ', '');
+      }
+
       if (!mounted) return;
 
       setState(() {
         _users = users;
         _branches = branches;
         _revenueSharingConfig = revenueSharingConfig;
+        _companyWalletSummary = companyWalletSummary;
+        _companyTransactions = companyTransactions;
         _loadError = revenueSharingError;
+        _companyFinanceError = companyFinanceError;
       });
     } on ApiException catch (e) {
       if (!mounted) return;
@@ -80,6 +114,94 @@ class _AdminOverviewScreenState extends State<AdminOverviewScreen> {
         setState(() => _loading = false);
       }
     }
+  }
+
+  _MonthRange get _selectedMonthRange {
+    final start = DateTime(_selectedMonth.year, _selectedMonth.month);
+    final end = DateTime(
+      _selectedMonth.year,
+      _selectedMonth.month + 1,
+    ).subtract(const Duration(milliseconds: 1));
+    return _MonthRange(start: start, end: end);
+  }
+
+  String _formatMonthLabel(DateTime value) {
+    const monthNames = <String>[
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December',
+    ];
+    return '${monthNames[value.month - 1]} ${value.year}';
+  }
+
+  List<DateTime> get _availableMonths {
+    final months = <DateTime>[];
+    final now = DateTime.now();
+    for (var offset = 0; offset < 12; offset += 1) {
+      months.add(DateTime(now.year, now.month - offset));
+    }
+    return months;
+  }
+
+  Future<void> _changeMonth(DateTime month) async {
+    setState(() => _selectedMonth = DateTime(month.year, month.month));
+    await _loadDashboard();
+  }
+
+  _AdminRevenueMetrics get _adminRevenueMetrics {
+    final totals = <String, double>{};
+    var grossRevenue = 0.0;
+    var companyIncome = 0.0;
+    var branchIncome = 0.0;
+
+    for (final transaction in _companyTransactions) {
+      if (transaction.status != 'POSTED') continue;
+
+      final sign = transaction.type == 'DEBIT' ? -1.0 : 1.0;
+      companyIncome += transaction.amount * sign;
+
+      if (transaction.totalPrice != null) {
+        grossRevenue += transaction.totalPrice! * sign;
+        branchIncome += (transaction.totalPrice! - transaction.amount) * sign;
+      }
+
+      final ticketKey = transaction.ticketNumber?.trim();
+      if (ticketKey != null && ticketKey.isNotEmpty) {
+        totals[ticketKey] = (totals[ticketKey] ?? 0) + sign;
+      }
+    }
+
+    final completedDeliveries = totals.values.where((value) => value > 0).length;
+
+    return _AdminRevenueMetrics(
+      grossRevenue: grossRevenue,
+      companyIncome: companyIncome,
+      branchIncome: branchIncome,
+      completedDeliveries: completedDeliveries,
+    );
+  }
+
+  String _money(double amount, String currency) {
+    return '$currency ${amount.toStringAsFixed(2)}';
+  }
+
+  String _dateTimeLabel(DateTime? value) {
+    if (value == null) return '-';
+    final local = value.toLocal();
+    final month = local.month.toString().padLeft(2, '0');
+    final day = local.day.toString().padLeft(2, '0');
+    final hour = local.hour.toString().padLeft(2, '0');
+    final minute = local.minute.toString().padLeft(2, '0');
+    return '${local.year}-$month-$day $hour:$minute';
   }
 
   Future<void> _showRevenueSharingDialog() async {
@@ -392,6 +514,19 @@ class _AdminOverviewScreenState extends State<AdminOverviewScreen> {
                     ),
                     const SizedBox(height: 20),
                   ],
+                  _AdminRevenueCard(
+                    selectedMonth: _selectedMonth,
+                    monthOptions: _availableMonths,
+                    onMonthChanged: _changeMonth,
+                    summary: _companyWalletSummary,
+                    metrics: _adminRevenueMetrics,
+                    error: _companyFinanceError,
+                    moneyFormatter: _money,
+                    monthFormatter: _formatMonthLabel,
+                    dateTimeFormatter: _dateTimeLabel,
+                    transactions: _companyTransactions,
+                  ),
+                  const SizedBox(height: 20),
                   Wrap(
                     spacing: 16,
                     runSpacing: 16,
@@ -536,6 +671,303 @@ class _AdminOverviewScreenState extends State<AdminOverviewScreen> {
     );
   }
 
+}
+
+class _AdminRevenueCard extends StatelessWidget {
+  const _AdminRevenueCard({
+    required this.selectedMonth,
+    required this.monthOptions,
+    required this.onMonthChanged,
+    required this.summary,
+    required this.metrics,
+    required this.error,
+    required this.moneyFormatter,
+    required this.monthFormatter,
+    required this.dateTimeFormatter,
+    required this.transactions,
+  });
+
+  final DateTime selectedMonth;
+  final List<DateTime> monthOptions;
+  final Future<void> Function(DateTime month) onMonthChanged;
+  final CompanyWalletSummary? summary;
+  final _AdminRevenueMetrics metrics;
+  final String? error;
+  final String Function(double amount, String currency) moneyFormatter;
+  final String Function(DateTime value) monthFormatter;
+  final String Function(DateTime? value) dateTimeFormatter;
+  final List<CompanyWalletTransaction> transactions;
+
+  @override
+  Widget build(BuildContext context) {
+    final currency = summary?.currency ?? 'USD';
+
+    return Container(
+      padding: const EdgeInsets.all(22),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.blueGrey.withOpacity(0.08),
+            blurRadius: 24,
+            offset: const Offset(0, 12),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Company Revenue Dashboard',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF1E3A5F),
+                      ),
+                    ),
+                    SizedBox(height: 4),
+                    Text(
+                      'Review company share, branch share, and total income by month.',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Color(0xFF64748B),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              SizedBox(
+                width: 220,
+                child: DropdownButtonFormField<DateTime>(
+                  value: selectedMonth,
+                  decoration: const InputDecoration(
+                    labelText: 'Month',
+                    border: OutlineInputBorder(),
+                    isDense: true,
+                  ),
+                  items: monthOptions
+                      .map(
+                        (month) => DropdownMenuItem<DateTime>(
+                          value: month,
+                          child: Text(monthFormatter(month)),
+                        ),
+                      )
+                      .toList(),
+                  onChanged: (month) {
+                    if (month != null) {
+                      onMonthChanged(month);
+                    }
+                  },
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 18),
+          if (error != null) ...[
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFFF7ED),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: const Color(0xFFFED7AA)),
+              ),
+              child: Text(
+                error!,
+                style: const TextStyle(
+                  fontSize: 13,
+                  color: Color(0xFF9A3412),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+          ],
+          Wrap(
+            spacing: 14,
+            runSpacing: 14,
+            children: [
+              _RulePill(
+                label: 'Total Revenue',
+                value: moneyFormatter(metrics.grossRevenue, currency),
+                color: const Color(0xFF1D4ED8),
+              ),
+              _RulePill(
+                label: 'Admin Income',
+                value: moneyFormatter(metrics.companyIncome, currency),
+                color: const Color(0xFF15803D),
+              ),
+              _RulePill(
+                label: 'Branch Income',
+                value: moneyFormatter(metrics.branchIncome, currency),
+                color: const Color(0xFF7C3AED),
+              ),
+              _RulePill(
+                label: 'Completed Deliveries',
+                value: '${metrics.completedDeliveries}',
+                color: const Color(0xFFB45309),
+              ),
+            ],
+          ),
+          const SizedBox(height: 18),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF8FAFC),
+              borderRadius: BorderRadius.circular(18),
+            ),
+            child: Text(
+              'Current company wallet balance: ${moneyFormatter(summary?.availableBalance ?? 0, currency)}. This report shows the selected month only and helps compare company income against the total ticket revenue handled during that month.',
+              style: const TextStyle(
+                fontSize: 13,
+                height: 1.5,
+                color: Color(0xFF475569),
+              ),
+            ),
+          ),
+          const SizedBox(height: 18),
+          const Text(
+            'Recent company revenue transactions',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+              color: Color(0xFF1E3A5F),
+            ),
+          ),
+          const SizedBox(height: 12),
+          if (transactions.isEmpty)
+            const Text(
+              'No company revenue transactions for the selected month.',
+              style: TextStyle(
+                fontSize: 13,
+                color: Color(0xFF64748B),
+              ),
+            )
+          else
+            ...transactions.take(6).map(
+              (transaction) => Container(
+                margin: const EdgeInsets.only(bottom: 10),
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF8FAFC),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: const Color(0xFFE2E8F0)),
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      width: 42,
+                      height: 42,
+                      decoration: BoxDecoration(
+                        color: (transaction.type == 'DEBIT'
+                                ? const Color(0xFFFEE2E2)
+                                : const Color(0xFFDCFCE7))
+                            .withOpacity(0.9),
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: Icon(
+                        transaction.type == 'DEBIT'
+                            ? Icons.call_made_rounded
+                            : Icons.call_received_rounded,
+                        color: transaction.type == 'DEBIT'
+                            ? const Color(0xFFB91C1C)
+                            : const Color(0xFF15803D),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            transaction.description,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFF0F172A),
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Ticket: ${transaction.ticketNumber ?? '-'} • ${transaction.status}',
+                            style: const TextStyle(
+                              color: Color(0xFF64748B),
+                            ),
+                          ),
+                          if (transaction.totalPrice != null) ...[
+                            const SizedBox(height: 4),
+                            Text(
+                              'Total revenue: ${moneyFormatter(transaction.totalPrice!, currency)} • Company share: ${transaction.revenueSharePercent ?? '-'}%',
+                              style: const TextStyle(
+                                color: Color(0xFF64748B),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Text(
+                          moneyFormatter(transaction.amount, currency),
+                          style: TextStyle(
+                            fontWeight: FontWeight.w700,
+                            color: transaction.type == 'DEBIT'
+                                ? const Color(0xFFB91C1C)
+                                : const Color(0xFF15803D),
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          dateTimeFormatter(transaction.createdAt),
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: Color(0xFF64748B),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _AdminRevenueMetrics {
+  const _AdminRevenueMetrics({
+    required this.grossRevenue,
+    required this.companyIncome,
+    required this.branchIncome,
+    required this.completedDeliveries,
+  });
+
+  final double grossRevenue;
+  final double companyIncome;
+  final double branchIncome;
+  final int completedDeliveries;
+}
+
+class _MonthRange {
+  const _MonthRange({
+    required this.start,
+    required this.end,
+  });
+
+  final DateTime start;
+  final DateTime end;
 }
 
 class _RevenueSharingCard extends StatelessWidget {
