@@ -68,7 +68,7 @@ class _OtpScreenState extends State<OtpScreen> {
   String get _timerLabel {
     final m = (_secondsLeft ~/ 60).toString().padLeft(2, '0');
     final s = (_secondsLeft % 60).toString().padLeft(2, '0');
-    return '$m:$s s';
+    return '$m:$s វិ.';
   }
 
   String get _otp => _controllers.map((c) => c.text).join();

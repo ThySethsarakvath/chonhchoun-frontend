@@ -45,7 +45,8 @@ class _ConversationsScreenState extends State<ConversationsScreen> {
         builder: (context, snap) {
           if (snap.connectionState == ConnectionState.waiting) {
             return const Center(
-                child: CircularProgressIndicator(color: AppColors.blue));
+              child: CircularProgressIndicator(color: AppColors.blue),
+            );
           }
           final items = snap.data ?? [];
           if (items.isEmpty) {
@@ -53,8 +54,10 @@ class _ConversationsScreenState extends State<ConversationsScreen> {
               children: const [
                 SizedBox(height: 120),
                 Center(
-                  child: Text('មិនមានការសន្ទនាទេ',
-                      style: TextStyle(color: Color(0xFF8BA4C8))),
+                  child: Text(
+                    'មិនមានការសន្ទនាទេ',
+                    style: TextStyle(color: Color(0xFF8BA4C8)),
+                  ),
                 ),
               ],
             );
@@ -88,9 +91,14 @@ class _ConversationsScreenState extends State<ConversationsScreen> {
         backgroundColor: Colors.white,
         elevation: 0,
         centerTitle: true,
-        title: const Text('ការឆ្លើយឆ្លង',
-            style: TextStyle(
-                color: AppColors.text, fontSize: 18, fontWeight: FontWeight.bold)),
+        title: const Text(
+          'ការឆ្លើយឆ្លង',
+          style: TextStyle(
+            color: AppColors.text,
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
       ),
       body: body,
     );
@@ -110,12 +118,32 @@ class _ConversationTile extends StatelessWidget {
         backgroundColor: AppColors.softBlue,
         child: Icon(Icons.local_shipping_rounded, color: AppColors.blue),
       ),
-      title: Text(conversation.peerName,
-          style: const TextStyle(
-              fontWeight: FontWeight.w700, color: AppColors.text)),
-      subtitle: Text('${conversation.trackingNumber} • ${conversation.status}',
-          style: const TextStyle(fontSize: 12, color: Color(0xFF8BA4C8))),
+      title: Text(
+        conversation.peerName,
+        style: const TextStyle(
+          fontWeight: FontWeight.w700,
+          color: AppColors.text,
+        ),
+      ),
+      subtitle: Text(
+        '${conversation.trackingNumber} • ${_conversationStatusKhmer(conversation.status)}',
+        style: const TextStyle(fontSize: 12, color: Color(0xFF8BA4C8)),
+      ),
       trailing: const Icon(Icons.chevron_right, color: Color(0xFFB0BEC5)),
     );
   }
+}
+
+String _conversationStatusKhmer(String status) {
+  return switch (status.toUpperCase()) {
+    'PENDING' || 'SEARCHING' => 'កំពុងរង់ចាំ',
+    'ACCEPTED' => 'បានទទួលយក',
+    'ARRIVED_AT_PICKUP' => 'បានមកដល់ទីតាំងទទួល',
+    'IN_TRANSIT' => 'កំពុងដឹកជញ្ជូន',
+    'ARRIVED_AT_DROPOFF' => 'បានមកដល់ទីតាំងប្រគល់',
+    'DELIVERED' || 'COMPLETED' => 'បានដឹកជញ្ជូន',
+    'CANCELLED' || 'CANCELED' => 'បានបោះបង់',
+    'FAILED' => 'មិនបានសម្រេច',
+    _ => 'កំពុងដំណើរការ',
+  };
 }

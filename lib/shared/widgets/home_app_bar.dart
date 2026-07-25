@@ -29,7 +29,7 @@ class HomeAppBar extends StatelessWidget {
       child: Row(
         children: [
           _HeaderAction(
-            tooltip: 'Open navigation menu',
+            tooltip: 'បើកម៉ឺនុយរុករក',
             onTap: onMenuTap,
             child: const Icon(
               Icons.menu_rounded,
@@ -71,7 +71,7 @@ class HomeAppBar extends StatelessWidget {
           ),
           Semantics(
             button: true,
-            label: 'Open profile',
+            label: 'បើកគណនី',
             child: InkResponse(
               onTap: onProfileTap,
               radius: 28,

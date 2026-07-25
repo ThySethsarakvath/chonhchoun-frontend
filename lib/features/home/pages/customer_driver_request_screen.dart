@@ -83,15 +83,17 @@ class _CustomerDriverRequestScreenState
       ]);
 
       if (!mounted) return;
-      final branches =
-          (results[0] as List<Branch>).where((branch) => branch.isActive).toList();
+      final branches = (results[0] as List<Branch>)
+          .where((branch) => branch.isActive)
+          .toList();
       final profile = results[1] as UserProfile;
 
       setState(() {
         _branches = branches;
         _profile = profile;
-        _selectedBranchId =
-            branches.length == 1 ? branches.first.id : _selectedBranchId;
+        _selectedBranchId = branches.length == 1
+            ? branches.first.id
+            : _selectedBranchId;
         _loading = false;
       });
     } catch (e) {
@@ -99,7 +101,7 @@ class _CustomerDriverRequestScreenState
       setState(() => _loading = false);
       await showErrorDialog(
         context,
-        e.toString().replaceFirst('Exception: ', ''),
+        'មិនអាចផ្ទុកព័ត៌មានសម្រាប់ពាក្យសុំបានទេ។ សូមព្យាយាមម្ដងទៀត។',
       );
       if (mounted) Navigator.pop(context);
     }
@@ -175,8 +177,8 @@ class _CustomerDriverRequestScreenState
         vehicleType: _usesOwnVehicle ? _ownVehicleType : null,
         plateNumber:
             _showsPlateNumberField && _plateNumberCtrl.text.trim().isNotEmpty
-                ? _plateNumberCtrl.text.trim()
-                : null,
+            ? _plateNumberCtrl.text.trim()
+            : null,
         avatarFile: _avatarFile,
         cvFile: _cvFile!,
         nationalIdFile: _nationalIdFile!,
@@ -192,10 +194,7 @@ class _CustomerDriverRequestScreenState
       );
     } catch (e) {
       if (!mounted) return;
-      showErrorDialog(
-        context,
-        e.toString().replaceFirst('Exception: ', ''),
-      );
+      showErrorDialog(context, 'មិនអាចផ្ញើពាក្យសុំបានទេ។ សូមព្យាយាមម្ដងទៀត។');
     } finally {
       if (mounted) setState(() => _submitting = false);
     }
@@ -241,9 +240,7 @@ class _CustomerDriverRequestScreenState
                     const SizedBox(height: 16),
                     _InfoCard(profile: _profile),
                     const SizedBox(height: 16),
-                    _RouteGuideCard(
-                      usesOwnVehicle: _usesOwnVehicle,
-                    ),
+                    _RouteGuideCard(usesOwnVehicle: _usesOwnVehicle),
                     const SizedBox(height: 16),
                     _SectionCard(
                       title: 'ព័ត៌មានសំណើ',
@@ -292,7 +289,9 @@ class _CustomerDriverRequestScreenState
                             const SizedBox(height: 12),
                             DropdownButtonFormField<String>(
                               value: _ownVehicleType,
-                              decoration: _inputDecoration('ជ្រើសរើសប្រភេទយានជំនិះ'),
+                              decoration: _inputDecoration(
+                                'ជ្រើសរើសប្រភេទយានជំនិះ',
+                              ),
                               items: ownVehicleTypeOptions
                                   .map(
                                     (option) => DropdownMenuItem<String>(
@@ -384,7 +383,8 @@ class _CustomerDriverRequestScreenState
                             const SizedBox(height: 12),
                             _DocumentTile(
                               title: 'ប័ណ្ណបើកបរ',
-                              subtitle: _fileName(_drivingLicenseFile) ??
+                              subtitle:
+                                  _fileName(_drivingLicenseFile) ??
                                   'ជ្រើសរើសឯកសារ',
                               helperText: _usesOwnVehicle
                                   ? 'តម្រូវសម្រាប់អ្នកដែលប្រើឡានផ្ទាល់ខ្លួន។'
@@ -397,7 +397,8 @@ class _CustomerDriverRequestScreenState
                                   'png',
                                   'webp',
                                 ],
-                                onSelected: (file) => _drivingLicenseFile = file,
+                                onSelected: (file) =>
+                                    _drivingLicenseFile = file,
                               ),
                             ),
                           ],
@@ -446,9 +447,7 @@ class _CustomerDriverRequestScreenState
 class _RouteGuideCard extends StatelessWidget {
   final bool usesOwnVehicle;
 
-  const _RouteGuideCard({
-    required this.usesOwnVehicle,
-  });
+  const _RouteGuideCard({required this.usesOwnVehicle});
 
   @override
   Widget build(BuildContext context) {
@@ -464,7 +463,7 @@ class _RouteGuideCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
-            'Choose your driver path',
+            'ជ្រើសរើសប្រភេទអ្នកបើកបរ',
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w800,
@@ -474,16 +473,15 @@ class _RouteGuideCard extends StatelessWidget {
           const SizedBox(height: 12),
           _RouteGuideLine(
             active: usesOwnVehicle,
-            title: 'City Express motorbike',
-            description:
-                'Use your own motorbike for in-city delivery. This is the simple rider path.',
+            title: 'អ្នកបើកបរម៉ូតូដឹកជញ្ជូនក្នុងក្រុង',
+            description: 'ប្រើម៉ូតូផ្ទាល់ខ្លួនសម្រាប់ការដឹកជញ្ជូនក្នុងក្រុង។',
           ),
           const SizedBox(height: 10),
           _RouteGuideLine(
             active: !usesOwnVehicle,
-            title: 'Branch logistics truck driver',
+            title: 'អ្នកបើកបររថយន្តដឹកទំនិញរបស់សាខា',
             description:
-                'Apply to a branch first. The branch owner must approve you before assigning a branch truck.',
+                'ដាក់ពាក្យទៅសាខាជាមុន។ ម្ចាស់សាខាត្រូវអនុម័ត មុនពេលប្រគល់រថយន្តរបស់សាខាឱ្យអ្នក។',
           ),
         ],
       ),
@@ -566,10 +564,7 @@ class _HeroCard extends StatelessWidget {
   final VoidCallback onTap;
   final ImageProvider<Object>? avatarProvider;
 
-  const _HeroCard({
-    required this.onTap,
-    required this.avatarProvider,
-  });
+  const _HeroCard({required this.onTap, required this.avatarProvider});
 
   @override
   Widget build(BuildContext context) {
@@ -699,10 +694,7 @@ class _SectionCard extends StatelessWidget {
   final String title;
   final Widget child;
 
-  const _SectionCard({
-    required this.title,
-    required this.child,
-  });
+  const _SectionCard({required this.title, required this.child});
 
   @override
   Widget build(BuildContext context) {
@@ -737,10 +729,7 @@ class _ReadOnlyField extends StatelessWidget {
   final String label;
   final String value;
 
-  const _ReadOnlyField({
-    required this.label,
-    required this.value,
-  });
+  const _ReadOnlyField({required this.label, required this.value});
 
   @override
   Widget build(BuildContext context) {
@@ -899,10 +888,7 @@ class _DocumentTile extends StatelessWidget {
           children: [
             Row(
               children: [
-                const Icon(
-                  Icons.upload_file_rounded,
-                  color: _requestAccent,
-                ),
+                const Icon(Icons.upload_file_rounded, color: _requestAccent),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(

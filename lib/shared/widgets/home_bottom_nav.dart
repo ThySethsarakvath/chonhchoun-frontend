@@ -60,9 +60,9 @@ class HomeBottomNav extends StatelessWidget {
               top: 0,
               child: Semantics(
                 button: true,
-                label: 'Scan QR code',
+                label: 'ស្កេនកូដ QR',
                 child: Tooltip(
-                  message: 'Scan QR code',
+                  message: 'ស្កេនកូដ QR',
                   child: Material(
                     color: AppColors.blueDark,
                     elevation: 8,

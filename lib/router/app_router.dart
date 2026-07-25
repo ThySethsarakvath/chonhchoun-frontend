@@ -20,23 +20,24 @@ import '../screens/customer/setting_screen.dart';
 import '../screens/customer/profile_screen.dart';
 import '../screens/driver/driver_workspace_screen.dart';
 import '../features/home/pages/customer_driver_request_screen.dart';
+
 abstract class AppRoutes {
   AppRoutes._();
 
   static const String adminDashboard = '/admin';
-  static const String landing       = '/';
-  static const String onboarding    = '/onboarding';
-  static const String login         = '/login';
-  static const String register      = '/register';
+  static const String landing = '/';
+  static const String onboarding = '/onboarding';
+  static const String login = '/login';
+  static const String register = '/register';
   static const String validateEmail = '/validate-email';
-  static const String otp           = '/otp';
-  static const String setPassword   = '/set-password';
-  static const String avatarUpload   = '/avatar-upload';
-  static const String profile       = '/profile';
-  static const String settings      = '/settings';
-  static const String customer      = '/home';
-  static const String branchOwner   = '/branch-owner';
-  static const String driver        = '/driver';
+  static const String otp = '/otp';
+  static const String setPassword = '/set-password';
+  static const String avatarUpload = '/avatar-upload';
+  static const String profile = '/profile';
+  static const String settings = '/settings';
+  static const String customer = '/home';
+  static const String branchOwner = '/branch-owner';
+  static const String driver = '/driver';
   static const String driverApplication = '/driver-application';
   static const String becomeDriver = '/become-driver';
 
@@ -107,7 +108,7 @@ class AppRouter {
         return _fade(const LandingPage());
       case AppRoutes.onboarding:
         return _fade(const OnboardingScreen());
-      
+
       case AppRoutes.login:
         return _slide(const LoginScreen());
       case AppRoutes.register:
@@ -126,10 +127,12 @@ class AppRouter {
         return _slide(AvatarUploadScreen(args: args));
       case AppRoutes.profile:
         final args = settings.arguments as ProfileArgs?;
-        return _fade(ProfileScreen(
-          profile: args?.profile,
-          source: args?.source ?? ProfileSource.home,
-        ));
+        return _fade(
+          ProfileScreen(
+            profile: args?.profile,
+            source: args?.source ?? ProfileSource.home,
+          ),
+        );
       case AppRoutes.settings:
         return _fade(const SettingsScreen());
       case AppRoutes.customer:
@@ -139,13 +142,13 @@ class AppRouter {
       case AppRoutes.branchOwner:
         return _fade(const BranchOwnerMainScreen());
       case AppRoutes.driver:
-         return _fade(const DriverWorkspaceScreen());
+        return _fade(const DriverWorkspaceScreen());
       case AppRoutes.driverApplication:
         return _slide(const DriverApplicationScreen());
       case AppRoutes.becomeDriver:
         return _slide(const CustomerDriverRequestScreen());
       default:
-        return _fade(_stub('404 — Page not found'));
+        return _fade(_stub('404 — រកមិនឃើញទំព័រ'));
     }
   }
 
@@ -162,8 +165,10 @@ class AppRouter {
     return PageRouteBuilder(
       pageBuilder: (_, __, ___) => page,
       transitionsBuilder: (_, anim, __, child) {
-        final tween = Tween(begin: const Offset(1, 0), end: Offset.zero)
-            .chain(CurveTween(curve: Curves.easeInOut));
+        final tween = Tween(
+          begin: const Offset(1, 0),
+          end: Offset.zero,
+        ).chain(CurveTween(curve: Curves.easeInOut));
         return SlideTransition(position: anim.drive(tween), child: child);
       },
       transitionDuration: const Duration(milliseconds: 300),
@@ -171,7 +176,7 @@ class AppRouter {
   }
 
   static Widget _stub(String name) => Scaffold(
-        appBar: AppBar(title: Text(name)),
-        body: Center(child: Text(name, style: const TextStyle(fontSize: 18))),
-      );
+    appBar: AppBar(title: Text(name)),
+    body: Center(child: Text(name, style: const TextStyle(fontSize: 18))),
+  );
 }

@@ -59,7 +59,10 @@ class _AvatarUploadScreenState extends State<AvatarUploadScreen> {
       if (mounted) _goHome();
     } catch (e) {
       if (mounted) {
-        showErrorDialog(context, e.toString().replaceFirst('Exception: ', ''));
+        showErrorDialog(
+          context,
+          'មិនអាចបញ្ចូលរូបប្រវត្តិរូបបានទេ។ សូមព្យាយាមម្ដងទៀត។',
+        );
       }
     } finally {
       if (mounted) setState(() => _uploading = false);
@@ -71,17 +74,16 @@ class _AvatarUploadScreenState extends State<AvatarUploadScreen> {
   Future<void> _goHome() async {
     setState(() => _uploading = true);
     try {
-      final profile = await _userService.getMe(accessToken: widget.args.accessToken);
+      final profile = await _userService.getMe(
+        accessToken: widget.args.accessToken,
+      );
       if (mounted) {
         final route = AppRoutes.homeForRole(profile.role.toLowerCase());
-        Navigator.pushNamedAndRemoveUntil(
-          context,
-          route,
-          (_) => false,
-        );
+        Navigator.pushNamedAndRemoveUntil(context, route, (_) => false);
         return;
       }
-    } catch (_) {} finally {
+    } catch (_) {
+    } finally {
       if (mounted) setState(() => _uploading = false);
     }
 

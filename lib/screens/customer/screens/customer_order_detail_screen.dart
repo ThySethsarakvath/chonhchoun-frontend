@@ -14,6 +14,7 @@ import '../../../shared/data/map_data.dart';
 import '../../../shared/utils/route_motion.dart';
 import '../../../global/base_url.dart';
 import '../../../features/auth/tokens/token_storage.dart';
+import '../customer_khmer.dart';
 
 class CustomerOrderDetailScreen extends StatefulWidget {
   const CustomerOrderDetailScreen({
@@ -41,10 +42,14 @@ class _CustomerOrderDetailScreenState extends State<CustomerOrderDetailScreen>
     with SingleTickerProviderStateMixin {
   CustomerOrder? _currentOrderNullable;
   CustomerOrder get _currentOrder => _currentOrderNullable!;
+  bool get _isTerminalHistory => {
+    OrderStatus.delivered,
+    OrderStatus.canceled,
+    OrderStatus.failed,
+  }.contains(_currentOrder.status);
   bool get _recipientTrackingUnlocked => {
     OrderStatus.inTransit,
     OrderStatus.arrivedAtDropoff,
-    OrderStatus.delivered,
   }.contains(_currentOrder.status);
   List<LatLng> _routePoints = [];
   bool _isLoadingRoute = true;
@@ -134,13 +139,13 @@ class _CustomerOrderDetailScreenState extends State<CustomerOrderDetailScreen>
         });
         _fetchRoute();
       } else {
-        throw Exception('Package not found');
+        throw Exception('រកមិនឃើញកញ្ចប់ទំនិញ');
       }
     } catch (e) {
       setState(() => _isLoadingPackage = false);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to load tracking details: $e')),
+          SnackBar(content: Text('មិនអាចផ្ទុកព័ត៌មានតាមដានបានទេ។')),
         );
       }
     }
@@ -209,8 +214,8 @@ class _CustomerOrderDetailScreenState extends State<CustomerOrderDetailScreen>
     if (token == null || token.isEmpty) return;
     final link = 'chonhchoun:recipient:$token';
     Share.share(
-      'Track this Chonhchoun express delivery in the app:\n$link',
-      subject: 'Chonhchoun Delivery Tracking',
+      'តាមដានការដឹកជញ្ជូនរហ័ស ChonhChoun នេះក្នុងកម្មវិធី៖\n$link',
+      subject: 'ការតាមដានការដឹកជញ្ជូន ChonhChoun',
     );
   }
 
@@ -220,7 +225,7 @@ class _CustomerOrderDetailScreenState extends State<CustomerOrderDetailScreen>
     final link = 'chonhchoun:recipient:$token';
     Clipboard.setData(ClipboardData(text: link));
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Tracking link copied to clipboard')),
+      const SnackBar(content: Text('បានចម្លងតំណតាមដានទៅក្ដារតម្បៀតខ្ទាស់')),
     );
   }
 
@@ -231,7 +236,7 @@ class _CustomerOrderDetailScreenState extends State<CustomerOrderDetailScreen>
         backgroundColor: AppColors.surface,
         appBar: AppBar(
           title: const Text(
-            "Loading Delivery...",
+            "កំពុងផ្ទុកការដឹកជញ្ជូន...",
             style: TextStyle(fontWeight: FontWeight.bold),
           ),
           backgroundColor: Colors.white,
@@ -247,7 +252,7 @@ class _CustomerOrderDetailScreenState extends State<CustomerOrderDetailScreen>
       backgroundColor: AppColors.surface,
       appBar: AppBar(
         title: const Text(
-          "Delivery Summary",
+          "សេចក្ដីសង្ខេបការដឹកជញ្ជូន",
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
         backgroundColor: Colors.white,
@@ -258,7 +263,7 @@ class _CustomerOrderDetailScreenState extends State<CustomerOrderDetailScreen>
             ? [
                 IconButton(
                   icon: const Icon(Icons.share_rounded),
-                  tooltip: 'Share tracking link',
+                  tooltip: 'ចែករំលែកតំណតាមដាន',
                   onPressed: _shareTrackingLink,
                 ),
               ]
@@ -269,13 +274,17 @@ class _CustomerOrderDetailScreenState extends State<CustomerOrderDetailScreen>
         child: Column(
           children: [
             _buildStatusHeader(),
-            const SizedBox(height: 16),
-            _buildLiveMap(),
+            if (!_isTerminalHistory) ...[
+              const SizedBox(height: 16),
+              _buildLiveMap(),
+            ],
             const SizedBox(height: 16),
             _buildJourneyTimeline(),
             const SizedBox(height: 16),
             if (_recipientTrackingUnlocked) _buildShareCard(),
-            if (!widget.fromQR && (widget.allowCancel ?? true)) ...[
+            if (!widget.fromQR &&
+                (widget.allowCancel ?? true) &&
+                _currentOrder.status == OrderStatus.arrivedAtPickup) ...[
               const SizedBox(height: 16),
               _buildQRCode(),
             ],
@@ -330,11 +339,11 @@ class _CustomerOrderDetailScreenState extends State<CustomerOrderDetailScreen>
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text(
-                  "Order Status",
+                  "ស្ថានភាពការដឹកជញ្ជូន",
                   style: TextStyle(color: AppColors.muted, fontSize: 12),
                 ),
                 Text(
-                  _currentOrder.statusText,
+                  customerOrderStatusKhmer(_currentOrder),
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 16,
@@ -509,7 +518,7 @@ class _CustomerOrderDetailScreenState extends State<CustomerOrderDetailScreen>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
-            'Delivery Progress',
+            'ដំណើរការដឹកជញ្ជូន',
             style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
           ),
           const SizedBox(height: 16),
@@ -530,7 +539,7 @@ class _CustomerOrderDetailScreenState extends State<CustomerOrderDetailScreen>
     final isPm = rawHour >= 12;
     final hour12 = rawHour % 12 == 0 ? 12 : rawHour % 12;
     final minute = khmerDt.minute.toString().padLeft(2, '0');
-    final period = isPm ? 'PM' : 'AM';
+    final period = isPm ? 'ល្ងាច' : 'ព្រឹក';
     return '$hour12:$minute $period';
   }
 
@@ -570,7 +579,7 @@ class _CustomerOrderDetailScreenState extends State<CustomerOrderDetailScreen>
 
     return [
       _CheckpointStep(
-        label: 'Pickup',
+        label: 'ទទួលទំនិញ',
         sublabel: _currentOrder.pickupAddress,
         isCompleted: true,
         isActive: s == OrderStatus.searching,
@@ -579,8 +588,8 @@ class _CustomerOrderDetailScreenState extends State<CustomerOrderDetailScreen>
         timeString: createdStr,
       ),
       _CheckpointStep(
-        label: 'Order Placed',
-        sublabel: 'Waiting for a driver',
+        label: 'បានបង្កើតការដឹកជញ្ជូន',
+        sublabel: 'កំពុងរង់ចាំអ្នកបើកបរ',
         isCompleted: true,
         isActive: s == OrderStatus.searching,
         icon: Icons.receipt_long_rounded,
@@ -588,10 +597,10 @@ class _CustomerOrderDetailScreenState extends State<CustomerOrderDetailScreen>
         timeString: createdStr,
       ),
       _CheckpointStep(
-        label: 'Driver Accepted',
+        label: 'អ្នកបើកបរបានទទួលយក',
         sublabel: _currentOrder.driverName != null
-            ? 'Driver: ${_currentOrder.driverName}'
-            : 'A driver is on the way to you',
+            ? 'អ្នកបើកបរ៖ ${_currentOrder.driverName}'
+            : 'អ្នកបើកបរកំពុងធ្វើដំណើរមកកាន់អ្នក',
         isCompleted: done(OrderStatus.accepted),
         isActive: s == OrderStatus.accepted,
         icon: Icons.person_pin_circle_rounded,
@@ -599,8 +608,8 @@ class _CustomerOrderDetailScreenState extends State<CustomerOrderDetailScreen>
         timeString: acceptedTime,
       ),
       _CheckpointStep(
-        label: 'Driver at Pickup',
-        sublabel: 'Show the sender QR to start delivery',
+        label: 'អ្នកបើកបរមកដល់ទីតាំងទទួល',
+        sublabel: 'បង្ហាញ QR របស់អ្នកផ្ញើ ដើម្បីចាប់ផ្ដើមការដឹកជញ្ជូន',
         isCompleted: done(OrderStatus.arrivedAtPickup),
         isActive: s == OrderStatus.arrivedAtPickup,
         icon: Icons.qr_code_rounded,
@@ -608,8 +617,8 @@ class _CustomerOrderDetailScreenState extends State<CustomerOrderDetailScreen>
         timeString: null,
       ),
       _CheckpointStep(
-        label: 'Package in Transit',
-        sublabel: 'Driver is following the suggested route',
+        label: 'កញ្ចប់កំពុងដឹកជញ្ជូន',
+        sublabel: 'អ្នកបើកបរកំពុងធ្វើដំណើរតាមផ្លូវដែលបានណែនាំ',
         isCompleted: done(OrderStatus.inTransit),
         isActive: s == OrderStatus.inTransit,
         icon: Icons.inventory_2_rounded,
@@ -617,8 +626,8 @@ class _CustomerOrderDetailScreenState extends State<CustomerOrderDetailScreen>
         timeString: null,
       ),
       _CheckpointStep(
-        label: 'Driver at Recipient',
-        sublabel: 'Recipient QR confirmation is required',
+        label: 'អ្នកបើកបរមកដល់អ្នកទទួល',
+        sublabel: 'ត្រូវការការបញ្ជាក់ដោយ QR របស់អ្នកទទួល',
         isCompleted: done(OrderStatus.arrivedAtDropoff),
         isActive: s == OrderStatus.arrivedAtDropoff,
         icon: Icons.qr_code_scanner_rounded,
@@ -626,7 +635,7 @@ class _CustomerOrderDetailScreenState extends State<CustomerOrderDetailScreen>
         timeString: null,
       ),
       _CheckpointStep(
-        label: 'Drop-off',
+        label: 'ប្រគល់ទំនិញ',
         sublabel: _currentOrder.dropoffAddress,
         isCompleted: done(OrderStatus.delivered),
         isActive: s == OrderStatus.delivered,
@@ -721,7 +730,7 @@ class _CustomerOrderDetailScreenState extends State<CustomerOrderDetailScreen>
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Text(
-                            'Now',
+                            'ឥឡូវនេះ',
                             style: TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.bold,
@@ -769,7 +778,7 @@ class _CustomerOrderDetailScreenState extends State<CustomerOrderDetailScreen>
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Text(
-                      'Share with Recipient',
+                      'ចែករំលែកជាមួយអ្នកទទួល',
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 14,
@@ -777,8 +786,8 @@ class _CustomerOrderDetailScreenState extends State<CustomerOrderDetailScreen>
                     ),
                     Text(
                       token == null
-                          ? 'Recipient tracking is being prepared'
-                          : 'Tracking unlocks after pickup verification',
+                          ? 'កំពុងរៀបចំការតាមដានសម្រាប់អ្នកទទួល'
+                          : 'ការតាមដាននឹងបើកបន្ទាប់ពីបញ្ជាក់ការទទួលកញ្ចប់',
                       style: const TextStyle(
                         fontSize: 11,
                         color: AppColors.muted,
@@ -792,13 +801,13 @@ class _CustomerOrderDetailScreenState extends State<CustomerOrderDetailScreen>
                   IconButton(
                     icon: const Icon(Icons.copy_rounded, size: 18),
                     color: AppColors.muted,
-                    tooltip: 'Copy link',
+                    tooltip: 'ចម្លងតំណ',
                     onPressed: token == null ? null : _copyTrackingLink,
                   ),
                   IconButton(
                     icon: const Icon(Icons.share_rounded, size: 18),
                     color: AppColors.blue,
-                    tooltip: 'Share',
+                    tooltip: 'ចែករំលែក',
                     onPressed: token == null ? null : _shareTrackingLink,
                   ),
                 ],
@@ -810,7 +819,7 @@ class _CustomerOrderDetailScreenState extends State<CustomerOrderDetailScreen>
             const Divider(),
             const SizedBox(height: 8),
             const Text(
-              'Recipient can scan this code in the Chonhchoun app',
+              'អ្នកទទួលអាចស្កេនកូដនេះក្នុងកម្មវិធី ChonhChoun',
               style: TextStyle(color: AppColors.muted, fontSize: 12),
             ),
             const SizedBox(height: 10),
@@ -831,12 +840,12 @@ class _CustomerOrderDetailScreenState extends State<CustomerOrderDetailScreen>
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Text(
-            "Pickup Verification QR",
+            "QR សម្រាប់បញ្ជាក់ការទទួលកញ្ចប់",
             style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
           ),
           const SizedBox(height: 8),
           Text(
-            "Show this code to the assigned driver to start delivery.",
+            "បង្ហាញកូដនេះដល់អ្នកបើកបរ ដើម្បីចាប់ផ្ដើមការដឹកជញ្ជូន។",
             textAlign: TextAlign.center,
             style: const TextStyle(color: AppColors.muted, fontSize: 12),
           ),
@@ -859,24 +868,24 @@ class _CustomerOrderDetailScreenState extends State<CustomerOrderDetailScreen>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
-            "Package Information",
+            "ព័ត៌មានកញ្ចប់ទំនិញ",
             style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
           ),
           const Divider(height: 24),
-          _buildInfoItem("Item Name", _currentOrder.itemName),
+          _buildInfoItem("ឈ្មោះទំនិញ", _currentOrder.itemName),
           _buildInfoItem(
-            "Details",
-            "${_currentOrder.typeText} • ${_currentOrder.quantity} package(s) • "
-                "Size ${_currentOrder.size.name} • ${_currentOrder.weight}kg",
+            "ព័ត៌មានលម្អិត",
+            "${customerItemTypeKhmer(_currentOrder.itemType)} • ${_currentOrder.quantity} កញ្ចប់ • "
+                "ទំហំ ${_currentOrder.size.name} • ${_currentOrder.weight} គីឡូក្រាម",
           ),
           _buildInfoItem(
-            "Service",
+            "សេវាកម្ម",
             _currentOrder.serviceType == DeliveryServiceType.warehouse
-                ? _currentOrder.serviceName
-                : _currentOrder.vehicleText,
+                ? customerServiceKhmer(_currentOrder.serviceType)
+                : customerVehicleKhmer(_currentOrder.vehicleType),
           ),
           if (_currentOrder.itemHandling)
-            _buildInfoItem("Add-ons", "Careful Item Handling"),
+            _buildInfoItem("សេវាបន្ថែម", "ថែរក្សាទំនិញដោយប្រុងប្រយ័ត្ន"),
         ],
       ),
     );
@@ -888,21 +897,21 @@ class _CustomerOrderDetailScreenState extends State<CustomerOrderDetailScreen>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
-            "Dropoff Details",
+            "ព័ត៌មានទីតាំងប្រគល់",
             style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
           ),
           const Divider(height: 24),
           _buildInfoItem(
-            "Contact Name",
-            _currentOrder.dropoffContactName ?? "N/A",
+            "ឈ្មោះអ្នកទទួល",
+            _currentOrder.dropoffContactName ?? "មិនមាន",
           ),
           _buildInfoItem(
-            "Contact Number",
-            _currentOrder.dropoffContactNumber ?? "N/A",
+            "លេខទូរសព្ទ",
+            _currentOrder.dropoffContactNumber ?? "មិនមាន",
           ),
           _buildInfoItem(
-            "Note to Driver",
-            _currentOrder.noteToDriver ?? "No note",
+            "កំណត់សម្គាល់ជូនអ្នកបើកបរ",
+            _currentOrder.noteToDriver ?? "គ្មានកំណត់សម្គាល់",
           ),
         ],
       ),
@@ -919,7 +928,7 @@ class _CustomerOrderDetailScreenState extends State<CustomerOrderDetailScreen>
             children: [
               const Expanded(
                 child: Text(
-                  "Assigned Driver",
+                  "អ្នកបើកបរដែលបានកំណត់",
                   style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                 ),
               ),
@@ -932,7 +941,7 @@ class _CustomerOrderDetailScreenState extends State<CustomerOrderDetailScreen>
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
-                  isOnline ? "Online" : "Offline",
+                  isOnline ? "អនឡាញ" : "ក្រៅបណ្ដាញ",
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.bold,
@@ -943,8 +952,11 @@ class _CustomerOrderDetailScreenState extends State<CustomerOrderDetailScreen>
             ],
           ),
           const Divider(height: 24),
-          _buildInfoItem("Driver Name", _currentOrder.driverName ?? "N/A"),
-          _buildInfoItem("Phone Number", _currentOrder.driverPhone ?? "N/A"),
+          _buildInfoItem(
+            "ឈ្មោះអ្នកបើកបរ",
+            _currentOrder.driverName ?? "មិនមាន",
+          ),
+          _buildInfoItem("លេខទូរសព្ទ", _currentOrder.driverPhone ?? "មិនមាន"),
         ],
       ),
     );
@@ -956,26 +968,26 @@ class _CustomerOrderDetailScreenState extends State<CustomerOrderDetailScreen>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
-            "Billing Details",
+            "ព័ត៌មានការបង់ប្រាក់",
             style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
           ),
           const Divider(height: 24),
           _buildInfoItem(
-            "Payment Method",
+            "វិធីបង់ប្រាក់",
             _currentOrder.serviceType == DeliveryServiceType.warehouse
                 ? (_currentOrder.paymentMethod == PaymentMethod.cash
-                      ? "Sender Pay"
-                      : "Receiver Pay")
+                      ? "អ្នកផ្ញើបង់"
+                      : "អ្នកទទួលបង់")
                 : (_currentOrder.paymentMethod == PaymentMethod.cash
-                      ? "Cash on Delivery"
-                      : "Online Payment"),
+                      ? "បង់ជាសាច់ប្រាក់ពេលទទួល"
+                      : "បង់ប្រាក់តាមអនឡាញ"),
           ),
           const SizedBox(height: 8),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               const Text(
-                "Total Amount",
+                "ចំនួនទឹកប្រាក់សរុប",
                 style: TextStyle(fontWeight: FontWeight.bold),
               ),
               Text(
@@ -1010,7 +1022,7 @@ class _CustomerOrderDetailScreenState extends State<CustomerOrderDetailScreen>
           Icon(Icons.close_rounded, size: 20),
           SizedBox(width: 10),
           Text(
-            "Cancel Delivery",
+            "បោះបង់ការដឹកជញ្ជូន",
             style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
           ),
         ],
@@ -1020,12 +1032,12 @@ class _CustomerOrderDetailScreenState extends State<CustomerOrderDetailScreen>
 
   void _showCancelDialog() {
     final List<String> reasons = [
-      "Changed my mind",
-      "Selected wrong location",
-      "Item not ready",
-      "Too expensive",
-      "Found another provider",
-      "Others",
+      "ប្ដូរចិត្ត",
+      "ជ្រើសរើសទីតាំងខុស",
+      "ទំនិញមិនទាន់រួចរាល់",
+      "តម្លៃថ្លៃពេក",
+      "បានរកឃើញអ្នកផ្ដល់សេវាផ្សេង",
+      "ផ្សេងៗ",
     ];
     showModalBottomSheet(
       context: context,
@@ -1041,12 +1053,12 @@ class _CustomerOrderDetailScreenState extends State<CustomerOrderDetailScreen>
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
-              "Cancel Delivery",
+              "បោះបង់ការដឹកជញ្ជូន",
               style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
             const Text(
-              "Please select a reason for cancellation",
+              "សូមជ្រើសរើសមូលហេតុនៃការបោះបង់",
               style: TextStyle(color: AppColors.muted),
             ),
             const SizedBox(height: 16),
@@ -1082,23 +1094,25 @@ class _CustomerOrderDetailScreenState extends State<CustomerOrderDetailScreen>
                         Navigator.pop(context);
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
-                            content: Text("Order has been canceled"),
+                            content: Text("បានបោះបង់ការដឹកជញ្ជូន"),
                           ),
                         );
                       }
                     } else if (mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
-                          content: Text(
-                            "Failed to cancel order: ${response.body}",
-                          ),
+                          content: Text("មិនអាចបោះបង់ការដឹកជញ្ជូនបានទេ។"),
                         ),
                       );
                     }
                   } catch (e) {
                     if (mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text("Error cancelling order: $e")),
+                        SnackBar(
+                          content: Text(
+                            "មានបញ្ហាពេលបោះបង់ការដឹកជញ្ជូន។ សូមព្យាយាមម្ដងទៀត។",
+                          ),
+                        ),
                       );
                     }
                   }

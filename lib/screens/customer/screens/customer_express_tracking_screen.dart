@@ -14,6 +14,7 @@ import '../../../shared/data/map_data.dart';
 import '../../../shared/models/order.dart';
 import '../../../shared/theme/app_tokens.dart';
 import '../../../shared/utils/route_motion.dart';
+import '../customer_khmer.dart';
 import 'customer_order_detail_screen.dart';
 
 class CustomerExpressTrackingScreen extends StatefulWidget {
@@ -82,7 +83,7 @@ class _CustomerExpressTrackingScreenState
         },
       );
       if (response.statusCode < 200 || response.statusCode >= 300) {
-        throw Exception('Unable to refresh delivery tracking.');
+        throw Exception('មិនអាចធ្វើបច្ចុប្បន្នភាពការតាមដានបានទេ។');
       }
       final order = CustomerOrder.fromJson(
         json.decode(response.body) as Map<String, dynamic>,
@@ -96,11 +97,11 @@ class _CustomerExpressTrackingScreenState
         _lastFittedStatus = order.status;
       });
       if (shouldFit) _fitRoute();
-    } catch (error) {
+    } catch (_) {
       if (!mounted || silent) return;
       setState(() {
         _loading = false;
-        _error = error.toString().replaceFirst('Exception: ', '');
+        _error = 'មិនអាចធ្វើបច្ចុប្បន្នភាពការតាមដានបានទេ។ សូមព្យាយាមម្ដងទៀត។';
       });
     } finally {
       _requestInFlight = false;
@@ -151,7 +152,7 @@ class _CustomerExpressTrackingScreenState
                   Align(
                     alignment: Alignment.centerRight,
                     child: IconButton(
-                      tooltip: 'Close',
+                      tooltip: 'បិទ',
                       onPressed: () => Navigator.pop(dialogContext),
                       icon: const Icon(Icons.close_rounded),
                     ),
@@ -163,13 +164,13 @@ class _CustomerExpressTrackingScreenState
                   ),
                   const SizedBox(height: AppSpacing.sm),
                   Text(
-                    'Pickup confirmation',
+                    'ការបញ្ជាក់ទទួលកញ្ចប់',
                     style: Theme.of(dialogContext).textTheme.titleLarge
                         ?.copyWith(fontWeight: FontWeight.w800),
                   ),
                   const SizedBox(height: AppSpacing.xs),
                   const Text(
-                    'Let your assigned driver scan this code before the delivery starts.',
+                    'អនុញ្ញាតឱ្យអ្នកបើកបរស្កេនកូដនេះ មុនចាប់ផ្ដើមការដឹកជញ្ជូន។',
                     textAlign: TextAlign.center,
                     style: TextStyle(color: AppColors.textSecondary),
                   ),
@@ -198,7 +199,7 @@ class _CustomerExpressTrackingScreenState
                       ),
                       SizedBox(width: AppSpacing.xs),
                       Text(
-                        'One-time secure confirmation',
+                        'ការបញ្ជាក់សុវត្ថិភាពប្រើបានតែម្ដង',
                         style: TextStyle(
                           color: AppColors.textSecondary,
                           fontSize: 12,
@@ -240,11 +241,14 @@ class _CustomerExpressTrackingScreenState
                 ),
                 const SizedBox(height: 12),
                 Text(
-                  _error ?? 'Delivery tracking is unavailable.',
+                  _error ?? 'មិនអាចប្រើការតាមដានការដឹកជញ្ជូនបានទេ។',
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 16),
-                FilledButton(onPressed: _sync, child: const Text('Retry')),
+                FilledButton(
+                  onPressed: _sync,
+                  child: const Text('ព្យាយាមម្ដងទៀត'),
+                ),
               ],
             ),
           ),
@@ -391,7 +395,7 @@ class _CustomerExpressTrackingScreenState
                                 onPressed: _showPickupQr,
                                 icon: const Icon(Icons.qr_code_2_rounded),
                                 label: const Text(
-                                  'Show pickup confirmation QR',
+                                  'បង្ហាញ QR បញ្ជាក់ទទួលកញ្ចប់',
                                 ),
                                 style: FilledButton.styleFrom(
                                   minimumSize: const Size.fromHeight(54),
@@ -462,7 +466,7 @@ class _TrackingHeader extends StatelessWidget {
         child: Row(
           children: [
             IconButton(
-              tooltip: 'Back',
+              tooltip: 'ត្រឡប់ក្រោយ',
               onPressed: onBack,
               icon: const Icon(Icons.arrow_back_rounded),
             ),
@@ -482,7 +486,8 @@ class _TrackingHeader extends StatelessWidget {
             Expanded(
               child: Semantics(
                 liveRegion: true,
-                label: 'Delivery status: ${order.statusText}',
+                label:
+                    'ស្ថានភាពការដឹកជញ្ជូន៖ ${customerOrderStatusKhmer(order)}',
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
@@ -500,8 +505,8 @@ class _TrackingHeader extends StatelessWidget {
                     const SizedBox(height: 2),
                     Text(
                       order.driverName == null
-                          ? 'Live delivery tracking'
-                          : '${order.driverName} • ${order.vehicleText}',
+                          ? 'ការតាមដានការដឹកជញ្ជូនផ្ទាល់'
+                          : '${order.driverName} • ${customerVehicleKhmer(order.vehicleType)}',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
@@ -514,7 +519,7 @@ class _TrackingHeader extends StatelessWidget {
               ),
             ),
             IconButton(
-              tooltip: 'Show the full route',
+              tooltip: 'បង្ហាញផ្លូវទាំងមូល',
               onPressed: onFitRoute,
               icon: const Icon(Icons.my_location_rounded),
             ),
@@ -567,7 +572,7 @@ class _DeliverySummaryCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      '${order.itemName} • ${order.quantity} item${order.quantity == 1 ? '' : 's'}',
+                      '${order.itemName} • ${order.quantity} មុខទំនិញ',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
@@ -592,7 +597,7 @@ class _DeliverySummaryCard extends StatelessWidget {
               const SizedBox(width: AppSpacing.sm),
               Semantics(
                 button: true,
-                label: 'View delivery details',
+                label: 'មើលព័ត៌មានលម្អិតការដឹកជញ្ជូន',
                 child: const CircleAvatar(
                   radius: 20,
                   backgroundColor: AppColors.softBlue,

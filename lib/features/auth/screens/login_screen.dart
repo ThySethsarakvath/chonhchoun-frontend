@@ -32,9 +32,9 @@ class _LoginScreenState extends State<LoginScreen> {
   static final _emailReg = RegExp(r'^[\w\-.]+@([\w\-]+\.)+[\w]{2,}$');
 
   String? _validateLogin() {
-    if (_emailCtrl.text.trim().isEmpty) return 'សូមបញ្ចូលអុីម៉ែលរបស់អ្នក';
+    if (_emailCtrl.text.trim().isEmpty) return 'សូមបញ្ចូលអ៊ីមែលរបស់អ្នក';
     if (!_emailReg.hasMatch(_emailCtrl.text.trim()))
-      return 'អុីម៉ែលមិនត្រឹមត្រូវ';
+      return 'អ៊ីមែលមិនត្រឹមត្រូវ';
     if (_passwordCtrl.text.isEmpty) return 'សូមបញ្ចូលលេខសម្ងាត់';
     if (_passwordCtrl.text.length < 6)
       return 'លេខសម្ងាត់ត្រូវតែ 6 តួអក្សរ ឬ ច្រើនជាងនេះ';
@@ -84,11 +84,11 @@ class _LoginScreenState extends State<LoginScreen> {
     final email = _emailCtrl.text.trim();
 
     if (email.isEmpty) {
-      showErrorDialog(context, 'សូមបញ្ចូលអុីម៉ែលរបស់អ្នកជាមុនសិន');
+      showErrorDialog(context, 'សូមបញ្ចូលអ៊ីមែលរបស់អ្នកជាមុនសិន');
       return;
     }
     if (!_emailReg.hasMatch(email)) {
-      showErrorDialog(context, 'អុីម៉ែលមិនត្រឹមត្រូវ');
+      showErrorDialog(context, 'អ៊ីមែលមិនត្រឹមត្រូវ');
       return;
     }
 
@@ -141,8 +141,8 @@ class _LoginScreenState extends State<LoginScreen> {
 
           // ── Email ────────────────────────────────────────────────────────
           AuthTextField(
-            label: 'អុីម៉ែល',
-            placeholder: 'បញ្ចូលអុីម៉ែលរបស់អ្នក',
+            label: 'អ៊ីមែល',
+            placeholder: 'បញ្ចូលអ៊ីមែលរបស់អ្នក',
             controller: _emailCtrl,
             keyboardType: TextInputType.emailAddress,
           ),

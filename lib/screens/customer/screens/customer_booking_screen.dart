@@ -37,6 +37,7 @@ class _CustomerBookingScreenState extends State<CustomerBookingScreen> {
   final MapController _mapController = MapController();
   LatLng? _userLocation;
   bool _isResolvingLocation = false;
+  VehicleType _selectedVehicle = VehicleType.bike;
 
   @override
   void initState() {
@@ -110,8 +111,8 @@ class _CustomerBookingScreenState extends State<CustomerBookingScreen> {
     if (name != null) return name;
     if (loc == null) {
       return widget.serviceType == DeliveryServiceType.express
-          ? "Center pin on location"
-          : "Select warehouse";
+          ? "ដាក់ម្ជុលនៅលើទីតាំង"
+          : "ជ្រើសរើសឃ្លាំង";
     }
     return "${loc.latitude.toStringAsFixed(4)}, ${loc.longitude.toStringAsFixed(4)}";
   }
@@ -149,7 +150,8 @@ class _CustomerBookingScreenState extends State<CustomerBookingScreen> {
     try {
       final uri = Uri.parse(
         'https://nominatim.openstreetmap.org/reverse'
-        '?format=jsonv2&lat=${point.latitude}&lon=${point.longitude}',
+        '?format=jsonv2&lat=${point.latitude}&lon=${point.longitude}'
+        '&accept-language=km',
       );
       final response = await http.get(
         uri,
@@ -187,13 +189,13 @@ class _CustomerBookingScreenState extends State<CustomerBookingScreen> {
               children: [
                 Text(
                   _isSelectingPickup
-                      ? "Select Drop-off Warehouse"
-                      : "Select Destination Warehouse",
+                      ? "ជ្រើសរើសឃ្លាំងទទួល"
+                      : "ជ្រើសរើសឃ្លាំងគោលដៅ",
                   style: Theme.of(sheetContext).textTheme.headlineSmall,
                 ),
                 const SizedBox(height: AppSpacing.xs),
                 Text(
-                  "Choose one of our Chonhchoun warehouses",
+                  "ជ្រើសរើសឃ្លាំង ChonhChoun មួយ",
                   style: Theme.of(sheetContext).textTheme.bodyMedium,
                 ),
                 const SizedBox(height: AppSpacing.lg),
@@ -329,6 +331,8 @@ class _CustomerBookingScreenState extends State<CustomerBookingScreen> {
           serviceType: widget.serviceType,
           onOrderCreated: widget.onOrderCreated,
           userLocation: _userLocation ?? const LatLng(11.5710, 104.8990),
+          initialVehicle: _selectedVehicle,
+          routePoints: _routePoints,
         ),
       ),
     );
@@ -355,7 +359,8 @@ class _CustomerBookingScreenState extends State<CustomerBookingScreen> {
             onWarehouseTap: _handleWarehouseMarkerTap,
           ),
 
-          if (widget.serviceType == DeliveryServiceType.express)
+          if (widget.serviceType == DeliveryServiceType.express &&
+              !hasBothLocations)
             _CenterSelectionPin(isPickup: _isSelectingPickup),
 
           SafeArea(
@@ -375,21 +380,24 @@ class _CustomerBookingScreenState extends State<CustomerBookingScreen> {
                         serviceType: widget.serviceType,
                         onBack: () => Navigator.pop(context),
                       ),
-                      const SizedBox(height: AppSpacing.sm),
-                      LocationInputCard(
-                        pickupText: _formatLocation(
-                          _pickupLocation,
-                          _pickupName,
+                      if (!(widget.serviceType == DeliveryServiceType.express &&
+                          hasBothLocations)) ...[
+                        const SizedBox(height: AppSpacing.sm),
+                        LocationInputCard(
+                          pickupText: _formatLocation(
+                            _pickupLocation,
+                            _pickupName,
+                          ),
+                          dropoffText: _formatLocation(
+                            _dropoffLocation,
+                            _dropoffName,
+                          ),
+                          isSelectingPickup: _isSelectingPickup,
+                          onSwitchMode: () => setState(
+                            () => _isSelectingPickup = !_isSelectingPickup,
+                          ),
                         ),
-                        dropoffText: _formatLocation(
-                          _dropoffLocation,
-                          _dropoffName,
-                        ),
-                        isSelectingPickup: _isSelectingPickup,
-                        onSwitchMode: () => setState(
-                          () => _isSelectingPickup = !_isSelectingPickup,
-                        ),
-                      ),
+                      ],
                     ],
                   ),
                 ),
@@ -400,9 +408,16 @@ class _CustomerBookingScreenState extends State<CustomerBookingScreen> {
           Positioned(
             right: AppSpacing.md,
             bottom:
-                bottomInset + (hasBothLocations ? 190 : 126) + AppSpacing.sm,
+                bottomInset +
+                (hasBothLocations &&
+                        widget.serviceType == DeliveryServiceType.express
+                    ? 370
+                    : hasBothLocations
+                    ? 190
+                    : 126) +
+                AppSpacing.sm,
             child: _MapControlButton(
-              tooltip: 'Recenter map',
+              tooltip: 'កំណត់ផែនទីទៅទីតាំងវិញ',
               icon: Icons.my_location_rounded,
               onTap: () {
                 final target = _pickupLocation ?? _userLocation;
@@ -413,26 +428,40 @@ class _CustomerBookingScreenState extends State<CustomerBookingScreen> {
             ),
           ),
 
-          Align(
-            alignment: Alignment.bottomCenter,
-            child: SafeArea(
-              top: false,
-              minimum: const EdgeInsets.all(AppSpacing.md),
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(
-                  maxWidth: AppBreakpoints.customerContentMaxWidth,
-                ),
-                child: _BookingActionPanel(
-                  isPickup: _isSelectingPickup,
-                  pickupSelected: _pickupLocation != null,
-                  dropoffSelected: _dropoffLocation != null,
-                  isResolving: _isResolvingLocation,
-                  onConfirmLocation: _confirmCenterLocation,
-                  onContinue: hasBothLocations ? _openPackageDetails : null,
+          if (hasBothLocations &&
+              widget.serviceType == DeliveryServiceType.express)
+            _ExpressVehicleDraggablePanel(
+              pickupAddress:
+                  _pickupName ?? _formatLocation(_pickupLocation, null),
+              dropoffAddress:
+                  _dropoffName ?? _formatLocation(_dropoffLocation, null),
+              selectedVehicle: _selectedVehicle,
+              onVehicleChanged: (vehicle) {
+                setState(() => _selectedVehicle = vehicle);
+              },
+              onContinue: _openPackageDetails,
+            )
+          else
+            Align(
+              alignment: Alignment.bottomCenter,
+              child: SafeArea(
+                top: false,
+                minimum: const EdgeInsets.all(AppSpacing.md),
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(
+                    maxWidth: AppBreakpoints.customerContentMaxWidth,
+                  ),
+                  child: _BookingActionPanel(
+                    isPickup: _isSelectingPickup,
+                    pickupSelected: _pickupLocation != null,
+                    dropoffSelected: _dropoffLocation != null,
+                    isResolving: _isResolvingLocation,
+                    onConfirmLocation: _confirmCenterLocation,
+                    onContinue: hasBothLocations ? _openPackageDetails : null,
+                  ),
                 ),
               ),
             ),
-          ),
         ],
       ),
     );
@@ -451,7 +480,7 @@ class _BookingMapHeader extends StatelessWidget {
     return Row(
       children: [
         _MapControlButton(
-          tooltip: 'Back',
+          tooltip: 'ត្រឡប់ក្រោយ',
           icon: Icons.arrow_back_rounded,
           onTap: onBack,
         ),
@@ -470,7 +499,7 @@ class _BookingMapHeader extends StatelessWidget {
               children: [
                 Expanded(
                   child: Text(
-                    'Book a delivery',
+                    'បង្កើតការដឹកជញ្ជូន',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: Theme.of(context).textTheme.titleMedium,
@@ -488,7 +517,7 @@ class _BookingMapHeader extends StatelessWidget {
                     borderRadius: BorderRadius.circular(AppRadius.pill),
                   ),
                   child: Text(
-                    isExpress ? 'Express' : 'Warehouse',
+                    isExpress ? 'ដឹកជញ្ជូនរហ័ស' : 'ឃ្លាំង',
                     style: Theme.of(context).textTheme.labelMedium?.copyWith(
                       color: isExpress ? AppColors.warning : AppColors.blue,
                       fontWeight: FontWeight.w700,
@@ -533,7 +562,7 @@ class _CenterSelectionPin extends StatelessWidget {
                     boxShadow: AppShadows.card,
                   ),
                   child: Text(
-                    isPickup ? 'Pickup point' : 'Drop-off point',
+                    isPickup ? 'ទីតាំងទទួលទំនិញ' : 'ទីតាំងប្រគល់ទំនិញ',
                     style: Theme.of(
                       context,
                     ).textTheme.labelMedium?.copyWith(color: Colors.white),
@@ -600,6 +629,291 @@ class _MapControlButton extends StatelessWidget {
   }
 }
 
+class _ExpressVehicleDraggablePanel extends StatelessWidget {
+  const _ExpressVehicleDraggablePanel({
+    required this.pickupAddress,
+    required this.dropoffAddress,
+    required this.selectedVehicle,
+    required this.onVehicleChanged,
+    required this.onContinue,
+  });
+
+  final String pickupAddress;
+  final String dropoffAddress;
+  final VehicleType selectedVehicle;
+  final ValueChanged<VehicleType> onVehicleChanged;
+  final VoidCallback onContinue;
+
+  @override
+  Widget build(BuildContext context) {
+    final screenHeight = MediaQuery.sizeOf(context).height;
+    final initialSize = (390 / screenHeight).clamp(0.50, 0.66).toDouble();
+    final minSize = (initialSize - 0.10).clamp(0.40, 0.56).toDouble();
+    final maxSize = (initialSize + 0.16).clamp(0.66, 0.82).toDouble();
+
+    return DraggableScrollableSheet(
+      initialChildSize: initialSize,
+      minChildSize: minSize,
+      maxChildSize: maxSize,
+      snap: true,
+      snapSizes: [minSize, initialSize, maxSize],
+      builder: (context, scrollController) {
+        return Align(
+          alignment: Alignment.bottomCenter,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(
+              maxWidth: AppBreakpoints.customerContentMaxWidth,
+            ),
+            child: Material(
+              color: Colors.white,
+              elevation: 16,
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(AppRadius.xl),
+              ),
+              clipBehavior: Clip.antiAlias,
+              child: CustomScrollView(
+                controller: scrollController,
+                physics: const ClampingScrollPhysics(),
+                slivers: [
+                  SliverFillRemaining(
+                    hasScrollBody: false,
+                    child: Padding(
+                      padding: EdgeInsets.fromLTRB(
+                        AppSpacing.lg,
+                        AppSpacing.sm,
+                        AppSpacing.lg,
+                        MediaQuery.paddingOf(context).bottom + AppSpacing.md,
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Center(
+                            child: Container(
+                              width: 40,
+                              height: 4,
+                              decoration: BoxDecoration(
+                                color: AppColors.line,
+                                borderRadius: BorderRadius.circular(
+                                  AppRadius.pill,
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: AppSpacing.md),
+                          Text(
+                            'រៀបចំការដឹកជញ្ជូនរបស់អ្នក',
+                            style: Theme.of(context).textTheme.titleMedium
+                                ?.copyWith(fontWeight: FontWeight.w900),
+                          ),
+                          const SizedBox(height: AppSpacing.sm),
+                          _PanelLocationRow(
+                            icon: Icons.location_on_rounded,
+                            color: AppColors.danger,
+                            label: 'ទីតាំងទទួលទំនិញ',
+                            value: pickupAddress,
+                          ),
+                          const SizedBox(height: AppSpacing.xs),
+                          _PanelLocationRow(
+                            icon: Icons.trip_origin_rounded,
+                            color: AppColors.success,
+                            label: 'ទីតាំងប្រគល់ទំនិញ',
+                            value: dropoffAddress,
+                          ),
+                          const SizedBox(height: AppSpacing.md),
+                          const Text(
+                            'ជ្រើសរើសយានជំនិះ',
+                            style: TextStyle(
+                              color: AppColors.text,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                          const SizedBox(height: AppSpacing.sm),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: _PanelVehicleOption(
+                                  label: 'ម៉ូតូ',
+                                  assetPath:
+                                      'assets/images/motorbike_topview.png',
+                                  selected: selectedVehicle == VehicleType.bike,
+                                  onTap: () =>
+                                      onVehicleChanged(VehicleType.bike),
+                                ),
+                              ),
+                              const SizedBox(width: AppSpacing.sm),
+                              Expanded(
+                                child: _PanelVehicleOption(
+                                  label: 'ម៉ូតូកង់បី',
+                                  assetPath:
+                                      'assets/images/rickshaw_topview.png',
+                                  selected:
+                                      selectedVehicle == VehicleType.tuktuk,
+                                  onTap: () =>
+                                      onVehicleChanged(VehicleType.tuktuk),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const Spacer(),
+                          FilledButton(
+                            onPressed: onContinue,
+                            style: FilledButton.styleFrom(
+                              minimumSize: const Size.fromHeight(50),
+                              backgroundColor: AppColors.blue,
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(
+                                  AppRadius.md,
+                                ),
+                              ),
+                            ),
+                            child: const Text(
+                              'បន្ត',
+                              style: TextStyle(fontWeight: FontWeight.w800),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _PanelLocationRow extends StatelessWidget {
+  const _PanelLocationRow({
+    required this.icon,
+    required this.color,
+    required this.label,
+    required this.value,
+  });
+
+  final IconData icon;
+  final Color color;
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.sm),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(AppRadius.sm),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, color: color, size: 18),
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: const TextStyle(
+                    color: AppColors.muted,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  value,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: AppColors.text,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PanelVehicleOption extends StatelessWidget {
+  const _PanelVehicleOption({
+    required this.label,
+    required this.assetPath,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String label;
+  final String assetPath;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      selected: selected,
+      button: true,
+      label: label,
+      child: Material(
+        color: selected ? AppColors.blue : AppColors.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(AppRadius.sm),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(AppRadius.sm),
+          child: AnimatedContainer(
+            duration: AppMotion.fast,
+            height: 72,
+            padding: const EdgeInsets.all(AppSpacing.sm),
+            decoration: BoxDecoration(
+              border: Border.all(
+                color: selected ? AppColors.blue : AppColors.line,
+                width: selected ? 2 : 1,
+              ),
+              borderRadius: BorderRadius.circular(AppRadius.sm),
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Expanded(
+                  child: Image.asset(
+                    assetPath,
+                    fit: BoxFit.contain,
+                    color: selected ? Colors.white : null,
+                    colorBlendMode: selected ? BlendMode.srcIn : null,
+                    errorBuilder: (_, _, _) => Icon(
+                      Icons.local_shipping_outlined,
+                      color: selected ? Colors.white : AppColors.blue,
+                      size: 25,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  label,
+                  style: TextStyle(
+                    color: selected ? Colors.white : AppColors.text,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _BookingActionPanel extends StatelessWidget {
   const _BookingActionPanel({
     required this.isPickup,
@@ -622,11 +936,11 @@ class _BookingActionPanel extends StatelessWidget {
     final currentSelected = isPickup ? pickupSelected : dropoffSelected;
     final locationLabel = isPickup
         ? currentSelected
-              ? 'Update pickup location'
-              : 'Confirm pickup location'
+              ? 'កែប្រែទីតាំងទទួលទំនិញ'
+              : 'បញ្ជាក់ទីតាំងទទួលទំនិញ'
         : currentSelected
-        ? 'Update drop-off location'
-        : 'Confirm drop-off location';
+        ? 'កែប្រែទីតាំងប្រគល់ទំនិញ'
+        : 'បញ្ជាក់ទីតាំងប្រគល់ទំនិញ';
     final accent = isPickup ? AppColors.blue : AppColors.danger;
 
     return AnimatedSize(
@@ -651,7 +965,7 @@ class _BookingActionPanel extends StatelessWidget {
                 child: FilledButton.icon(
                   onPressed: onContinue,
                   icon: const Icon(Icons.arrow_forward_rounded),
-                  label: const Text('Confirm Selection'),
+                  label: const Text('បញ្ជាក់ការជ្រើសរើស'),
                   style: FilledButton.styleFrom(
                     backgroundColor: AppColors.blueDark,
                     foregroundColor: Colors.white,
@@ -687,7 +1001,7 @@ class _BookingActionPanel extends StatelessWidget {
                                   : Icons.location_on_rounded,
                             ),
                       label: Text(
-                        isResolving ? 'Finding address…' : locationLabel,
+                        isResolving ? 'កំពុងស្វែងរកអាសយដ្ឋាន…' : locationLabel,
                       ),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: accent,

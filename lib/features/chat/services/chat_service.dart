@@ -20,6 +20,6 @@ class ChatService {
           .map((e) => ChatMessage.fromJson(e as Map<String, dynamic>))
           .toList();
     }
-    throw Exception('Failed to load chat history (${res.statusCode})');
+    throw Exception('មិនអាចផ្ទុកប្រវត្តិសន្ទនាបានទេ (${res.statusCode})');
   }
 }

@@ -53,7 +53,7 @@ class DeliveryItem {
 
   factory DeliveryItem.fromJson(Map<String, dynamic> json) {
     final status = _parseStatus(json['status']);
-    final name = (json['package'] ?? {})['name'] ?? 'Package';
+    final name = (json['package'] ?? {})['name'] ?? 'កញ្ចប់ទំនិញ';
     final id = json['_id'] ?? json['id'] ?? '';
     final shortId = id.toString().length > 8
         ? id.toString().substring(0, 8)
@@ -101,7 +101,7 @@ class DeliveryItem {
           json['date'] ??
           (json['createdAt'] != null
               ? _formatDate(json['createdAt'])
-              : 'Just now'),
+              : 'ទើបតែឥឡូវ'),
       origin: (json['pickup'] ?? {})['address'] ?? '',
       destination: (json['dropoff'] ?? {})['address'] ?? '',
       checkpoints: checkpoints,
@@ -140,7 +140,7 @@ class DeliveryItem {
       final dt = DateTime.parse(iso);
       return "${dt.day}/${dt.month}";
     } catch (_) {
-      return "Just now";
+      return "ទើបតែឥឡូវ";
     }
   }
 }
@@ -171,21 +171,20 @@ class PromoBanner {
 class HomeData {
   static const List<PromoBanner> banners = [
     PromoBanner(
-      title: 'Buy GPS',
-      subtitle:
-          'Liveasy GPS system allows you to track your vehicles from the app.',
+      title: 'ទិញ GPS',
+      subtitle: 'ប្រព័ន្ធ GPS អនុញ្ញាតឱ្យអ្នកតាមដានយានជំនិះពីកម្មវិធី។',
       imagePath: 'assets/images/banner_gps.png',
       backgroundColor: '#2C5F8A',
     ),
     PromoBanner(
-      title: 'Refer and earn',
-      subtitle: 'Refer Liveasy to earn money on account',
+      title: 'ណែនាំមិត្តភក្ដិ និងទទួលរង្វាន់',
+      subtitle: 'ណែនាំមិត្តភក្ដិ ដើម្បីទទួលរង្វាន់ក្នុងគណនី',
       imagePath: 'assets/images/banner_refer.png',
       backgroundColor: '#1A7A4A',
     ),
     PromoBanner(
-      title: 'Bonus',
-      subtitle: 'Keep booking Liveasy to earn rewards',
+      title: 'រង្វាន់បន្ថែម',
+      subtitle: 'បន្តប្រើសេវាដឹកជញ្ជូន ដើម្បីទទួលរង្វាន់',
       imagePath: 'assets/images/banner_bonus.png',
       backgroundColor: '#D4780A',
     ),

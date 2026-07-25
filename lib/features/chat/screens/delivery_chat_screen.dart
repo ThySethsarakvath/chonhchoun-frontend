@@ -8,6 +8,7 @@ import '../../../shared/colors/app_colors.dart';
 import '../../auth/tokens/token_storage.dart';
 import '../models/chat_message.dart';
 import '../services/chat_service.dart';
+
 class DeliveryChatScreen extends StatefulWidget {
   final String packageId;
   final String currentUserId;
@@ -104,8 +105,9 @@ class _DeliveryChatScreenState extends State<DeliveryChatScreen> {
   void _onMqttUpdates(List<MqttReceivedMessage<MqttMessage>> events) {
     for (final event in events) {
       final recv = event.payload as MqttPublishMessage;
-      final payload =
-          MqttPublishPayload.bytesToStringAsString(recv.payload.message);
+      final payload = MqttPublishPayload.bytesToStringAsString(
+        recv.payload.message,
+      );
       Map<String, dynamic> data;
       try {
         data = json.decode(payload) as Map<String, dynamic>;
@@ -141,13 +143,15 @@ class _DeliveryChatScreenState extends State<DeliveryChatScreen> {
       return;
     }
     setState(() {
-      _messages.add(ChatMessage(
-        id: 'local-${DateTime.now().microsecondsSinceEpoch}',
-        packageId: widget.packageId,
-        senderId: widget.currentUserId,
-        text: text,
-        createdAt: DateTime.now(),
-      ));
+      _messages.add(
+        ChatMessage(
+          id: 'local-${DateTime.now().microsecondsSinceEpoch}',
+          packageId: widget.packageId,
+          senderId: widget.currentUserId,
+          text: text,
+          createdAt: DateTime.now(),
+        ),
+      );
     });
     final builder = MqttClientPayloadBuilder();
     builder.addString(json.encode({'token': token, 'text': text}));
@@ -187,13 +191,18 @@ class _DeliveryChatScreenState extends State<DeliveryChatScreen> {
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(widget.peerName,
-                style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 15,
-                    fontWeight: FontWeight.w700)),
-            Text(_connected ? 'online' : 'connecting…',
-                style: const TextStyle(color: Colors.white70, fontSize: 11)),
+            Text(
+              widget.peerName,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 15,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            Text(
+              _connected ? 'អនឡាញ' : 'កំពុងភ្ជាប់…',
+              style: const TextStyle(color: Colors.white70, fontSize: 11),
+            ),
           ],
         ),
       ),
@@ -202,20 +211,24 @@ class _DeliveryChatScreenState extends State<DeliveryChatScreen> {
           Expanded(
             child: _loading
                 ? const Center(
-                    child: CircularProgressIndicator(color: AppColors.blue))
+                    child: CircularProgressIndicator(color: AppColors.blue),
+                  )
                 : _messages.isEmpty
-                    ? const Center(
-                        child: Text('មិនទាន់មានសារនៅឡើយទេ',
-                            style: TextStyle(color: Color(0xFF8BA4C8))))
-                    : ListView.builder(
-                        controller: _scrollCtrl,
-                        padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-                        itemCount: _messages.length,
-                        itemBuilder: (_, i) => _Bubble(
-                          message: _messages[i],
-                          isMe: _messages[i].senderId == widget.currentUserId,
-                        ),
-                      ),
+                ? const Center(
+                    child: Text(
+                      'មិនទាន់មានសារនៅឡើយទេ',
+                      style: TextStyle(color: Color(0xFF8BA4C8)),
+                    ),
+                  )
+                : ListView.builder(
+                    controller: _scrollCtrl,
+                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                    itemCount: _messages.length,
+                    itemBuilder: (_, i) => _Bubble(
+                      message: _messages[i],
+                      isMe: _messages[i].senderId == widget.currentUserId,
+                    ),
+                  ),
           ),
           _InputBar(controller: _inputCtrl, onSend: _send),
         ],
@@ -236,8 +249,9 @@ class _Bubble extends StatelessWidget {
       child: Container(
         margin: const EdgeInsets.symmetric(vertical: 4),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-        constraints:
-            BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.75),
+        constraints: BoxConstraints(
+          maxWidth: MediaQuery.of(context).size.width * 0.75,
+        ),
         decoration: BoxDecoration(
           color: isMe ? AppColors.blue : Colors.white,
           borderRadius: BorderRadius.only(
@@ -298,8 +312,10 @@ class _InputBar extends StatelessWidget {
                     hintText: 'សរសេរសារ...',
                     hintStyle: TextStyle(color: Color(0xFFB0BEC5)),
                     border: InputBorder.none,
-                    contentPadding:
-                        EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    contentPadding: EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
                   ),
                 ),
               ),
@@ -311,9 +327,14 @@ class _InputBar extends StatelessWidget {
                 width: 46,
                 height: 46,
                 decoration: const BoxDecoration(
-                  shape: BoxShape.circle, color: AppColors.blue),
-                child: const Icon(Icons.send_rounded,
-                    color: Colors.white, size: 22),
+                  shape: BoxShape.circle,
+                  color: AppColors.blue,
+                ),
+                child: const Icon(
+                  Icons.send_rounded,
+                  color: Colors.white,
+                  size: 22,
+                ),
               ),
             ),
           ],

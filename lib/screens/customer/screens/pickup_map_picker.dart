@@ -46,7 +46,8 @@ class _PickupMapPickerState extends State<PickupMapPicker> {
     try {
       final url = Uri.parse(
         'https://nominatim.openstreetmap.org/reverse'
-        '?format=jsonv2&lat=${point.latitude}&lon=${point.longitude}',
+        '?format=jsonv2&lat=${point.latitude}&lon=${point.longitude}'
+        '&accept-language=km',
       );
       final response = await http.get(
         url,
@@ -110,7 +111,7 @@ class _PickupMapPickerState extends State<PickupMapPicker> {
                     child: const _PickerMarker(
                       icon: Icons.warehouse_rounded,
                       color: AppColors.danger,
-                      semanticLabel: 'Warehouse location',
+                      semanticLabel: 'ទីតាំងឃ្លាំង',
                     ),
                   ),
                   Marker(
@@ -120,7 +121,7 @@ class _PickupMapPickerState extends State<PickupMapPicker> {
                     child: const _PickerMarker(
                       icon: Icons.my_location_rounded,
                       color: AppColors.blue,
-                      semanticLabel: 'Selected pickup location',
+                      semanticLabel: 'ទីតាំងទទួលទំនិញដែលបានជ្រើសរើស',
                     ),
                   ),
                 ],
@@ -187,13 +188,13 @@ class _PickupMapPickerState extends State<PickupMapPicker> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  'Selected pickup',
+                                  'ទីតាំងទទួលទំនិញដែលបានជ្រើសរើស',
                                   style: Theme.of(
                                     context,
                                   ).textTheme.titleMedium,
                                 ),
                                 Text(
-                                  'Tap anywhere on the map to adjust',
+                                  'ចុចលើផែនទី ដើម្បីកែប្រែទីតាំង',
                                   style: Theme.of(context).textTheme.bodySmall,
                                 ),
                               ],
@@ -232,7 +233,7 @@ class _PickupMapPickerState extends State<PickupMapPicker> {
                           Expanded(
                             child: OutlinedButton(
                               onPressed: () => Navigator.of(context).pop(),
-                              child: const Text('Cancel'),
+                              child: const Text('បោះបង់'),
                             ),
                           ),
                           const SizedBox(width: AppSpacing.sm),
@@ -242,7 +243,7 @@ class _PickupMapPickerState extends State<PickupMapPicker> {
                                   ? null
                                   : _saveSelection,
                               icon: const Icon(Icons.check_rounded),
-                              label: const Text('Use location'),
+                              label: const Text('ប្រើទីតាំងនេះ'),
                             ),
                           ),
                         ],
@@ -302,7 +303,7 @@ class _PickerHeader extends StatelessWidget {
               boxShadow: AppShadows.card,
             ),
             child: Text(
-              'Select pickup location',
+              'ជ្រើសរើសទីតាំងទទួលទំនិញ',
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: Theme.of(context).textTheme.titleMedium,

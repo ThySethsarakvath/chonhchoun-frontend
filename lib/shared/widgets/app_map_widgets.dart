@@ -16,6 +16,7 @@ class CustomerMapPicker extends StatelessWidget {
     this.routePoints,
     this.warehouseLocations,
     this.onWarehouseTap,
+    this.onMapReady,
     required this.mapController,
   });
 
@@ -25,6 +26,7 @@ class CustomerMapPicker extends StatelessWidget {
   final List<LatLng>? routePoints;
   final List<LatLng>? warehouseLocations;
   final Function(LatLng)? onWarehouseTap;
+  final VoidCallback? onMapReady;
   final MapController mapController;
 
   @override
@@ -34,6 +36,7 @@ class CustomerMapPicker extends StatelessWidget {
       options: MapOptions(
         initialCenter: pickupLocation ?? const LatLng(11.5564, 104.9282),
         initialZoom: 14.0,
+        onMapReady: onMapReady,
         onTap: onMapTap != null
             ? (tapPosition, point) => onMapTap!(point)
             : null,
@@ -68,7 +71,7 @@ class CustomerMapPicker extends StatelessWidget {
                 child: const _MapPin(
                   color: AppColors.blue,
                   icon: Icons.trip_origin_rounded,
-                  semanticLabel: 'Pickup location',
+                  semanticLabel: 'ទីតាំងទទួលទំនិញ',
                 ),
               ),
             if (dropoffLocation != null)
@@ -79,7 +82,7 @@ class CustomerMapPicker extends StatelessWidget {
                 child: const _MapPin(
                   color: AppColors.danger,
                   icon: Icons.location_on_rounded,
-                  semanticLabel: 'Drop-off location',
+                  semanticLabel: 'ទីតាំងប្រគល់ទំនិញ',
                 ),
               ),
             if (warehouseLocations != null)
@@ -90,7 +93,7 @@ class CustomerMapPicker extends StatelessWidget {
                   height: 50,
                   child: Semantics(
                     button: true,
-                    label: 'Select warehouse',
+                    label: 'ជ្រើសរើសឃ្លាំង',
                     child: Material(
                       color: AppColors.surfaceContainer,
                       elevation: 4,
@@ -187,7 +190,7 @@ class LocationInputCard extends StatelessWidget {
               context: context,
               icon: Icons.trip_origin_rounded,
               color: AppColors.blue,
-              label: "Pick-up point",
+              label: "ទីតាំងទទួលទំនិញ",
               value: pickupText,
               active: isSelectingPickup,
               onTap: isSelectingPickup ? null : onSwitchMode,
@@ -203,7 +206,7 @@ class LocationInputCard extends StatelessWidget {
               context: context,
               icon: Icons.location_on_rounded,
               color: AppColors.danger,
-              label: "Drop-off point",
+              label: "ទីតាំងប្រគល់ទំនិញ",
               value: dropoffText,
               active: !isSelectingPickup,
               onTap: !isSelectingPickup ? null : onSwitchMode,
@@ -352,8 +355,8 @@ class DriverPreviewRouteOverlay extends StatelessWidget {
       child: Padding(
         padding: EdgeInsets.all(12),
         child: _MapPlaceholderTag(
-          title: 'Map Preview',
-          subtitle: 'OpenStreetMap placeholder',
+          title: 'មើលផែនទីជាមុន',
+          subtitle: 'ផែនទី OpenStreetMap',
         ),
       ),
     );
@@ -371,7 +374,7 @@ class DriverLiveMapOverlay extends StatelessWidget {
         padding: EdgeInsets.all(16),
         child: _MapPlaceholderTag(
           title: 'OpenStreetMap',
-          subtitle: 'Simple placeholder for next week',
+          subtitle: 'ផែនទីសម្រាប់បង្ហាញទីតាំង',
         ),
       ),
     );
@@ -388,8 +391,8 @@ class DriverProfileMapOverlay extends StatelessWidget {
       child: Padding(
         padding: EdgeInsets.all(16),
         child: _MapPlaceholderTag(
-          title: 'Coverage Zone',
-          subtitle: 'Placeholder map',
+          title: 'តំបន់គ្របដណ្ដប់សេវាកម្ម',
+          subtitle: 'ផែនទីតំបន់សេវាកម្ម',
           compact: true,
         ),
       ),

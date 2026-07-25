@@ -66,9 +66,7 @@ class _QRScannerScreenState extends State<QRScannerScreen>
     if (id.startsWith('chonhchoun:pickup:') ||
         id.startsWith('chonhchoun:dropoff:')) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('This verification QR must be scanned by the driver.'),
-        ),
+        const SnackBar(content: Text('QR បញ្ជាក់នេះត្រូវតែស្កេនដោយអ្នកបើកបរ។')),
       );
       return;
     }
@@ -106,16 +104,18 @@ class _QRScannerScreenState extends State<QRScannerScreen>
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('Package not found or invalid QR code.'),
+              content: Text('រកមិនឃើញកញ្ចប់ ឬកូដ QR មិនត្រឹមត្រូវ។'),
             ),
           );
         }
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Error finding package: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('មានបញ្ហាពេលស្វែងរកកញ្ចប់។ សូមព្យាយាមម្ដងទៀត។'),
+          ),
+        );
       }
     } finally {
       if (mounted) {
@@ -162,7 +162,7 @@ class _QRScannerScreenState extends State<QRScannerScreen>
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('No QR code found in selected image.'),
+              content: Text('រកមិនឃើញកូដ QR ក្នុងរូបភាពដែលបានជ្រើសរើស។'),
             ),
           );
         }
@@ -171,7 +171,7 @@ class _QRScannerScreenState extends State<QRScannerScreen>
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('Failed to read image: $e')));
+        ).showSnackBar(const SnackBar(content: Text('មិនអាចអានរូបភាពបានទេ។')));
       }
     } finally {
       if (mounted) {
@@ -198,7 +198,7 @@ class _QRScannerScreenState extends State<QRScannerScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Scan Package QR'),
+        title: const Text('ស្កេន QR កញ្ចប់ទំនិញ'),
         backgroundColor: Colors.white,
         foregroundColor: AppColors.text,
       ),
@@ -243,7 +243,7 @@ class _QRScannerScreenState extends State<QRScannerScreen>
                       ),
                       const SizedBox(height: 8),
                       const Text(
-                        'Camera scanning is not supported on Windows. Please use the button below to upload a QR code image!',
+                        'ការស្កេនតាមកាមេរ៉ាមិនគាំទ្រលើ Windows ទេ។ សូមប្រើប៊ូតុងខាងក្រោម ដើម្បីបញ្ចូលរូបភាពកូដ QR។',
                         textAlign: TextAlign.center,
                         style: TextStyle(color: Colors.grey, fontSize: 13),
                       ),
@@ -252,7 +252,7 @@ class _QRScannerScreenState extends State<QRScannerScreen>
                         onPressed: _pickAndScanImage,
                         icon: const Icon(Icons.photo_library_rounded),
                         label: const Text(
-                          'Upload QR Code',
+                          'បញ្ចូលរូបភាព QR',
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 15,
@@ -398,7 +398,7 @@ class _QRScannerScreenState extends State<QRScannerScreen>
                       ),
                       child: const Center(
                         child: Text(
-                          'Align QR in Frame',
+                          'ដាក់ QR ឱ្យត្រូវក្នុងស៊ុម',
                           style: TextStyle(
                             color: Colors.white,
                             fontWeight: FontWeight.w600,
@@ -430,7 +430,7 @@ class _QRScannerScreenState extends State<QRScannerScreen>
                       iconSize: 26,
                       padding: const EdgeInsets.all(14),
                       onPressed: _pickAndScanImage,
-                      tooltip: 'Upload QR Image',
+                      tooltip: 'បញ្ចូលរូបភាព QR',
                     ),
                   ),
                 ],

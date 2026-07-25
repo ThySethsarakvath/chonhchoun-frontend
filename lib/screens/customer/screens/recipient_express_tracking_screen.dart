@@ -72,15 +72,11 @@ class _RecipientExpressTrackingScreenState
         });
         return;
       }
-      throw Exception(
-        body is Map<String, dynamic>
-            ? body['message']?.toString()
-            : 'Unable to load tracking.',
-      );
-    } catch (error) {
+      throw Exception('មិនអាចផ្ទុកការតាមដានបានទេ។');
+    } catch (_) {
       if (!mounted) return;
       setState(() {
-        _error = error.toString().replaceFirst(RegExp(r'^Exception:\s*'), '');
+        _error = 'មិនអាចផ្ទុកការតាមដានបានទេ។ សូមព្យាយាមម្ដងទៀត។';
         _loading = false;
       });
     }
@@ -97,11 +93,11 @@ class _RecipientExpressTrackingScreenState
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Incoming delivery',
+              'ការដឹកជញ្ជូនមកដល់',
               style: TextStyle(fontWeight: FontWeight.w800, fontSize: 18),
             ),
             Text(
-              'Live recipient tracking',
+              'ការតាមដានផ្ទាល់សម្រាប់អ្នកទទួល',
               style: TextStyle(
                 color: AppColors.textSecondary,
                 fontSize: 12,
@@ -153,7 +149,7 @@ class _RecipientExpressTrackingScreenState
                   AppSurfaceCard(
                     child: Semantics(
                       liveRegion: true,
-                      label: 'Delivery status: ${_statusLabel(status)}',
+                      label: 'ស្ថានភាពការដឹកជញ្ជូន៖ ${_statusLabel(status)}',
                       child: Row(
                         children: [
                           Container(
@@ -189,8 +185,8 @@ class _RecipientExpressTrackingScreenState
                                 const SizedBox(height: AppSpacing.xxs),
                                 Text(
                                   trackingEnabled
-                                      ? 'Your live route is updating automatically.'
-                                      : 'Tracking unlocks after sender handoff verification.',
+                                      ? 'ផ្លូវធ្វើដំណើរកំពុងធ្វើបច្ចុប្បន្នភាពដោយស្វ័យប្រវត្តិ។'
+                                      : 'ការតាមដាននឹងបើកបន្ទាប់ពីអ្នកផ្ញើបញ្ជាក់ការប្រគល់កញ្ចប់។',
                                   style: const TextStyle(
                                     color: AppColors.textSecondary,
                                     height: 1.35,
@@ -223,7 +219,7 @@ class _RecipientExpressTrackingScreenState
                             ),
                             SizedBox(width: AppSpacing.xs),
                             Text(
-                              'Package arriving',
+                              'កញ្ចប់កំពុងមកដល់',
                               style: TextStyle(
                                 fontWeight: FontWeight.w800,
                                 fontSize: 17,
@@ -233,21 +229,21 @@ class _RecipientExpressTrackingScreenState
                         ),
                         const Divider(height: AppSpacing.xl),
                         _detail(
-                          'Item',
-                          package['name']?.toString() ?? 'Package',
+                          'ទំនិញ',
+                          package['name']?.toString() ?? 'កញ្ចប់ទំនិញ',
                         ),
                         _detail(
-                          'Quantity',
+                          'ចំនួន',
                           package['quantity']?.toString() ?? '1',
                         ),
                         _detail(
-                          'Deliver to',
-                          dropoff['address']?.toString() ?? 'Destination',
+                          'ប្រគល់ទៅ',
+                          dropoff['address']?.toString() ?? 'ទីតាំងគោលដៅ',
                         ),
                         if (driver != null)
                           _detail(
-                            'Driver',
-                            driver['name']?.toString() ?? 'Assigned',
+                            'អ្នកបើកបរ',
+                            driver['name']?.toString() ?? 'បានកំណត់',
                           ),
                       ],
                     ),
@@ -264,7 +260,7 @@ class _RecipientExpressTrackingScreenState
                           ),
                           const SizedBox(height: AppSpacing.sm),
                           const Text(
-                            'Delivery confirmation',
+                            'ការបញ្ជាក់ការប្រគល់ទំនិញ',
                             style: TextStyle(
                               fontWeight: FontWeight.w800,
                               fontSize: 17,
@@ -272,7 +268,7 @@ class _RecipientExpressTrackingScreenState
                           ),
                           const SizedBox(height: AppSpacing.xs),
                           const Text(
-                            'Check the package and quantity, then let the driver scan this code.',
+                            'ពិនិត្យកញ្ចប់ និងចំនួនឱ្យត្រឹមត្រូវ រួចឱ្យអ្នកបើកបរស្កេនកូដនេះ។',
                             textAlign: TextAlign.center,
                             style: TextStyle(
                               color: AppColors.textSecondary,
@@ -329,13 +325,13 @@ class _RecipientExpressTrackingScreenState
   String _statusLabel(String status) {
     switch (status) {
       case 'IN_TRANSIT':
-        return 'Your package is on the way';
+        return 'កញ្ចប់របស់អ្នកកំពុងធ្វើដំណើរមក';
       case 'ARRIVED_AT_DROPOFF':
-        return 'Driver has arrived';
+        return 'អ្នកបើកបរបានមកដល់';
       case 'DELIVERED':
-        return 'Delivery completed';
+        return 'ការដឹកជញ្ជូនបានបញ្ចប់';
       default:
-        return 'Waiting for sender handoff';
+        return 'កំពុងរង់ចាំអ្នកផ្ញើប្រគល់កញ្ចប់';
     }
   }
 }
@@ -487,7 +483,7 @@ class _RecipientRouteMapState extends State<_RecipientRouteMap> {
                     ),
                     SizedBox(width: AppSpacing.xs),
                     Text(
-                      'LIVE ROUTE',
+                      'ផ្លូវធ្វើដំណើរផ្ទាល់',
                       style: TextStyle(
                         color: AppColors.text,
                         fontSize: 11,
@@ -522,7 +518,7 @@ class _RecipientRouteMapState extends State<_RecipientRouteMap> {
                     ),
                     SizedBox(width: AppSpacing.xxs),
                     Text(
-                      'Drag or pinch the map',
+                      'អូស ឬពង្រីកបង្រួមផែនទី',
                       style: TextStyle(
                         color: AppColors.textSecondary,
                         fontSize: 11,
@@ -588,7 +584,7 @@ class _ErrorState extends StatelessWidget {
             FilledButton.icon(
               onPressed: onRetry,
               icon: const Icon(Icons.refresh_rounded),
-              label: const Text('Try again'),
+              label: const Text('ព្យាយាមម្ដងទៀត'),
             ),
           ],
         ),

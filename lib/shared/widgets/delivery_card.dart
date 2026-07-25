@@ -31,21 +31,18 @@ class DeliveryCard extends StatelessWidget {
         .toList();
     String? village;
     for (final part in parts) {
-      final isVillage =
-          _villagePattern.hasMatch(part) || part.contains('ភូមិ');
+      final isVillage = _villagePattern.hasMatch(part) || part.contains('ភូមិ');
       if (isVillage) {
         village = part;
         break;
       }
     }
-    final city = parts.any(
-      (part) => part.toLowerCase().contains('phnom penh'),
-    );
+    final city = parts.any((part) => part.toLowerCase().contains('phnom penh'));
 
     if (village != null) {
-      return city ? '$village, Phnom Penh' : village;
+      return city ? '$village, ភ្នំពេញ' : village;
     }
-    return city ? 'Phnom Penh' : address;
+    return city ? 'ភ្នំពេញ' : address;
   }
 
   @override
@@ -60,7 +57,10 @@ class DeliveryCard extends StatelessWidget {
           color: isCanceled ? const Color(0xFFFFF4F4) : Colors.white,
           borderRadius: BorderRadius.circular(16),
           border: isCanceled
-              ? Border.all(color: const Color(0xFFD32F2F).withValues(alpha: 0.25), width: 1.5)
+              ? Border.all(
+                  color: const Color(0xFFD32F2F).withValues(alpha: 0.25),
+                  width: 1.5,
+                )
               : null,
           boxShadow: [
             BoxShadow(
@@ -84,12 +84,16 @@ class DeliveryCard extends StatelessWidget {
                     width: 42,
                     height: 42,
                     decoration: BoxDecoration(
-                      color: isCanceled ? const Color(0xFFFFD5D5) : const Color(0xFFEEF3FB),
+                      color: isCanceled
+                          ? const Color(0xFFFFD5D5)
+                          : const Color(0xFFEEF3FB),
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: Icon(
                       Icons.inventory_2_outlined,
-                      color: isCanceled ? const Color(0xFFD32F2F) : const Color(0xFF2C5F8A),
+                      color: isCanceled
+                          ? const Color(0xFFD32F2F)
+                          : const Color(0xFF2C5F8A),
                       size: 22,
                     ),
                   ),
@@ -113,8 +117,12 @@ class DeliveryCard extends StatelessWidget {
                               item.status.label,
                               style: TextStyle(
                                 fontSize: 11,
-                                fontWeight: isCanceled ? FontWeight.bold : FontWeight.normal,
-                                color: isCanceled ? const Color(0xFFD32F2F) : const Color(0xFF8BA4C8),
+                                fontWeight: isCanceled
+                                    ? FontWeight.bold
+                                    : FontWeight.normal,
+                                color: isCanceled
+                                    ? const Color(0xFFD32F2F)
+                                    : const Color(0xFF8BA4C8),
                               ),
                             ),
                             const Text(
@@ -127,16 +135,16 @@ class DeliveryCard extends StatelessWidget {
                             Text(
                               item.date,
                               style: const TextStyle(
-                                  fontSize: 11,
-                                  color: Color(0xFF8BA4C8),
-                                ),
+                                fontSize: 11,
+                                color: Color(0xFF8BA4C8),
+                              ),
                             ),
                           ],
                         ),
                       ],
                     ),
                   ),
-    
+
                   // Arrow
                   const Icon(
                     Icons.chevron_right_rounded,
@@ -153,7 +161,7 @@ class DeliveryCard extends StatelessWidget {
                 ] else ...[
                   const SizedBox(height: 12),
                 ],
-    
+
                 // From / To labels
                 Row(
                   children: [
@@ -177,7 +185,7 @@ class DeliveryCard extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 2),
-    
+
                 // Origin / Destination names
                 Row(
                   children: [

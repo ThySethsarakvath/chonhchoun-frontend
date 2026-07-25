@@ -63,9 +63,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         setState(() => _loading = false);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(
-              'Error loading profile: ${e.toString().replaceFirst('Exception: ', '')}',
-            ),
+            content: Text('មិនអាចផ្ទុកព័ត៌មានគណនីបានទេ។ សូមព្យាយាមម្ដងទៀត។'),
             backgroundColor: Colors.redAccent,
           ),
         );
@@ -113,7 +111,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               } catch (error) {
                 setSheetState(
                   () => errorText =
-                      'Unable to select that image. Please try another one.',
+                      'មិនអាចជ្រើសរើសរូបភាពនេះបានទេ។ សូមសាកល្បងរូបភាពផ្សេង។',
                 );
               }
             }
@@ -123,14 +121,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
               final phone = phoneController.text.trim();
               if (name.length < 2) {
                 setSheetState(
-                  () => errorText = 'Please enter a valid full name.',
+                  () => errorText = 'សូមបញ្ចូលឈ្មោះពេញឱ្យបានត្រឹមត្រូវ។',
                 );
                 return;
               }
               if (!_phoneReg.hasMatch(phone)) {
                 setSheetState(
-                  () => errorText =
-                      'Please enter a valid Cambodian phone number.',
+                  () =>
+                      errorText = 'សូមបញ្ចូលលេខទូរសព្ទកម្ពុជាឱ្យបានត្រឹមត្រូវ។',
                 );
                 return;
               }
@@ -142,7 +140,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               try {
                 final accessToken = await TokenStorage.getAccessToken();
                 if (accessToken == null || accessToken.isEmpty) {
-                  throw Exception('Please log in again.');
+                  throw Exception('សូមចូលគណនីម្ដងទៀត។');
                 }
 
                 await _userService.updateProfile(
@@ -166,9 +164,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
               } catch (error) {
                 setSheetState(() {
                   saving = false;
-                  errorText = error
-                      .toString()
-                      .replaceFirst('Exception: ', '');
+                  errorText =
+                      'មិនអាចធ្វើបច្ចុប្បន្នភាពគណនីបានទេ។ សូមព្យាយាមម្ដងទៀត។';
                 });
               }
             }
@@ -199,7 +196,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ),
                       const SizedBox(height: 18),
                       const Text(
-                        'Edit profile',
+                        'កែប្រែគណនី',
                         style: TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.w800,
@@ -261,12 +258,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ),
                       const SizedBox(height: 22),
                       _EditProfileField(
-                        label: 'Full name',
+                        label: 'ឈ្មោះពេញ',
                         controller: nameController,
                       ),
                       const SizedBox(height: 14),
                       _EditProfileField(
-                        label: 'Phone number',
+                        label: 'លេខទូរសព្ទ',
                         controller: phoneController,
                         keyboardType: TextInputType.phone,
                       ),
@@ -300,10 +297,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   ),
                                 )
                               : const Text(
-                                  'Save changes',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.w700,
-                                  ),
+                                  'រក្សាទុកការកែប្រែ',
+                                  style: TextStyle(fontWeight: FontWeight.w700),
                                 ),
                         ),
                       ),
@@ -322,7 +317,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (updatedProfile != null && mounted) {
       setState(() => _userProfile = updatedProfile);
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Profile updated successfully.')),
+        const SnackBar(content: Text('បានធ្វើបច្ចុប្បន្នភាពគណនីដោយជោគជ័យ។')),
       );
     }
   }
@@ -622,7 +617,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                   const SizedBox(height: 14),
 
-                  _ProfileField(label: 'អុីម៉ែល', value: p?.email ?? '—'),
+                  _ProfileField(label: 'អ៊ីមែល', value: p?.email ?? '—'),
                   const SizedBox(height: 80),
 
                   SizedBox(

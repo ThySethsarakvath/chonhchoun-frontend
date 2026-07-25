@@ -7,9 +7,9 @@ import '../models/conversation.dart';
 /// (a delivery is chattable once a driver is assigned).
 class ConversationService {
   Map<String, String> _headers(String token) => {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer $token',
-      };
+    'Content-Type': 'application/json',
+    'Authorization': 'Bearer $token',
+  };
 
   /// Customer: their own bookings that already have a driver assigned.
   Future<List<Conversation>> customerConversations(String token) async {
@@ -18,18 +18,20 @@ class ConversationService {
       headers: _headers(token),
     );
     if (res.statusCode != 200) {
-      throw Exception('Failed to load conversations (${res.statusCode})');
+      throw Exception('មិនអាចផ្ទុកបញ្ជីសន្ទនាបានទេ (${res.statusCode})');
     }
     final body = json.decode(res.body) as Map<String, dynamic>;
     final data = (body['data'] as List<dynamic>? ?? []);
     return data
         .where((p) => p['driverId'] != null)
-        .map((p) => Conversation(
-              packageId: (p['_id'] ?? '').toString(),
-              trackingNumber: (p['trackingNumber'] ?? '').toString(),
-              status: (p['status'] ?? '').toString(),
-              peerName: 'អ្នកដឹកជញ្ជូន', // "Driver"
-            ))
+        .map(
+          (p) => Conversation(
+            packageId: (p['_id'] ?? '').toString(),
+            trackingNumber: (p['trackingNumber'] ?? '').toString(),
+            status: (p['status'] ?? '').toString(),
+            peerName: 'អ្នកដឹកជញ្ជូន', // "Driver"
+          ),
+        )
         .toList();
   }
 
@@ -40,12 +42,14 @@ class ConversationService {
       headers: _headers(token),
     );
     if (res.statusCode != 200) {
-      throw Exception('Failed to load deliveries (${res.statusCode})');
+      throw Exception('មិនអាចផ្ទុកបញ្ជីដឹកជញ្ជូនបានទេ (${res.statusCode})');
     }
     final data = json.decode(res.body) as List<dynamic>;
     return data.map((p) {
       final customer = p['customerId'];
-      final name = customer is Map ? (customer['name'] ?? 'អតិថិជន') : 'អតិថិជន';
+      final name = customer is Map
+          ? (customer['name'] ?? 'អតិថិជន')
+          : 'អតិថិជន';
       return Conversation(
         packageId: (p['_id'] ?? '').toString(),
         trackingNumber: (p['trackingNumber'] ?? '').toString(),

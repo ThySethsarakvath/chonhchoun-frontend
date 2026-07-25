@@ -218,7 +218,7 @@ class AppDrawer extends StatelessWidget {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                userProfile?.name ?? 'User',
+                                userProfile?.name ?? 'អ្នកប្រើប្រាស់',
                                 style: const TextStyle(
                                   color: Colors.white,
                                   fontSize: 14,

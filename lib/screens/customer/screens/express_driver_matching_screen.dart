@@ -76,14 +76,14 @@ class _ExpressDriverMatchingScreenState
       );
       if (response.statusCode != 200) {
         throw Exception(
-          _messageFrom(response.body, 'Unable to check delivery'),
+          _messageFrom(response.body, 'មិនអាចពិនិត្យការដឹកជញ្ជូនបានទេ'),
         );
       }
       final data = json.decode(response.body) as Map<String, dynamic>;
       final status = data['status']?.toString().toUpperCase() ?? 'PENDING';
       if (status != 'PENDING') {
         if (status == 'CANCELLED' || status == 'FAILED') {
-          throw Exception('This delivery is no longer active.');
+          throw Exception('ការដឹកជញ្ជូននេះលែងដំណើរការហើយ។');
         }
         _openTracking();
         return;
@@ -105,9 +105,12 @@ class _ExpressDriverMatchingScreenState
       _updateCountdown();
     } catch (error) {
       if (!mounted || silent) return;
+      final message = error.toString().replaceFirst('Exception: ', '');
       setState(() {
         _loading = false;
-        _error = error.toString().replaceFirst('Exception: ', '');
+        _error = RegExp(r'[\u1780-\u17FF]').hasMatch(message)
+            ? message
+            : 'មិនអាចពិនិត្យការស្វែងរកអ្នកបើកបរបានទេ។';
       });
     } finally {
       _requestInFlight = false;
@@ -138,7 +141,7 @@ class _ExpressDriverMatchingScreenState
       );
       if (response.statusCode != 200 && response.statusCode != 201) {
         throw Exception(
-          _messageFrom(response.body, 'Unable to retry driver matching'),
+          _messageFrom(response.body, 'មិនអាចស្វែងរកអ្នកបើកបរម្ដងទៀតបានទេ'),
         );
       }
       final data = json.decode(response.body) as Map<String, dynamic>;
@@ -155,8 +158,11 @@ class _ExpressDriverMatchingScreenState
       });
     } catch (error) {
       if (mounted) {
+        final message = error.toString().replaceFirst('Exception: ', '');
         setState(
-          () => _error = error.toString().replaceFirst('Exception: ', ''),
+          () => _error = RegExp(r'[\u1780-\u17FF]').hasMatch(message)
+              ? message
+              : 'មិនអាចស្វែងរកអ្នកបើកបរម្ដងទៀតបានទេ។',
         );
       }
     } finally {
@@ -192,7 +198,7 @@ class _ExpressDriverMatchingScreenState
       canPop: true,
       child: Scaffold(
         backgroundColor: AppColors.surface,
-        appBar: AppBar(title: const Text('Finding a driver')),
+        appBar: AppBar(title: const Text('កំពុងស្វែងរកអ្នកបើកបរ')),
         body: SafeArea(
           child: Center(
             child: SingleChildScrollView(
@@ -210,8 +216,8 @@ class _ExpressDriverMatchingScreenState
                       duration: AppMotion.standard,
                       child: Text(
                         _expired
-                            ? 'No driver accepted in time'
-                            : 'Broadcasting your delivery',
+                            ? 'គ្មានអ្នកបើកបរទទួលយកទាន់ពេល'
+                            : 'កំពុងផ្សព្វផ្សាយសំណើដឹកជញ្ជូនរបស់អ្នក',
                         key: ValueKey(_expired),
                         textAlign: TextAlign.center,
                         style: Theme.of(context).textTheme.headlineSmall,
@@ -220,8 +226,8 @@ class _ExpressDriverMatchingScreenState
                     const SizedBox(height: AppSpacing.sm),
                     Text(
                       _expired
-                          ? 'You can retry to notify currently available drivers nearby.'
-                          : 'Nearby drivers can accept this request. The first acceptance reserves the delivery.',
+                          ? 'អ្នកអាចព្យាយាមម្ដងទៀត ដើម្បីជូនដំណឹងដល់អ្នកបើកបរដែលនៅជិត និងទំនេរ។'
+                          : 'អ្នកបើកបរដែលនៅជិតអាចទទួលយកសំណើនេះ។ អ្នកដែលទទួលមុនគេនឹងទទួលបានការដឹកជញ្ជូននេះ។',
                       textAlign: TextAlign.center,
                       style: Theme.of(context).textTheme.bodyMedium,
                     ),
@@ -246,18 +252,18 @@ class _ExpressDriverMatchingScreenState
                         children: [
                           const _MatchingStep(
                             icon: Icons.check_circle_rounded,
-                            label: 'Delivery request created',
+                            label: 'បានបង្កើតសំណើដឹកជញ្ជូន',
                             completed: true,
                           ),
                           _MatchingStep(
                             icon: Icons.cell_tower_rounded,
-                            label: 'Notifying nearby available drivers',
+                            label: 'កំពុងជូនដំណឹងដល់អ្នកបើកបរដែលនៅជិត',
                             completed: !_expired,
                             active: !_expired,
                           ),
                           const _MatchingStep(
                             icon: Icons.delivery_dining_rounded,
-                            label: 'Waiting for the first driver to accept',
+                            label: 'កំពុងរង់ចាំអ្នកបើកបរដំបូងទទួលយក',
                             active: true,
                           ),
                         ],
@@ -265,7 +271,7 @@ class _ExpressDriverMatchingScreenState
                     ),
                     const SizedBox(height: 12),
                     Text(
-                      'Broadcast attempt $_attempt',
+                      'ការផ្សព្វផ្សាយលើកទី $_attempt',
                       style: Theme.of(context).textTheme.bodySmall,
                     ),
                     if (_error != null) ...[
@@ -304,7 +310,9 @@ class _ExpressDriverMatchingScreenState
                                 )
                               : const Icon(Icons.refresh),
                           label: Text(
-                            _retrying ? 'Broadcasting...' : 'Retry matching',
+                            _retrying
+                                ? 'កំពុងផ្សព្វផ្សាយ...'
+                                : 'ស្វែងរកម្ដងទៀត',
                           ),
                           style: FilledButton.styleFrom(
                             backgroundColor: AppColors.blueDark,
@@ -342,8 +350,8 @@ class _CountdownDial extends StatelessWidget {
     return Semantics(
       liveRegion: true,
       label: loading
-          ? 'Checking driver matching status'
-          : '$remainingSeconds seconds remaining',
+          ? 'កំពុងពិនិត្យស្ថានភាពស្វែងរកអ្នកបើកបរ'
+          : 'នៅសល់ $remainingSeconds វិនាទី',
       child: LayoutBuilder(
         builder: (context, constraints) {
           final dimension = (constraints.maxWidth * 0.55).clamp(190.0, 230.0);
@@ -391,7 +399,7 @@ class _CountdownDial extends StatelessWidget {
                       ),
                       const SizedBox(height: AppSpacing.xs),
                       Text(
-                        expired ? 'expired' : 'seconds',
+                        expired ? 'ផុតកំណត់' : 'វិនាទី',
                         style: Theme.of(context).textTheme.labelMedium
                             ?.copyWith(
                               color: expired

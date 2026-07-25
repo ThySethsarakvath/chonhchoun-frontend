@@ -279,10 +279,7 @@ class CustomerHeroSection extends StatelessWidget {
 // ── Surface Card ──────────────────────────────────────────────────────────────
 
 class AppSurfaceCard extends StatelessWidget {
-  const AppSurfaceCard({
-    super.key,
-    required this.child,
-  });
+  const AppSurfaceCard({super.key, required this.child});
 
   final Widget child;
 
@@ -310,10 +307,7 @@ class AppSurfaceCard extends StatelessWidget {
 // ── Status Chip ───────────────────────────────────────────────────────────────
 
 class AppStatusChip extends StatelessWidget {
-  const AppStatusChip({
-    super.key,
-    required this.label,
-  });
+  const AppStatusChip({super.key, required this.label});
 
   final String label;
 
@@ -339,10 +333,7 @@ class AppStatusChip extends StatelessWidget {
 // ── Back Chip ─────────────────────────────────────────────────────────────────
 
 class AppBackChip extends StatelessWidget {
-  const AppBackChip({
-    super.key,
-    required this.onTap,
-  });
+  const AppBackChip({super.key, required this.onTap});
 
   final VoidCallback onTap;
 
@@ -371,11 +362,7 @@ class AppBackChip extends StatelessWidget {
 // ── Stat Line ─────────────────────────────────────────────────────────────────
 
 class AppStatLine extends StatelessWidget {
-  const AppStatLine({
-    super.key,
-    required this.label,
-    required this.value,
-  });
+  const AppStatLine({super.key, required this.label, required this.value});
 
   final String label;
   final String value;
@@ -392,12 +379,7 @@ class AppStatLine extends StatelessWidget {
           ),
         ),
         const SizedBox(width: 10),
-        const Expanded(
-          child: Divider(
-            thickness: 1,
-            color: AppColors.line,
-          ),
-        ),
+        const Expanded(child: Divider(thickness: 1, color: AppColors.line)),
         const SizedBox(width: 10),
         Text(
           value,
@@ -515,7 +497,7 @@ class CustomerBottomBar extends StatelessWidget {
               width: 84,
               child: _BottomBarItem(
                 icon: Icons.home_filled,
-                label: 'Home',
+                label: 'ទំព័រដើម',
                 isSelected: selectedIndex == 0,
                 onTap: () => onSelected(0),
               ),
@@ -524,7 +506,7 @@ class CustomerBottomBar extends StatelessWidget {
               width: 84,
               child: _BottomBarItem(
                 icon: Icons.history_rounded,
-                label: 'Orders',
+                label: 'ការដឹកជញ្ជូន',
                 isSelected: selectedIndex == 1,
                 onTap: () => onSelected(1),
               ),
@@ -533,7 +515,7 @@ class CustomerBottomBar extends StatelessWidget {
               width: 84,
               child: _BottomBarItem(
                 icon: Icons.person_rounded,
-                label: 'Profile',
+                label: 'គណនី',
                 isSelected: selectedIndex == 2,
                 onTap: () => onSelected(2),
               ),

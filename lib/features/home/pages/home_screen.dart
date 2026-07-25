@@ -194,9 +194,11 @@ class _HomeScreenState extends State<HomeScreen> {
     } catch (e) {
       debugPrint("Booking Error: $e");
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text("ការកក់មិនបានជោគជ័យ: $e")));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("មិនអាចបង្កើតការដឹកជញ្ជូនបានទេ។ សូមព្យាយាមម្ដងទៀត។"),
+          ),
+        );
       }
       return null;
     }
@@ -243,7 +245,7 @@ class _HomeScreenState extends State<HomeScreen> {
             const SizedBox(height: 24),
             _buildServiceOption(
               icon: Icons.electric_bolt_rounded,
-              title: 'Chonhchoun Express',
+              title: 'ដឹកជញ្ជូនរហ័ស',
               subtitle: 'ដឹកជញ្ជូនរហ័សទាន់ចិត្ត (ក្រោម ២ ម៉ោង)',
               onTap: () {
                 Navigator.pop(context);
@@ -253,7 +255,7 @@ class _HomeScreenState extends State<HomeScreen> {
             const SizedBox(height: 12),
             _buildServiceOption(
               icon: Icons.warehouse_rounded,
-              title: 'Warehouse to Warehouse',
+              title: 'ដឹកជញ្ជូនរវាងឃ្លាំង',
               subtitle: 'ផ្ញើពីឃ្លាំងមួយទៅឃ្លាំងមួយទៀត (តម្លៃធូរថ្លៃ)',
               onTap: () {
                 Navigator.pop(context);
@@ -682,12 +684,12 @@ class _HomeScreenState extends State<HomeScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         SectionHeader(
-          title: 'My Branch Logistics Tickets',
+          title: 'សំបុត្រដឹកជញ្ជូនតាមសាខារបស់ខ្ញុំ',
           onLinkTap: () => _openBranchTickets(sortedShipments),
         ),
         const SizedBox(height: 12),
         if (_branchLogisticsShipments.isEmpty)
-          const _EmptyState(message: 'No branch logistics ticket yet')
+          const _EmptyState(message: 'មិនទាន់មានសំបុត្រដឹកជញ្ជូនតាមសាខាទេ')
         else
           ...visibleShipments.map((shipment) {
             final status = _customerShipmentStatusLabel(shipment.status);
@@ -754,7 +756,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                   const SizedBox(height: 10),
                   Text(
-                    'Package ID: $stockId',
+                    'លេខសម្គាល់កញ្ចប់៖ $stockId',
                     style: const TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
@@ -802,14 +804,16 @@ class _HomeScreenState extends State<HomeScreen> {
           backgroundColor: const Color(0xFFEEF3FB),
           appBar: AppBar(
             title: const Text(
-              'My Branch Logistics Tickets',
+              'សំបុត្រដឹកជញ្ជូនតាមសាខារបស់ខ្ញុំ',
               style: TextStyle(fontWeight: FontWeight.w700),
             ),
             backgroundColor: Colors.white,
             foregroundColor: const Color(0xFF203247),
           ),
           body: shipments.isEmpty
-              ? const _EmptyState(message: 'No branch logistics ticket yet')
+              ? const _EmptyState(
+                  message: 'មិនទាន់មានសំបុត្រដឹកជញ្ជូនតាមសាខាទេ',
+                )
               : ListView.separated(
                   padding: const EdgeInsets.fromLTRB(20, 18, 20, 32),
                   itemCount: shipments.length,
@@ -833,21 +837,21 @@ class _HomeScreenState extends State<HomeScreen> {
   String _customerShipmentStatusLabel(String status) {
     switch (status) {
       case 'CREATED':
-        return 'Waiting for Driver';
+        return 'កំពុងរង់ចាំអ្នកបើកបរ';
       case 'ASSIGNED':
-        return 'Assigned to Driver';
+        return 'បានកំណត់អ្នកបើកបរ';
       case 'RECEIVED_AT_SENDER_WAREHOUSE':
-        return 'Collected from Branch';
+        return 'បានទទួលពីសាខា';
       case 'IN_TRANSIT':
-        return 'Delivering';
+        return 'កំពុងដឹកជញ្ជូន';
       case 'RECEIVED_AT_RECEIVER_WAREHOUSE':
-        return 'Arrived at Branch';
+        return 'បានមកដល់សាខា';
       case 'READY_FOR_PICKUP':
-        return 'Ready for Pickup';
+        return 'រួចរាល់សម្រាប់ការទទួល';
       case 'COMPLETED':
-        return 'Completed';
+        return 'បានបញ្ចប់';
       case 'CANCELLED':
-        return 'Cancelled';
+        return 'បានបោះបង់';
       default:
         return status;
     }
@@ -889,7 +893,7 @@ class _SearchBar extends StatelessWidget {
               },
               style: Theme.of(context).textTheme.bodyMedium,
               decoration: const InputDecoration(
-                hintText: 'Enter your tracking number',
+                hintText: 'បញ្ចូលលេខតាមដានរបស់អ្នក',
                 prefixIcon: Icon(Icons.search_rounded),
                 suffixIcon: Icon(Icons.qr_code_scanner_rounded, size: 20),
               ),
@@ -976,7 +980,7 @@ class _CustomerDeliveryListScreen extends StatelessWidget {
         foregroundColor: const Color(0xFF203247),
       ),
       body: items.isEmpty
-          ? const _EmptyState(message: 'No delivery found')
+          ? const _EmptyState(message: 'រកមិនឃើញការដឹកជញ្ជូន')
           : ListView.separated(
               padding: const EdgeInsets.fromLTRB(20, 18, 20, 32),
               itemCount: items.length,
@@ -1072,7 +1076,7 @@ class _CustomerBranchTicketCard extends StatelessWidget {
           ),
           const SizedBox(height: 10),
           Text(
-            'Package ID: $stockId',
+            'លេខសម្គាល់កញ្ចប់៖ $stockId',
             style: const TextStyle(
               color: Color(0xFF334155),
               fontSize: 12,
