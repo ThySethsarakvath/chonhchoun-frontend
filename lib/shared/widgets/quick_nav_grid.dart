@@ -44,8 +44,7 @@ class QuickNavGrid extends StatelessWidget {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              for (final item in items)
-                Expanded(child: _NavCell(item: item)),
+              for (final item in items) Expanded(child: _NavCell(item: item)),
             ],
           ),
         ),

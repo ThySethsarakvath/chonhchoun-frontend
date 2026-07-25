@@ -39,9 +39,7 @@ class HomeBottomNav extends StatelessWidget {
               child: DecoratedBox(
                 decoration: const BoxDecoration(
                   color: AppColors.surfaceContainer,
-                  border: Border(
-                    top: BorderSide(color: Color(0xFFECF0F4)),
-                  ),
+                  border: Border(top: BorderSide(color: Color(0xFFECF0F4))),
                   boxShadow: AppShadows.card,
                 ),
                 child: Padding(

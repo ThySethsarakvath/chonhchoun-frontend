@@ -6,6 +6,7 @@ import '../../../shared/colors/app_colors.dart';
 import '../../../shared/models/order.dart';
 import '../../../shared/models/home_models.dart';
 import '../../../shared/widgets/app_shell_widgets.dart';
+import '../../../shared/theme/app_tokens.dart';
 import '../../../shared/services/home_service.dart';
 import '../../../features/auth/tokens/token_storage.dart';
 import 'express_driver_matching_screen.dart';
@@ -170,33 +171,40 @@ class _CustomerItemInfoScreenState extends State<CustomerItemInfoScreen> {
     return Scaffold(
       backgroundColor: AppColors.surface,
       appBar: AppBar(
-        title: const Text(
-          "Complete Booking",
-          style: TextStyle(fontWeight: FontWeight.bold),
+        leading: IconButton(
+          tooltip: 'Back',
+          onPressed: () => Navigator.of(context).pop(),
+          icon: const Icon(Icons.arrow_back_rounded),
         ),
-        backgroundColor: Colors.white,
-        foregroundColor: AppColors.text,
-        elevation: 0,
-        centerTitle: true,
+        title: const Text("Complete booking"),
+        centerTitle: false,
       ),
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            _buildRouteCard(),
-            const SizedBox(height: 16),
-            _buildItemSpecsCard(),
-            if (widget.serviceType == DeliveryServiceType.express) ...[
-              const SizedBox(height: 16),
-              _buildVehicleCard(),
-              const SizedBox(height: 16),
-              _buildDropoffContactCard(),
-            ],
-            const SizedBox(height: 16),
-            _buildAddonsCard(),
-            const SizedBox(height: 16),
-            _buildPaymentCard(),
-            const SizedBox(height: 24),
-          ],
+      body: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(
+            maxWidth: AppBreakpoints.customerContentMaxWidth,
+          ),
+          child: SingleChildScrollView(
+            keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+            child: Column(
+              children: [
+                _buildRouteCard(),
+                const SizedBox(height: AppSpacing.md),
+                _buildItemSpecsCard(),
+                if (widget.serviceType == DeliveryServiceType.express) ...[
+                  const SizedBox(height: AppSpacing.md),
+                  _buildVehicleCard(),
+                  const SizedBox(height: AppSpacing.md),
+                  _buildDropoffContactCard(),
+                ],
+                const SizedBox(height: AppSpacing.md),
+                _buildAddonsCard(),
+                const SizedBox(height: AppSpacing.md),
+                _buildPaymentCard(),
+                const SizedBox(height: AppSpacing.xl),
+              ],
+            ),
+          ),
         ),
       ),
       bottomNavigationBar: _buildBottomSummary(),
@@ -720,91 +728,110 @@ class _CustomerItemInfoScreenState extends State<CustomerItemInfoScreen> {
   }
 
   Widget _buildBottomSummary() {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black12,
-            blurRadius: 10,
-            offset: Offset(0, -4),
+    return SafeArea(
+      top: false,
+      child: Align(
+        alignment: Alignment.topCenter,
+        heightFactor: 1,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(
+            maxWidth: AppBreakpoints.customerContentMaxWidth,
           ),
-        ],
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text(
-                "Total Payable",
-                style: TextStyle(fontSize: 16, color: AppColors.muted),
-              ),
-              Text(
-                "${_totalPrice.toInt()}៛",
-                style: const TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.blueDark,
-                ),
-              ),
-            ],
-          ),
-          if (widget.serviceType == DeliveryServiceType.express) ...[
-            const SizedBox(height: 6),
-            Align(
-              alignment: Alignment.centerRight,
-              child: Text(
-                _quoteLoading
-                    ? "Calculating road-distance price…"
-                    : _quoteError ??
-                          (_quote == null
-                              ? "Estimated price"
-                              : "${_quote!.distanceKm.toStringAsFixed(1)} km • "
-                                    "${(_quote!.durationSeconds / 60).ceil()} min estimated"),
-                style: TextStyle(
-                  color: _quoteError == null
-                      ? AppColors.muted
-                      : AppColors.danger,
-                  fontSize: 12,
-                ),
-              ),
+          child: Container(
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.lg,
+              AppSpacing.sm,
+              AppSpacing.lg,
+              AppSpacing.md,
             ),
-          ],
-          const SizedBox(height: 12),
-          ElevatedButton(
-            onPressed: _isSubmitting || _quoteLoading ? null : _submitBooking,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.blue,
-              minimumSize: const Size(double.infinity, 54),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(14),
-              ),
-              elevation: 0,
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black12,
+                  blurRadius: 10,
+                  offset: Offset(0, -4),
+                ),
+              ],
             ),
-            child: _isSubmitting
-                ? const SizedBox(
-                    width: 22,
-                    height: 22,
-                    child: CircularProgressIndicator(
-                      color: Colors.white,
-                      strokeWidth: 2.5,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      "Total Payable",
+                      style: TextStyle(fontSize: 16, color: AppColors.muted),
                     ),
-                  )
-                : Text(
-                    _quoteError != null
-                        ? "Retry Price Calculation"
-                        : "Confirm & Book Now",
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 17,
-                      fontWeight: FontWeight.bold,
+                    Text(
+                      "${_totalPrice.toInt()}៛",
+                      style: const TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.blueDark,
+                      ),
+                    ),
+                  ],
+                ),
+                if (widget.serviceType == DeliveryServiceType.express) ...[
+                  const SizedBox(height: 6),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: Text(
+                      _quoteLoading
+                          ? "Calculating road-distance price…"
+                          : _quoteError ??
+                                (_quote == null
+                                    ? "Estimated price"
+                                    : "${_quote!.distanceKm.toStringAsFixed(1)} km • "
+                                          "${(_quote!.durationSeconds / 60).ceil()} min estimated"),
+                      style: TextStyle(
+                        color: _quoteError == null
+                            ? AppColors.muted
+                            : AppColors.danger,
+                        fontSize: 12,
+                      ),
                     ),
                   ),
+                ],
+                const SizedBox(height: 12),
+                ElevatedButton(
+                  onPressed: _isSubmitting || _quoteLoading
+                      ? null
+                      : _submitBooking,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.blue,
+                    minimumSize: const Size(double.infinity, 54),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    elevation: 0,
+                  ),
+                  child: _isSubmitting
+                      ? const SizedBox(
+                          width: 22,
+                          height: 22,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2.5,
+                          ),
+                        )
+                      : Text(
+                          _quoteError != null
+                              ? "Retry Price Calculation"
+                              : "Confirm & Book Now",
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 17,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                ),
+              ],
+            ),
           ),
-        ],
+        ),
       ),
     );
   }
@@ -1061,32 +1088,93 @@ class _VehicleTile extends StatelessWidget {
   final VoidCallback onTap;
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: isSelected
-              ? AppColors.blue.withValues(alpha: 0.05)
-              : Colors.white,
-          border: Border.all(
-            color: isSelected ? AppColors.blue : AppColors.line,
-          ),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Row(
-          children: [
-            Icon(icon, color: isSelected ? AppColors.blue : AppColors.muted),
-            const SizedBox(width: 12),
-            Text(
-              title,
-              style: TextStyle(
-                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-              ),
+    return Semantics(
+      button: true,
+      selected: isSelected,
+      label: '$title, $price',
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        child: AnimatedContainer(
+          duration: AppMotion.standard,
+          curve: AppMotion.standardCurve,
+          padding: const EdgeInsets.all(AppSpacing.md),
+          decoration: BoxDecoration(
+            color: isSelected
+                ? AppColors.blue.withValues(alpha: 0.07)
+                : AppColors.surfaceContainerLow,
+            border: Border.all(
+              color: isSelected ? AppColors.blue : AppColors.line,
             ),
-            const Spacer(),
-            Text(price, style: const TextStyle(fontWeight: FontWeight.bold)),
-          ],
+            borderRadius: BorderRadius.circular(AppRadius.lg),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 42,
+                height: 42,
+                decoration: BoxDecoration(
+                  color: isSelected
+                      ? AppColors.softBlue
+                      : AppColors.surfaceContainer,
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  icon,
+                  color: isSelected ? AppColors.blue : AppColors.muted,
+                ),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: AppColors.text,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.xxs),
+                    Text(
+                      price,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                        color: isSelected
+                            ? AppColors.blue
+                            : AppColors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              AnimatedContainer(
+                duration: AppMotion.fast,
+                width: 22,
+                height: 22,
+                decoration: BoxDecoration(
+                  color: isSelected ? AppColors.blue : Colors.transparent,
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: isSelected ? AppColors.blue : AppColors.line,
+                    width: 2,
+                  ),
+                ),
+                child: isSelected
+                    ? const Icon(
+                        Icons.check_rounded,
+                        size: 14,
+                        color: Colors.white,
+                      )
+                    : null,
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -1104,15 +1192,17 @@ class _PaymentBtn extends StatelessWidget {
       child: ElevatedButton(
         onPressed: onTap,
         style: ElevatedButton.styleFrom(
-          backgroundColor: isSelected ? AppColors.blue : Colors.white,
+          backgroundColor: isSelected
+              ? AppColors.blue
+              : AppColors.surfaceContainerLow,
           foregroundColor: isSelected ? Colors.white : AppColors.text,
           elevation: 0,
           side: BorderSide(color: isSelected ? AppColors.blue : AppColors.line),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(AppRadius.md),
           ),
         ),
-        child: Text(label),
+        child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis),
       ),
     );
   }

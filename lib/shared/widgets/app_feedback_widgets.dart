@@ -31,9 +31,10 @@ class _AppSkeletonState extends State<AppSkeleton>
       vsync: this,
       duration: const Duration(milliseconds: 900),
     )..repeat(reverse: true);
-    _opacity = Tween<double>(begin: 0.45, end: 0.9).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
-    );
+    _opacity = Tween<double>(
+      begin: 0.45,
+      end: 0.9,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
   }
 
   @override
@@ -46,9 +47,7 @@ class _AppSkeletonState extends State<AppSkeleton>
   Widget build(BuildContext context) {
     final disableAnimations = MediaQuery.disableAnimationsOf(context);
     return FadeTransition(
-      opacity: disableAnimations
-          ? const AlwaysStoppedAnimation(0.7)
-          : _opacity,
+      opacity: disableAnimations ? const AlwaysStoppedAnimation(0.7) : _opacity,
       child: Container(
         width: widget.width,
         height: widget.height,

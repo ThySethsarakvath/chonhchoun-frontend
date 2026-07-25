@@ -14,7 +14,9 @@ class DriverHistoryTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final provider = DriverScope.of(context);
-    final history = provider.historyRequests;
+    final history = provider.historyRequests
+        .where((request) => request.status == 'DELIVERED')
+        .toList();
 
     return RefreshIndicator(
       onRefresh: () async {

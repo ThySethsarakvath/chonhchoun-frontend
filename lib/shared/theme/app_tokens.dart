@@ -37,18 +37,10 @@ abstract final class AppBreakpoints {
 
 abstract final class AppShadows {
   static const card = [
-    BoxShadow(
-      color: Color(0x0F17324D),
-      blurRadius: 24,
-      offset: Offset(0, 8),
-    ),
+    BoxShadow(color: Color(0x0F17324D), blurRadius: 24, offset: Offset(0, 8)),
   ];
 
   static const floating = [
-    BoxShadow(
-      color: Color(0x24152F47),
-      blurRadius: 28,
-      offset: Offset(0, 12),
-    ),
+    BoxShadow(color: Color(0x24152F47), blurRadius: 28, offset: Offset(0, 12)),
   ];
 }

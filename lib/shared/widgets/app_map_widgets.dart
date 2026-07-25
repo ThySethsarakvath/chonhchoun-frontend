@@ -3,6 +3,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import '../colors/app_colors.dart';
 import '../data/map_data.dart';
+import '../theme/app_tokens.dart';
 
 // ── Customer Map Picker ───────────────────────────────────────────────────────
 
@@ -33,7 +34,9 @@ class CustomerMapPicker extends StatelessWidget {
       options: MapOptions(
         initialCenter: pickupLocation ?? const LatLng(11.5564, 104.9282),
         initialZoom: 14.0,
-        onTap: onMapTap != null ? (tapPosition, point) => onMapTap!(point) : null,
+        onTap: onMapTap != null
+            ? (tapPosition, point) => onMapTap!(point)
+            : null,
       ),
       children: [
         TileLayer(
@@ -45,8 +48,13 @@ class CustomerMapPicker extends StatelessWidget {
             polylines: [
               Polyline(
                 points: routePoints!,
+                color: Colors.white,
+                strokeWidth: 8,
+              ),
+              Polyline(
+                points: routePoints!,
                 color: AppColors.blue,
-                strokeWidth: 4,
+                strokeWidth: 5,
               ),
             ],
           ),
@@ -57,10 +65,10 @@ class CustomerMapPicker extends StatelessWidget {
                 point: pickupLocation!,
                 width: 60,
                 height: 60,
-                child: const Icon(
-                  Icons.location_on,
+                child: const _MapPin(
                   color: AppColors.blue,
-                  size: 40,
+                  icon: Icons.trip_origin_rounded,
+                  semanticLabel: 'Pickup location',
                 ),
               ),
             if (dropoffLocation != null)
@@ -68,10 +76,10 @@ class CustomerMapPicker extends StatelessWidget {
                 point: dropoffLocation!,
                 width: 60,
                 height: 60,
-                child: const Icon(
-                  Icons.location_on,
+                child: const _MapPin(
                   color: AppColors.danger,
-                  size: 40,
+                  icon: Icons.location_on_rounded,
+                  semanticLabel: 'Drop-off location',
                 ),
               ),
             if (warehouseLocations != null)
@@ -80,23 +88,24 @@ class CustomerMapPicker extends StatelessWidget {
                   point: loc,
                   width: 50,
                   height: 50,
-                  child: GestureDetector(
-                    onTap: () => onWarehouseTap?.call(loc),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.2),
-                            blurRadius: 4,
-                          ),
-                        ],
+                  child: Semantics(
+                    button: true,
+                    label: 'Select warehouse',
+                    child: Material(
+                      color: AppColors.surfaceContainer,
+                      elevation: 4,
+                      shadowColor: AppColors.text.withValues(alpha: 0.18),
+                      shape: const CircleBorder(
+                        side: BorderSide(color: AppColors.line),
                       ),
-                      child: const Icon(
-                        Icons.warehouse,
-                        color: AppColors.blueDark,
-                        size: 24,
+                      child: InkResponse(
+                        onTap: () => onWarehouseTap?.call(loc),
+                        radius: 25,
+                        child: const Icon(
+                          Icons.warehouse_rounded,
+                          color: AppColors.blueDark,
+                          size: 23,
+                        ),
                       ),
                     ),
                   ),
@@ -105,6 +114,39 @@ class CustomerMapPicker extends StatelessWidget {
           ],
         ),
       ],
+    );
+  }
+}
+
+class _MapPin extends StatelessWidget {
+  const _MapPin({
+    required this.color,
+    required this.icon,
+    required this.semanticLabel,
+  });
+
+  final Color color;
+  final IconData icon;
+  final String semanticLabel;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      image: true,
+      label: semanticLabel,
+      child: Center(
+        child: Container(
+          width: 44,
+          height: 44,
+          decoration: BoxDecoration(
+            color: AppColors.surfaceContainer,
+            shape: BoxShape.circle,
+            border: Border.all(color: color.withValues(alpha: 0.28), width: 2),
+            boxShadow: AppShadows.card,
+          ),
+          child: Icon(icon, color: color, size: 24),
+        ),
+      ),
     );
   }
 }
@@ -127,55 +169,53 @@ class LocationInputCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
-          ),
-        ],
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          _buildLocationRow(
-            icon: Icons.circle_outlined,
-            color: AppColors.blue,
-            label: "Pick-up point",
-            value: pickupText,
-            active: isSelectingPickup,
-            onTap: isSelectingPickup ? null : onSwitchMode,
-          ),
-          Padding(
-            padding: const EdgeInsets.only(left: 11),
-            child: Align(
-              alignment: Alignment.centerLeft,
-              child: Container(
-                width: 2,
-                height: 20,
-                color: AppColors.line,
+    return Material(
+      color: AppColors.surfaceContainer,
+      elevation: 0,
+      borderRadius: BorderRadius.circular(AppRadius.xl),
+      child: Container(
+        padding: const EdgeInsets.all(AppSpacing.sm),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(AppRadius.xl),
+          border: Border.all(color: AppColors.line.withValues(alpha: 0.8)),
+          boxShadow: AppShadows.floating,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _buildLocationRow(
+              context: context,
+              icon: Icons.trip_origin_rounded,
+              color: AppColors.blue,
+              label: "Pick-up point",
+              value: pickupText,
+              active: isSelectingPickup,
+              onTap: isSelectingPickup ? null : onSwitchMode,
+            ),
+            Padding(
+              padding: const EdgeInsets.only(left: 21),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Container(width: 2, height: 12, color: AppColors.line),
               ),
             ),
-          ),
-          _buildLocationRow(
-            icon: Icons.location_on,
-            color: AppColors.danger,
-            label: "Drop-off point",
-            value: dropoffText,
-            active: !isSelectingPickup,
-            onTap: !isSelectingPickup ? null : onSwitchMode,
-          ),
-        ],
+            _buildLocationRow(
+              context: context,
+              icon: Icons.location_on_rounded,
+              color: AppColors.danger,
+              label: "Drop-off point",
+              value: dropoffText,
+              active: !isSelectingPickup,
+              onTap: !isSelectingPickup ? null : onSwitchMode,
+            ),
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildLocationRow({
+    required BuildContext context,
     required IconData icon,
     required Color color,
     required String label,
@@ -183,48 +223,74 @@ class LocationInputCard extends StatelessWidget {
     required bool active,
     VoidCallback? onTap,
   }) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(10),
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
-        decoration: active
-            ? BoxDecoration(
-                color: color.withValues(alpha: 0.05),
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: color.withValues(alpha: 0.3)),
-              )
-            : null,
-        child: Row(
-          children: [
-            Icon(icon, color: color, size: 24),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    label,
-                    style: const TextStyle(
-                      color: AppColors.muted,
-                      fontSize: 12,
-                    ),
-                  ),
-                  Text(
-                    value,
-                    style: const TextStyle(
-                      color: AppColors.text,
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
-                    ),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
-              ),
+    return Semantics(
+      button: onTap != null,
+      selected: active,
+      label: '$label: $value',
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        child: AnimatedContainer(
+          duration: AppMotion.standard,
+          curve: AppMotion.standardCurve,
+          padding: const EdgeInsets.symmetric(
+            vertical: AppSpacing.sm,
+            horizontal: AppSpacing.sm,
+          ),
+          decoration: BoxDecoration(
+            color: active ? color.withValues(alpha: 0.07) : Colors.transparent,
+            borderRadius: BorderRadius.circular(AppRadius.md),
+            border: Border.all(
+              color: active
+                  ? color.withValues(alpha: 0.28)
+                  : Colors.transparent,
             ),
-            if (active)
-              const Icon(Icons.gps_fixed, color: AppColors.muted, size: 18),
-          ],
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 34,
+                height: 34,
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.11),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(icon, color: color, size: 19),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      label,
+                      style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                        color: active ? color : AppColors.muted,
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.xxs),
+                    Text(
+                      value,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: AppColors.text,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              if (active)
+                Icon(Icons.gps_fixed_rounded, color: color, size: 18)
+              else
+                const Icon(
+                  Icons.chevron_right_rounded,
+                  color: AppColors.muted,
+                  size: 20,
+                ),
+            ],
+          ),
         ),
       ),
     );
@@ -249,8 +315,8 @@ class DriverLeafletMapCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final flags = interactive
         ? InteractiveFlag.drag |
-            InteractiveFlag.pinchZoom |
-            InteractiveFlag.doubleTapZoom
+              InteractiveFlag.pinchZoom |
+              InteractiveFlag.doubleTapZoom
         : InteractiveFlag.none;
 
     return Stack(
@@ -374,10 +440,7 @@ class _MapPlaceholderTag extends StatelessWidget {
           const SizedBox(height: 2),
           Text(
             subtitle,
-            style: const TextStyle(
-              color: AppColors.muted,
-              fontSize: 12,
-            ),
+            style: const TextStyle(color: AppColors.muted, fontSize: 12),
           ),
         ],
       ),

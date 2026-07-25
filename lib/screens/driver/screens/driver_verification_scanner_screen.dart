@@ -7,6 +7,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:qr_code_vision/qr_code_vision.dart';
 
+import '../../../shared/theme/app_tokens.dart';
 import '../../../shared/widgets/driver_colors.dart';
 
 class DriverVerificationScannerScreen extends StatefulWidget {
@@ -82,20 +83,62 @@ class _DriverVerificationScannerScreenState
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(
-        title: Text(widget.title),
+        title: Text(
+          widget.title,
+          style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 18),
+        ),
         backgroundColor: Colors.black,
         foregroundColor: Colors.white,
+        surfaceTintColor: Colors.transparent,
       ),
       body: Stack(
         children: [
           if (_cameraUnsupported)
-            const Center(
+            Center(
               child: Padding(
-                padding: EdgeInsets.all(32),
-                child: Text(
-                  'Camera scanning is unavailable on desktop. Upload a QR image to test verification.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(color: Colors.white70, fontSize: 16),
+                padding: const EdgeInsets.all(AppSpacing.xl),
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 420),
+                  child: Container(
+                    padding: const EdgeInsets.all(AppSpacing.xl),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(AppRadius.xl),
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: 0.18),
+                      ),
+                    ),
+                    child: const Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.desktop_windows_outlined,
+                          color: Colors.white,
+                          size: 40,
+                        ),
+                        SizedBox(height: AppSpacing.md),
+                        Text(
+                          'Camera scanning is unavailable on desktop',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w800,
+                            fontSize: 17,
+                          ),
+                        ),
+                        SizedBox(height: AppSpacing.xs),
+                        Text(
+                          'Upload a QR image below to test and complete verification.',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: Colors.white70,
+                            fontSize: 14,
+                            height: 1.4,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
               ),
             )
@@ -107,32 +150,123 @@ class _DriverVerificationScannerScreenState
                 if (value != null) _verify(value);
               },
             ),
-          Center(
-            child: IgnorePointer(
-              child: Container(
-                width: 250,
-                height: 250,
-                decoration: BoxDecoration(
-                  border: Border.all(color: DriverColors.success, width: 3),
-                  borderRadius: BorderRadius.circular(24),
+          if (!_cameraUnsupported)
+            Positioned.fill(
+              child: IgnorePointer(
+                child: ColoredBox(color: Colors.black.withValues(alpha: 0.24)),
+              ),
+            ),
+          if (!_cameraUnsupported)
+            Center(
+              child: Semantics(
+                label: 'Position the QR code inside the scan frame',
+                child: IgnorePointer(
+                  child: Container(
+                    width: 260,
+                    height: 260,
+                    decoration: BoxDecoration(
+                      color: Colors.transparent,
+                      border: Border.all(color: DriverColors.success, width: 4),
+                      borderRadius: BorderRadius.circular(AppRadius.xl),
+                      boxShadow: [
+                        BoxShadow(
+                          color: DriverColors.success.withValues(alpha: 0.35),
+                          blurRadius: 18,
+                          spreadRadius: 1,
+                        ),
+                      ],
+                    ),
+                    child: const Center(
+                      child: Icon(
+                        Icons.qr_code_2_rounded,
+                        color: Colors.white54,
+                        size: 54,
+                      ),
+                    ),
+                  ),
                 ),
               ),
             ),
-          ),
-          Positioned(
-            left: 20,
-            right: 20,
-            bottom: 30,
-            child: FilledButton.icon(
-              onPressed: _processing ? null : _scanImage,
-              icon: _processing
-                  ? const SizedBox(
-                      width: 18,
-                      height: 18,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Icon(Icons.image_outlined),
-              label: Text(_processing ? 'Verifying…' : 'Upload QR image'),
+          if (!_cameraUnsupported)
+            Align(
+              alignment: Alignment.topCenter,
+              child: SafeArea(
+                bottom: false,
+                minimum: const EdgeInsets.all(AppSpacing.lg),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.md,
+                    vertical: AppSpacing.sm,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: 0.68),
+                    borderRadius: BorderRadius.circular(AppRadius.pill),
+                  ),
+                  child: const Text(
+                    'Align the complete QR code inside the frame',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 13,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          Align(
+            alignment: Alignment.bottomCenter,
+            child: SafeArea(
+              top: false,
+              minimum: const EdgeInsets.all(AppSpacing.lg),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 420),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (!_cameraUnsupported)
+                      const Padding(
+                        padding: EdgeInsets.only(bottom: AppSpacing.sm),
+                        child: Text(
+                          'Scanning happens automatically',
+                          style: TextStyle(
+                            color: Colors.white70,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 54,
+                      child: FilledButton.icon(
+                        onPressed: _processing ? null : _scanImage,
+                        icon: _processing
+                            ? const SizedBox.square(
+                                dimension: 18,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.white,
+                                ),
+                              )
+                            : const Icon(Icons.image_outlined),
+                        label: Text(
+                          _processing
+                              ? 'Verifying…'
+                              : 'Upload QR image instead',
+                        ),
+                        style: FilledButton.styleFrom(
+                          backgroundColor: DriverColors.blue,
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(AppRadius.lg),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
           ),
         ],

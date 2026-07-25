@@ -11,6 +11,7 @@ import '../../../shared/models/order.dart';
 import '../../../shared/colors/app_colors.dart';
 import '../../../shared/widgets/app_shell_widgets.dart';
 import '../../../shared/data/map_data.dart';
+import '../../../shared/utils/route_motion.dart';
 import '../../../global/base_url.dart';
 import '../../../features/auth/tokens/token_storage.dart';
 
@@ -36,7 +37,8 @@ class CustomerOrderDetailScreen extends StatefulWidget {
       _CustomerOrderDetailScreenState();
 }
 
-class _CustomerOrderDetailScreenState extends State<CustomerOrderDetailScreen> {
+class _CustomerOrderDetailScreenState extends State<CustomerOrderDetailScreen>
+    with SingleTickerProviderStateMixin {
   CustomerOrder? _currentOrderNullable;
   CustomerOrder get _currentOrder => _currentOrderNullable!;
   bool get _recipientTrackingUnlocked => {
@@ -48,7 +50,8 @@ class _CustomerOrderDetailScreenState extends State<CustomerOrderDetailScreen> {
   bool _isLoadingRoute = true;
   bool _isLoadingPackage = false;
   Timer? _pollTimer;
-  Timer? _animationTimer;
+  final SmoothRouteProgress _progressSmoother = SmoothRouteProgress();
+  late final AnimationController _frameController;
   final MapController _mapController = MapController();
   bool _mapReady = false;
 
@@ -65,19 +68,24 @@ class _CustomerOrderDetailScreenState extends State<CustomerOrderDetailScreen> {
       const Duration(seconds: 2),
       (_) => _silentRefresh(),
     );
-    _animationTimer = Timer.periodic(const Duration(milliseconds: 400), (_) {
-      if (!mounted || _currentOrderNullable == null) return;
-      if (_currentOrder.status == OrderStatus.accepted ||
-          _currentOrder.status == OrderStatus.inTransit) {
-        setState(() {});
-      }
-    });
+    _frameController =
+        AnimationController(vsync: this, duration: const Duration(seconds: 1))
+          ..addListener(_onAnimationFrame)
+          ..repeat();
+  }
+
+  void _onAnimationFrame() {
+    if (_currentOrderNullable == null) return;
+    if (_currentOrder.status == OrderStatus.accepted ||
+        _currentOrder.status == OrderStatus.inTransit) {
+      setState(() {});
+    }
   }
 
   @override
   void dispose() {
     _pollTimer?.cancel();
-    _animationTimer?.cancel();
+    _frameController.dispose();
     super.dispose();
   }
 
@@ -355,6 +363,19 @@ class _CustomerOrderDetailScreenState extends State<CustomerOrderDetailScreen> {
       );
     }
 
+    final driverMotion = sampleRouteMotion(
+      _currentOrder.activeRoutePoints,
+      _progressSmoother.update(
+        phaseKey: _currentOrder.status.name,
+        serverProgress: _currentOrder.simulationProgress,
+        durationSeconds: _currentOrder.simulationDurationSeconds,
+        completed: const {
+          OrderStatus.arrivedAtPickup,
+          OrderStatus.arrivedAtDropoff,
+          OrderStatus.delivered,
+        }.contains(_currentOrder.status),
+      ),
+    );
     final visiblePoints = <LatLng>[
       ..._routePoints,
       _currentOrder.pickup,
@@ -456,26 +477,19 @@ class _CustomerOrderDetailScreenState extends State<CustomerOrderDetailScreen> {
                 ),
                 if (_currentOrder.simulatedDriverLocation != null)
                   Marker(
-                    point: _currentOrder.simulatedDriverLocation!,
+                    point:
+                        driverMotion?.position ??
+                        _currentOrder.simulatedDriverLocation!,
                     width: 54,
-                    height: 54,
-                    child: Container(
-                      padding: const EdgeInsets.all(5),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.2),
-                            blurRadius: 8,
-                          ),
-                        ],
-                      ),
+                    height: 70,
+                    child: Transform.rotate(
+                      angle: driverMotion?.bearingRadians ?? 0,
                       child: Image.asset(
                         _currentOrder.vehicleType == VehicleType.tuktuk
                             ? 'assets/images/rickshaw_topview.png'
                             : 'assets/images/motorbike_topview.png',
                         fit: BoxFit.contain,
+                        filterQuality: FilterQuality.high,
                       ),
                     ),
                   ),

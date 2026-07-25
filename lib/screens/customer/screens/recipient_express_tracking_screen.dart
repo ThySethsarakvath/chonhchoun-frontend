@@ -10,6 +10,8 @@ import 'package:qr_flutter/qr_flutter.dart';
 import '../../../global/base_url.dart';
 import '../../../shared/colors/app_colors.dart';
 import '../../../shared/data/map_data.dart';
+import '../../../shared/theme/app_tokens.dart';
+import '../../../shared/utils/route_motion.dart';
 import '../../../shared/widgets/app_shell_widgets.dart';
 
 class RecipientExpressTrackingScreen extends StatefulWidget {
@@ -23,9 +25,10 @@ class RecipientExpressTrackingScreen extends StatefulWidget {
 }
 
 class _RecipientExpressTrackingScreenState
-    extends State<RecipientExpressTrackingScreen> {
+    extends State<RecipientExpressTrackingScreen>
+    with SingleTickerProviderStateMixin {
   Timer? _timer;
-  Timer? _animationTimer;
+  late final AnimationController _frameController;
   Map<String, dynamic>? _delivery;
   bool _loading = true;
   String? _error;
@@ -35,16 +38,22 @@ class _RecipientExpressTrackingScreenState
     super.initState();
     _load();
     _timer = Timer.periodic(const Duration(seconds: 2), (_) => _load());
-    _animationTimer = Timer.periodic(const Duration(milliseconds: 400), (_) {
-      final status = _delivery?['status']?.toString();
-      if (mounted && status == 'IN_TRANSIT') setState(() {});
-    });
+    _frameController =
+        AnimationController(vsync: this, duration: const Duration(seconds: 1))
+          ..addListener(_onAnimationFrame)
+          ..repeat();
+  }
+
+  void _onAnimationFrame() {
+    if (_delivery?['status']?.toString() == 'IN_TRANSIT') {
+      setState(() {});
+    }
   }
 
   @override
   void dispose() {
     _timer?.cancel();
-    _animationTimer?.cancel();
+    _frameController.dispose();
     super.dispose();
   }
 
@@ -82,9 +91,24 @@ class _RecipientExpressTrackingScreenState
     return Scaffold(
       backgroundColor: AppColors.surface,
       appBar: AppBar(
-        title: const Text(
-          'Incoming Express Delivery',
-          style: TextStyle(fontWeight: FontWeight.w700),
+        backgroundColor: AppColors.surface,
+        surfaceTintColor: Colors.transparent,
+        title: const Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Incoming delivery',
+              style: TextStyle(fontWeight: FontWeight.w800, fontSize: 18),
+            ),
+            Text(
+              'Live recipient tracking',
+              style: TextStyle(
+                color: AppColors.textSecondary,
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
         ),
       ),
       body: _loading
@@ -103,106 +127,179 @@ class _RecipientExpressTrackingScreenState
     final dropoff = delivery['dropoff'] as Map? ?? const {};
     final driver = delivery['driver'] as Map?;
     final dropoffToken = delivery['dropoffQrToken']?.toString();
+    final mapHeight = (MediaQuery.sizeOf(context).height * 0.52).clamp(
+      360.0,
+      540.0,
+    );
 
     return RefreshIndicator(
       onRefresh: _load,
       child: ListView(
-        padding: const EdgeInsets.all(16),
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.md,
+          AppSpacing.sm,
+          AppSpacing.md,
+          AppSpacing.section,
+        ),
         children: [
-          AppSurfaceCard(
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: AppColors.blue.withValues(alpha: 0.1),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    trackingEnabled
-                        ? Icons.delivery_dining_rounded
-                        : Icons.lock_clock_rounded,
-                    color: AppColors.blue,
-                  ),
-                ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        _statusLabel(status),
-                        style: const TextStyle(
-                          fontWeight: FontWeight.w800,
-                          fontSize: 17,
-                        ),
-                      ),
-                      const SizedBox(height: 3),
-                      Text(
-                        trackingEnabled
-                            ? 'Live simulated tracking is available.'
-                            : 'Tracking unlocks after sender handoff verification.',
-                        style: const TextStyle(color: AppColors.muted),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-          if (trackingEnabled) ...[
-            const SizedBox(height: 16),
-            SizedBox(
-              height: 420,
-              child: _RecipientRouteMap(delivery: delivery),
-            ),
-          ],
-          const SizedBox(height: 16),
-          AppSurfaceCard(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Package arriving',
-                  style: TextStyle(fontWeight: FontWeight.w800, fontSize: 17),
-                ),
-                const Divider(height: 24),
-                _detail('Item', package['name']?.toString() ?? 'Package'),
-                _detail('Quantity', package['quantity']?.toString() ?? '1'),
-                _detail(
-                  'Deliver to',
-                  dropoff['address']?.toString() ?? 'Destination',
-                ),
-                if (driver != null)
-                  _detail('Driver', driver['name']?.toString() ?? 'Assigned'),
-              ],
-            ),
-          ),
-          if (dropoffToken != null) ...[
-            const SizedBox(height: 16),
-            AppSurfaceCard(
+          Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(
+                maxWidth: AppBreakpoints.customerContentMaxWidth,
+              ),
               child: Column(
                 children: [
-                  const Text(
-                    'Delivery Confirmation QR',
-                    style: TextStyle(fontWeight: FontWeight.w800, fontSize: 17),
+                  AppSurfaceCard(
+                    child: Semantics(
+                      liveRegion: true,
+                      label: 'Delivery status: ${_statusLabel(status)}',
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 48,
+                            height: 48,
+                            decoration: BoxDecoration(
+                              color: trackingEnabled
+                                  ? AppColors.softBlue
+                                  : AppColors.surfaceContainerLow,
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(
+                              trackingEnabled
+                                  ? Icons.delivery_dining_rounded
+                                  : Icons.lock_clock_rounded,
+                              color: trackingEnabled
+                                  ? AppColors.blue
+                                  : AppColors.textSecondary,
+                            ),
+                          ),
+                          const SizedBox(width: AppSpacing.sm),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  _statusLabel(status),
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w800,
+                                    fontSize: 17,
+                                  ),
+                                ),
+                                const SizedBox(height: AppSpacing.xxs),
+                                Text(
+                                  trackingEnabled
+                                      ? 'Your live route is updating automatically.'
+                                      : 'Tracking unlocks after sender handoff verification.',
+                                  style: const TextStyle(
+                                    color: AppColors.textSecondary,
+                                    height: 1.35,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
-                  const SizedBox(height: 8),
-                  const Text(
-                    'Check the package and quantity, then let the driver scan this code.',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(color: AppColors.muted),
+                  if (trackingEnabled) ...[
+                    const SizedBox(height: AppSpacing.md),
+                    SizedBox(
+                      height: mapHeight,
+                      child: _RecipientRouteMap(delivery: delivery),
+                    ),
+                  ],
+                  const SizedBox(height: AppSpacing.md),
+                  AppSurfaceCard(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Row(
+                          children: [
+                            Icon(
+                              Icons.inventory_2_outlined,
+                              color: AppColors.blue,
+                            ),
+                            SizedBox(width: AppSpacing.xs),
+                            Text(
+                              'Package arriving',
+                              style: TextStyle(
+                                fontWeight: FontWeight.w800,
+                                fontSize: 17,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const Divider(height: AppSpacing.xl),
+                        _detail(
+                          'Item',
+                          package['name']?.toString() ?? 'Package',
+                        ),
+                        _detail(
+                          'Quantity',
+                          package['quantity']?.toString() ?? '1',
+                        ),
+                        _detail(
+                          'Deliver to',
+                          dropoff['address']?.toString() ?? 'Destination',
+                        ),
+                        if (driver != null)
+                          _detail(
+                            'Driver',
+                            driver['name']?.toString() ?? 'Assigned',
+                          ),
+                      ],
+                    ),
                   ),
-                  const SizedBox(height: 16),
-                  QrImageView(
-                    data: 'chonhchoun:dropoff:$dropoffToken',
-                    size: 220,
-                  ),
+                  if (dropoffToken != null) ...[
+                    const SizedBox(height: AppSpacing.md),
+                    AppSurfaceCard(
+                      child: Column(
+                        children: [
+                          const Icon(
+                            Icons.qr_code_2_rounded,
+                            color: AppColors.blue,
+                            size: 32,
+                          ),
+                          const SizedBox(height: AppSpacing.sm),
+                          const Text(
+                            'Delivery confirmation',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w800,
+                              fontSize: 17,
+                            ),
+                          ),
+                          const SizedBox(height: AppSpacing.xs),
+                          const Text(
+                            'Check the package and quantity, then let the driver scan this code.',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              color: AppColors.textSecondary,
+                              height: 1.4,
+                            ),
+                          ),
+                          const SizedBox(height: AppSpacing.md),
+                          Container(
+                            padding: const EdgeInsets.all(AppSpacing.sm),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(AppRadius.lg),
+                              border: Border.all(color: AppColors.line),
+                            ),
+                            child: QrImageView(
+                              data: 'chonhchoun:dropoff:$dropoffToken',
+                              size: 210,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),
-          ],
-          const SizedBox(height: 32),
+          ),
         ],
       ),
     );
@@ -243,74 +340,199 @@ class _RecipientExpressTrackingScreenState
   }
 }
 
-class _RecipientRouteMap extends StatelessWidget {
+class _RecipientRouteMap extends StatefulWidget {
   const _RecipientRouteMap({required this.delivery});
 
   final Map<String, dynamic> delivery;
 
   @override
+  State<_RecipientRouteMap> createState() => _RecipientRouteMapState();
+}
+
+class _RecipientRouteMapState extends State<_RecipientRouteMap> {
+  late List<LatLng> _route;
+  final SmoothRouteProgress _progressSmoother = SmoothRouteProgress();
+
+  @override
+  void initState() {
+    super.initState();
+    _route = _points(widget.delivery['routePoints']);
+  }
+
+  @override
+  void didUpdateWidget(_RecipientRouteMap oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!identical(
+      oldWidget.delivery['routePoints'],
+      widget.delivery['routePoints'],
+    )) {
+      _route = _points(widget.delivery['routePoints']);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final route = _points(delivery['routePoints']);
+    final delivery = widget.delivery;
+    final route = _route;
     final dropoff = _point(delivery['dropoff']);
     final progress = _progress();
-    final driverPoint = _interpolate(route, progress);
+    final driverMotion = sampleRouteMotion(route, progress);
+    final driverPoint = driverMotion?.position;
     final center = route.isNotEmpty
         ? route[route.length ~/ 2]
         : dropoff ?? const LatLng(11.5564, 104.9282);
     final vehicleType = delivery['vehicleType']?.toString();
 
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(22),
-      child: FlutterMap(
-        options: MapOptions(
-          initialCenter: center,
-          initialZoom: 13,
-          interactionOptions: const InteractionOptions(
-            flags: InteractiveFlag.all | InteractiveFlag.scrollWheelZoom,
-          ),
-        ),
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(AppRadius.xl),
+        border: Border.all(color: AppColors.line),
+        boxShadow: AppShadows.card,
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Stack(
         children: [
-          TileLayer(
-            urlTemplate: MapConfig.urlTemplate,
-            userAgentPackageName: MapConfig.userAgent,
-          ),
-          if (route.length >= 2)
-            PolylineLayer(
-              polylines: [
-                Polyline(
-                  points: route,
-                  strokeWidth: 5,
-                  color: AppColors.blue,
-                  borderStrokeWidth: 2,
-                  borderColor: Colors.white,
+          Positioned.fill(
+            child: FlutterMap(
+              options: MapOptions(
+                initialCenter: center,
+                initialZoom: 13,
+                interactionOptions: const InteractionOptions(
+                  flags: InteractiveFlag.all | InteractiveFlag.scrollWheelZoom,
+                ),
+              ),
+              children: [
+                TileLayer(
+                  urlTemplate: MapConfig.urlTemplate,
+                  userAgentPackageName: MapConfig.userAgent,
+                ),
+                if (route.length >= 2)
+                  PolylineLayer(
+                    polylines: [
+                      Polyline(
+                        points: route,
+                        strokeWidth: 5,
+                        color: AppColors.blue,
+                        borderStrokeWidth: 3,
+                        borderColor: Colors.white,
+                      ),
+                    ],
+                  ),
+                MarkerLayer(
+                  markers: [
+                    if (dropoff != null)
+                      Marker(
+                        point: dropoff,
+                        width: 46,
+                        height: 46,
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: AppColors.danger,
+                            shape: BoxShape.circle,
+                            border: Border.all(color: Colors.white, width: 3),
+                            boxShadow: AppShadows.card,
+                          ),
+                          child: const Icon(
+                            Icons.flag_rounded,
+                            color: Colors.white,
+                            size: 21,
+                          ),
+                        ),
+                      ),
+                    if (driverPoint != null)
+                      Marker(
+                        point: driverPoint,
+                        width: 54,
+                        height: 70,
+                        child: Transform.rotate(
+                          angle: driverMotion?.bearingRadians ?? 0,
+                          child: Image.asset(
+                            vehicleType == 'RICKSHAW'
+                                ? 'assets/images/rickshaw_topview.png'
+                                : 'assets/images/motorbike_topview.png',
+                            fit: BoxFit.contain,
+                            filterQuality: FilterQuality.high,
+                          ),
+                        ),
+                      ),
+                  ],
                 ),
               ],
             ),
-          MarkerLayer(
-            markers: [
-              if (dropoff != null)
-                Marker(
-                  point: dropoff,
-                  width: 42,
-                  height: 42,
-                  child: const Icon(
-                    Icons.location_on_rounded,
-                    color: AppColors.danger,
-                    size: 38,
-                  ),
+          ),
+          Positioned(
+            top: AppSpacing.sm,
+            left: AppSpacing.sm,
+            child: Material(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(AppRadius.pill),
+              elevation: 2,
+              child: const Padding(
+                padding: EdgeInsets.symmetric(
+                  horizontal: AppSpacing.sm,
+                  vertical: AppSpacing.xs,
                 ),
-              if (driverPoint != null)
-                Marker(
-                  point: driverPoint,
-                  width: 58,
-                  height: 58,
-                  child: Image.asset(
-                    vehicleType == 'RICKSHAW'
-                        ? 'assets/images/rickshaw_topview.png'
-                        : 'assets/images/motorbike_topview.png',
-                  ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    SizedBox(
+                      width: 8,
+                      height: 8,
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          color: AppColors.success,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                    ),
+                    SizedBox(width: AppSpacing.xs),
+                    Text(
+                      'LIVE ROUTE',
+                      style: TextStyle(
+                        color: AppColors.text,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                  ],
                 ),
-            ],
+              ),
+            ),
+          ),
+          Positioned(
+            right: AppSpacing.sm,
+            bottom: AppSpacing.sm,
+            child: Material(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(AppRadius.md),
+              elevation: 2,
+              child: const Padding(
+                padding: EdgeInsets.symmetric(
+                  horizontal: AppSpacing.sm,
+                  vertical: AppSpacing.xs,
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.touch_app_outlined,
+                      size: 15,
+                      color: AppColors.textSecondary,
+                    ),
+                    SizedBox(width: AppSpacing.xxs),
+                    Text(
+                      'Drag or pinch the map',
+                      style: TextStyle(
+                        color: AppColors.textSecondary,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
           ),
         ],
       ),
@@ -318,15 +540,17 @@ class _RecipientRouteMap extends StatelessWidget {
   }
 
   double _progress() {
-    final stored = (delivery['simulationProgress'] as num?)?.toDouble() ?? 0;
-    final startedRaw = delivery['simulationPhaseStartedAt']?.toString();
-    if (startedRaw == null) return stored.clamp(0, 1);
-    final started = DateTime.tryParse(startedRaw);
-    if (started == null) return stored.clamp(0, 1);
+    final stored =
+        (widget.delivery['simulationProgress'] as num?)?.toDouble() ?? 0;
     final duration =
-        (delivery['simulationDurationSeconds'] as num?)?.toDouble() ?? 30;
-    final elapsed = DateTime.now().difference(started).inMilliseconds / 1000;
-    return (elapsed / duration).clamp(stored, 1).toDouble();
+        (widget.delivery['simulationDurationSeconds'] as num?)?.toInt() ?? 30;
+    final status = widget.delivery['status']?.toString() ?? 'PENDING';
+    return _progressSmoother.update(
+      phaseKey: status,
+      serverProgress: stored,
+      durationSeconds: duration,
+      completed: const {'ARRIVED_AT_DROPOFF', 'DELIVERED'}.contains(status),
+    );
   }
 
   static List<LatLng> _points(dynamic raw) {
@@ -340,21 +564,6 @@ class _RecipientRouteMap extends StatelessWidget {
     final longitude = raw['longitude'] as num?;
     if (latitude == null || longitude == null) return null;
     return LatLng(latitude.toDouble(), longitude.toDouble());
-  }
-
-  static LatLng? _interpolate(List<LatLng> points, double progress) {
-    if (points.isEmpty) return null;
-    if (points.length == 1) return points.first;
-    final scaled = progress * (points.length - 1);
-    final lower = scaled.floor().clamp(0, points.length - 1);
-    final upper = (lower + 1).clamp(0, points.length - 1);
-    final fraction = scaled - lower;
-    return LatLng(
-      points[lower].latitude +
-          (points[upper].latitude - points[lower].latitude) * fraction,
-      points[lower].longitude +
-          (points[upper].longitude - points[lower].longitude) * fraction,
-    );
   }
 }
 

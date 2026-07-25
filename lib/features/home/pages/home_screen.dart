@@ -532,66 +532,68 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                  SectionHeader(
-                    title: 'ការដឹកជញ្ជូនថ្មីៗ',
-                    onLinkTap: () => _openDeliveryList(
-                      title: 'ការដឹកជញ្ជូនថ្មីៗ',
-                      items: _recent,
-                      showTracking: true,
-                      compactAddresses: true,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  if (_recent.isEmpty)
-                    const _EmptyState(message: 'មិនមានការដឹកជញ្ជូនថ្មីៗទេ')
-                  else
-                    ...(recentPreview.map(
-                      (item) => DeliveryCard(
-                        item: item,
-                        showTracking: true,
-                        compactAddresses: true,
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) =>
-                                  CustomerOrderDetailScreen(packageId: item.id),
-                            ),
-                          );
-                        },
+                      SectionHeader(
+                        title: 'ការដឹកជញ្ជូនថ្មីៗ',
+                        onLinkTap: () => _openDeliveryList(
+                          title: 'ការដឹកជញ្ជូនថ្មីៗ',
+                          items: _recent,
+                          showTracking: true,
+                          compactAddresses: true,
+                        ),
                       ),
-                    )),
-                  const SizedBox(height: 24),
-                  _buildBranchLogisticsSection(),
-                  const SizedBox(height: 24),
-                  SectionHeader(
-                    title: 'ការជញ្ជូនកន្លងទៅ',
-                    onLinkTap: () => _openDeliveryList(
-                      title: 'ការជញ្ជូនកន្លងទៅ',
-                      items: _history,
-                      showTracking: true,
-                      compactAddresses: true,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  if (_history.isEmpty)
-                    const _EmptyState(message: 'មិនមានការជញ្ជូនកន្លងទៅទេ')
-                  else
-                    ...(historyPreview.map(
-                      (item) => DeliveryCard(
-                        item: item,
-                        showTracking: false,
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) =>
-                                  CustomerOrderDetailScreen(packageId: item.id),
-                            ),
-                          );
-                        },
+                      const SizedBox(height: 12),
+                      if (_recent.isEmpty)
+                        const _EmptyState(message: 'មិនមានការដឹកជញ្ជូនថ្មីៗទេ')
+                      else
+                        ...(recentPreview.map(
+                          (item) => DeliveryCard(
+                            item: item,
+                            showTracking: true,
+                            compactAddresses: true,
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => CustomerOrderDetailScreen(
+                                    packageId: item.id,
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                        )),
+                      const SizedBox(height: 24),
+                      _buildBranchLogisticsSection(),
+                      const SizedBox(height: 24),
+                      SectionHeader(
+                        title: 'ការជញ្ជូនកន្លងទៅ',
+                        onLinkTap: () => _openDeliveryList(
+                          title: 'ការជញ្ជូនកន្លងទៅ',
+                          items: _history,
+                          showTracking: true,
+                          compactAddresses: true,
+                        ),
                       ),
-                    )),
+                      const SizedBox(height: 12),
+                      if (_history.isEmpty)
+                        const _EmptyState(message: 'មិនមានការជញ្ជូនកន្លងទៅទេ')
+                      else
+                        ...(historyPreview.map(
+                          (item) => DeliveryCard(
+                            item: item,
+                            showTracking: false,
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => CustomerOrderDetailScreen(
+                                    packageId: item.id,
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                        )),
                       const SizedBox(height: AppSpacing.md),
                     ],
                   ),

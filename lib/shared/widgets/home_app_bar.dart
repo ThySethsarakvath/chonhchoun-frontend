@@ -45,9 +45,9 @@ class HomeAppBar extends StatelessWidget {
                   children: [
                     Text(
                       city,
-                      style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                        color: Colors.white,
-                      ),
+                      style: Theme.of(
+                        context,
+                      ).textTheme.labelLarge?.copyWith(color: Colors.white),
                     ),
                     const SizedBox(width: 4),
                     const Icon(
@@ -78,36 +78,36 @@ class HomeAppBar extends StatelessWidget {
               child: Container(
                 width: 44,
                 height: 44,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
                   border: Border.all(
                     color: Colors.white.withValues(alpha: 0.9),
                     width: 2,
                   ),
                   color: AppColors.blueLight,
-                  boxShadow: const AppShadows.card,
-              ),
-              child: ClipOval(
-                child: avatarUrl != null && avatarUrl!.isNotEmpty
-                    ? Image.network(
-                        avatarUrl!,
-                        fit: BoxFit.cover,
-                        errorBuilder: (_, _, _) => const Icon(
-                          Icons.person_rounded,
-                          color: Colors.white,
-                          size: 22,
+                  boxShadow: AppShadows.card,
+                ),
+                child: ClipOval(
+                  child: avatarUrl != null && avatarUrl!.isNotEmpty
+                      ? Image.network(
+                          avatarUrl!,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, _, _) => const Icon(
+                            Icons.person_rounded,
+                            color: Colors.white,
+                            size: 22,
+                          ),
+                        )
+                      : Image.asset(
+                          'assets/images/avatar.png',
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, _, _) => const Icon(
+                            Icons.person_rounded,
+                            color: Colors.white,
+                            size: 22,
+                          ),
                         ),
-                      )
-                    : Image.asset(
-                        'assets/images/avatar.png',
-                        fit: BoxFit.cover,
-                        errorBuilder: (_, _, _) => const Icon(
-                          Icons.person_rounded,
-                          color: Colors.white,
-                          size: 22,
-                        ),
-                      ),
-              ),
+                ),
               ),
             ),
           ),

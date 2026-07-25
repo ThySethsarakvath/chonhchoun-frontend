@@ -7,6 +7,7 @@ import 'package:http/http.dart' as http;
 import '../../../features/auth/tokens/token_storage.dart';
 import '../../../global/base_url.dart';
 import '../../../shared/colors/app_colors.dart';
+import '../../../shared/theme/app_tokens.dart';
 import 'customer_express_tracking_screen.dart';
 
 class ExpressDriverMatchingScreen extends StatefulWidget {
@@ -191,121 +192,93 @@ class _ExpressDriverMatchingScreenState
       canPop: true,
       child: Scaffold(
         backgroundColor: AppColors.surface,
-        appBar: AppBar(
-          backgroundColor: AppColors.surface,
-          foregroundColor: AppColors.text,
-          elevation: 0,
-          title: const Text(
-            'Finding a driver',
-            style: TextStyle(fontWeight: FontWeight.w700),
-          ),
-        ),
+        appBar: AppBar(title: const Text('Finding a driver')),
         body: SafeArea(
           child: Center(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.lg,
+                AppSpacing.md,
+                AppSpacing.lg,
+                AppSpacing.xxl,
+              ),
               child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 520),
+                constraints: const BoxConstraints(maxWidth: 560),
                 child: Column(
                   children: [
-                    Text(
-                      _expired
-                          ? 'No driver accepted in time'
-                          : 'Broadcasting your delivery',
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        color: AppColors.text,
-                        fontSize: 24,
-                        fontWeight: FontWeight.w800,
+                    AnimatedSwitcher(
+                      duration: AppMotion.standard,
+                      child: Text(
+                        _expired
+                            ? 'No driver accepted in time'
+                            : 'Broadcasting your delivery',
+                        key: ValueKey(_expired),
+                        textAlign: TextAlign.center,
+                        style: Theme.of(context).textTheme.headlineSmall,
                       ),
                     ),
-                    const SizedBox(height: 10),
+                    const SizedBox(height: AppSpacing.sm),
                     Text(
                       _expired
                           ? 'You can retry to notify currently available drivers nearby.'
                           : 'Nearby drivers can accept this request. The first acceptance reserves the delivery.',
                       textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        color: AppColors.muted,
-                        fontSize: 14,
-                        height: 1.5,
-                      ),
+                      style: Theme.of(context).textTheme.bodyMedium,
                     ),
-                    const SizedBox(height: 34),
-                    SizedBox.square(
-                      dimension: 220,
-                      child: Stack(
-                        alignment: Alignment.center,
+                    const SizedBox(height: AppSpacing.xxl),
+                    _CountdownDial(
+                      loading: _loading,
+                      expired: _expired,
+                      progress: progress,
+                      remainingSeconds: _remainingSeconds,
+                    ),
+                    const SizedBox(height: AppSpacing.xxl),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(AppSpacing.md),
+                      decoration: BoxDecoration(
+                        color: AppColors.surfaceContainer,
+                        borderRadius: BorderRadius.circular(AppRadius.xl),
+                        border: Border.all(color: AppColors.line),
+                        boxShadow: AppShadows.card,
+                      ),
+                      child: Column(
                         children: [
-                          SizedBox.expand(
-                            child: CircularProgressIndicator(
-                              value: _loading ? null : progress,
-                              strokeWidth: 13,
-                              strokeCap: StrokeCap.round,
-                              backgroundColor: AppColors.line,
-                              color: _expired
-                                  ? AppColors.danger
-                                  : AppColors.blue,
-                            ),
+                          const _MatchingStep(
+                            icon: Icons.check_circle_rounded,
+                            label: 'Delivery request created',
+                            completed: true,
                           ),
-                          Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                _loading ? '...' : '$_remainingSeconds',
-                                style: const TextStyle(
-                                  color: AppColors.text,
-                                  fontSize: 52,
-                                  height: 1,
-                                  fontWeight: FontWeight.w800,
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                              const Text(
-                                'seconds',
-                                style: TextStyle(
-                                  color: AppColors.muted,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ],
+                          _MatchingStep(
+                            icon: Icons.cell_tower_rounded,
+                            label: 'Notifying nearby available drivers',
+                            completed: !_expired,
+                            active: !_expired,
+                          ),
+                          const _MatchingStep(
+                            icon: Icons.delivery_dining_rounded,
+                            label: 'Waiting for the first driver to accept',
+                            active: true,
                           ),
                         ],
                       ),
                     ),
-                    const SizedBox(height: 32),
-                    _MatchingStep(
-                      icon: Icons.check_circle,
-                      label: 'Delivery request created',
-                      completed: true,
-                    ),
-                    _MatchingStep(
-                      icon: Icons.cell_tower,
-                      label: 'Notifying nearby available drivers',
-                      completed: !_expired,
-                      active: !_expired,
-                    ),
-                    const _MatchingStep(
-                      icon: Icons.delivery_dining,
-                      label: 'Waiting for the first driver to accept',
-                      active: true,
-                    ),
                     const SizedBox(height: 12),
                     Text(
                       'Broadcast attempt $_attempt',
-                      style: const TextStyle(
-                        color: AppColors.muted,
-                        fontSize: 12,
-                      ),
+                      style: Theme.of(context).textTheme.bodySmall,
                     ),
                     if (_error != null) ...[
                       const SizedBox(height: 16),
                       Container(
                         width: double.infinity,
-                        padding: const EdgeInsets.all(12),
+                        padding: const EdgeInsets.all(AppSpacing.sm),
                         decoration: BoxDecoration(
                           color: AppColors.danger.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(AppRadius.md),
+                          border: Border.all(
+                            color: AppColors.danger.withValues(alpha: 0.2),
+                          ),
                         ),
                         child: Text(
                           _error!,
@@ -315,7 +288,7 @@ class _ExpressDriverMatchingScreenState
                       ),
                     ],
                     if (_expired) ...[
-                      const SizedBox(height: 24),
+                      const SizedBox(height: AppSpacing.xl),
                       SizedBox(
                         width: double.infinity,
                         height: 52,
@@ -334,7 +307,7 @@ class _ExpressDriverMatchingScreenState
                             _retrying ? 'Broadcasting...' : 'Retry matching',
                           ),
                           style: FilledButton.styleFrom(
-                            backgroundColor: AppColors.blue,
+                            backgroundColor: AppColors.blueDark,
                           ),
                         ),
                       ),
@@ -345,6 +318,94 @@ class _ExpressDriverMatchingScreenState
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _CountdownDial extends StatelessWidget {
+  const _CountdownDial({
+    required this.loading,
+    required this.expired,
+    required this.progress,
+    required this.remainingSeconds,
+  });
+
+  final bool loading;
+  final bool expired;
+  final double progress;
+  final int remainingSeconds;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = expired ? AppColors.danger : AppColors.blue;
+    return Semantics(
+      liveRegion: true,
+      label: loading
+          ? 'Checking driver matching status'
+          : '$remainingSeconds seconds remaining',
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final dimension = (constraints.maxWidth * 0.55).clamp(190.0, 230.0);
+          return Container(
+            width: dimension + 28,
+            height: dimension + 28,
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: color.withValues(alpha: 0.06),
+              boxShadow: [
+                BoxShadow(
+                  color: color.withValues(alpha: 0.12),
+                  blurRadius: 36,
+                  spreadRadius: 6,
+                ),
+              ],
+            ),
+            child: SizedBox.square(
+              dimension: dimension,
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  SizedBox.expand(
+                    child: CircularProgressIndicator(
+                      value: loading ? null : progress,
+                      strokeWidth: 12,
+                      strokeCap: StrokeCap.round,
+                      backgroundColor: AppColors.line,
+                      color: color,
+                    ),
+                  ),
+                  Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      AnimatedSwitcher(
+                        duration: AppMotion.fast,
+                        child: Text(
+                          loading ? '…' : '$remainingSeconds',
+                          key: ValueKey(loading ? -1 : remainingSeconds),
+                          style: Theme.of(
+                            context,
+                          ).textTheme.displaySmall?.copyWith(fontSize: 52),
+                        ),
+                      ),
+                      const SizedBox(height: AppSpacing.xs),
+                      Text(
+                        expired ? 'expired' : 'seconds',
+                        style: Theme.of(context).textTheme.labelMedium
+                            ?.copyWith(
+                              color: expired
+                                  ? AppColors.danger
+                                  : AppColors.muted,
+                            ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
       ),
     );
   }

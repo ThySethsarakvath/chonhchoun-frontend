@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:latlong2/latlong.dart';
 
+import '../utils/route_motion.dart';
+
 class DriverRequest {
   const DriverRequest({
     // Demo / display fields
@@ -184,20 +186,13 @@ class DriverRequest {
   }
 
   LatLng? get simulatedLocation {
-    final points = activeRoutePoints;
-    if (points.isEmpty) return driverStartLocation;
-    if (points.length == 1) return points.first;
-    final scaled = effectiveProgress * (points.length - 1);
-    final lower = scaled.floor().clamp(0, points.length - 1);
-    final upper = (lower + 1).clamp(0, points.length - 1);
-    final fraction = scaled - lower;
-    return LatLng(
-      points[lower].latitude +
-          (points[upper].latitude - points[lower].latitude) * fraction,
-      points[lower].longitude +
-          (points[upper].longitude - points[lower].longitude) * fraction,
-    );
+    return motionSnapshot?.position ?? driverStartLocation;
   }
+
+  double get simulatedBearingRadians => motionSnapshot?.bearingRadians ?? 0;
+
+  RouteMotionSnapshot? get motionSnapshot =>
+      sampleRouteMotion(activeRoutePoints, effectiveProgress);
 
   static List<LatLng> _points(dynamic raw) {
     if (raw is! List) return const [];

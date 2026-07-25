@@ -17,8 +17,5 @@ class AppColors {
   static const danger = Color(0xFFD94B55);
   static const info = Color(0xFF3178C6);
 
-  static const gradientPrimary = [
-    blueDark,
-    blue,
-  ];
+  static const gradientPrimary = [blueDark, blue];
 }

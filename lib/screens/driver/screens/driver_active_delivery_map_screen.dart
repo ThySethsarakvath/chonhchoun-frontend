@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../shared/theme/app_tokens.dart';
 import '../../../shared/widgets/driver_colors.dart';
 import '../driver_provider.dart';
 import '../widgets/express_driver_route_map.dart';
@@ -22,15 +23,74 @@ class DriverActiveDeliveryMapScreen extends StatelessWidget {
             appBar: AppBar(
               backgroundColor: DriverColors.blueDark,
               foregroundColor: Colors.white,
-              title: const Text('Active delivery'),
+              title: const Text(
+                'Delivery completed',
+                style: TextStyle(fontWeight: FontWeight.w800),
+              ),
             ),
-            body: const Center(
+            body: Center(
               child: Padding(
-                padding: EdgeInsets.all(24),
-                child: Text(
-                  'This delivery is complete. You can return to the driver dashboard.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(color: DriverColors.muted),
+                padding: const EdgeInsets.all(AppSpacing.xl),
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 420),
+                  child: Material(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(AppRadius.xl),
+                    child: Padding(
+                      padding: const EdgeInsets.all(AppSpacing.xl),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Container(
+                            width: 76,
+                            height: 76,
+                            decoration: BoxDecoration(
+                              color: DriverColors.success.withValues(
+                                alpha: 0.12,
+                              ),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(
+                              Icons.check_rounded,
+                              color: DriverColors.success,
+                              size: 42,
+                            ),
+                          ),
+                          const SizedBox(height: AppSpacing.lg),
+                          const Text(
+                            'Delivery completed',
+                            style: TextStyle(
+                              color: DriverColors.text,
+                              fontSize: 22,
+                              fontWeight: FontWeight.w900,
+                            ),
+                          ),
+                          const SizedBox(height: AppSpacing.xs),
+                          const Text(
+                            'The package handoff was verified successfully.',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              color: DriverColors.muted,
+                              height: 1.4,
+                            ),
+                          ),
+                          const SizedBox(height: AppSpacing.xl),
+                          SizedBox(
+                            width: double.infinity,
+                            child: FilledButton.icon(
+                              onPressed: () => Navigator.maybePop(context),
+                              icon: const Icon(Icons.home_rounded),
+                              label: const Text('Return to dashboard'),
+                              style: FilledButton.styleFrom(
+                                backgroundColor: DriverColors.blue,
+                                foregroundColor: Colors.white,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
                 ),
               ),
             ),
@@ -46,169 +106,227 @@ class DriverActiveDeliveryMapScreen extends StatelessWidget {
               Positioned.fill(
                 child: ExpressDriverRouteMap(request: request, borderRadius: 0),
               ),
-              Positioned(
-                top: 0,
-                left: 0,
-                right: 0,
+              Align(
+                alignment: Alignment.topCenter,
                 child: SafeArea(
                   bottom: false,
                   child: Padding(
-                    padding: const EdgeInsets.all(14),
-                    child: Material(
-                      color: Colors.white,
-                      elevation: 8,
-                      borderRadius: BorderRadius.circular(18),
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 9,
-                        ),
-                        child: Row(
-                          children: [
-                            IconButton(
-                              tooltip: 'Back',
-                              onPressed: () => Navigator.maybePop(context),
-                              icon: const Icon(Icons.arrow_back_rounded),
-                            ),
-                            Container(
-                              padding: const EdgeInsets.all(10),
-                              decoration: BoxDecoration(
-                                color: DriverColors.blue.withValues(alpha: 0.1),
-                                shape: BoxShape.circle,
+                    padding: const EdgeInsets.all(AppSpacing.md),
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(
+                        maxWidth: AppBreakpoints.customerContentMaxWidth,
+                      ),
+                      child: Material(
+                        color: Colors.white,
+                        elevation: 5,
+                        borderRadius: BorderRadius.circular(AppRadius.lg),
+                        clipBehavior: Clip.antiAlias,
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: AppSpacing.xs,
+                            vertical: AppSpacing.xs,
+                          ),
+                          child: Row(
+                            children: [
+                              IconButton(
+                                tooltip: 'Back',
+                                onPressed: () => Navigator.maybePop(context),
+                                icon: const Icon(Icons.arrow_back_rounded),
                               ),
-                              child: Icon(
-                                _statusIcon(request.status),
-                                color: DriverColors.blue,
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    _statusTitle(request.status),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: const TextStyle(
-                                      color: DriverColors.text,
-                                      fontWeight: FontWeight.w800,
-                                      fontSize: 16,
-                                    ),
+                              Container(
+                                width: 42,
+                                height: 42,
+                                decoration: BoxDecoration(
+                                  color: DriverColors.blue.withValues(
+                                    alpha: 0.1,
                                   ),
-                                  Text(
-                                    _statusMessage(request.status),
-                                    maxLines: 2,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: const TextStyle(
-                                      color: DriverColors.muted,
-                                      fontSize: 12,
-                                    ),
-                                  ),
-                                ],
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Icon(
+                                  _statusIcon(request.status),
+                                  color: DriverColors.blue,
+                                ),
                               ),
-                            ),
-                          ],
+                              const SizedBox(width: AppSpacing.sm),
+                              Expanded(
+                                child: Semantics(
+                                  liveRegion: true,
+                                  label:
+                                      'Delivery status: ${_statusTitle(request.status)}',
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        _statusTitle(request.status),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: const TextStyle(
+                                          color: DriverColors.text,
+                                          fontWeight: FontWeight.w800,
+                                          fontSize: 16,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        _statusMessage(request.status),
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: const TextStyle(
+                                          color: DriverColors.muted,
+                                          fontSize: 12,
+                                          height: 1.25,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: AppSpacing.xs,
+                                  vertical: AppSpacing.xxs,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: DriverColors.success.withValues(
+                                    alpha: 0.12,
+                                  ),
+                                  borderRadius: BorderRadius.circular(
+                                    AppRadius.pill,
+                                  ),
+                                ),
+                                child: const Text(
+                                  'LIVE',
+                                  style: TextStyle(
+                                    color: DriverColors.success,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w900,
+                                    letterSpacing: 0.5,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ),
                   ),
                 ),
               ),
-              Positioned(
-                left: 14,
-                right: 14,
-                bottom: 14,
+              Align(
+                alignment: Alignment.bottomCenter,
                 child: SafeArea(
                   top: false,
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      if (canScan) ...[
-                        SizedBox(
-                          width: double.infinity,
-                          height: 52,
-                          child: FilledButton.icon(
-                            onPressed: provider.isLoading
-                                ? null
-                                : () => _openScanner(context, request.status!),
-                            icon: provider.isLoading
-                                ? const SizedBox.square(
-                                    dimension: 18,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      color: Colors.white,
-                                    ),
-                                  )
-                                : const Icon(Icons.qr_code_scanner_rounded),
-                            label: Text(
-                              request.status == 'ARRIVED_AT_PICKUP'
-                                  ? 'Scan sender pickup QR'
-                                  : 'Scan recipient completion QR',
-                            ),
-                            style: FilledButton.styleFrom(
-                              backgroundColor: DriverColors.blue,
-                              foregroundColor: Colors.white,
-                              elevation: 8,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(16),
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 10),
-                      ],
-                      Material(
-                        color: Colors.white,
-                        elevation: 9,
-                        borderRadius: BorderRadius.circular(20),
-                        child: Padding(
-                          padding: const EdgeInsets.all(15),
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              _RouteLine(
-                                icon: Icons.inventory_2_rounded,
-                                color: DriverColors.blue,
-                                label: 'Pickup',
-                                value: request.pickup,
-                              ),
-                              const SizedBox(height: 10),
-                              _RouteLine(
-                                icon: Icons.location_on_rounded,
-                                color: DriverColors.danger,
-                                label: 'Drop-off',
-                                value: request.dropOff,
-                              ),
-                              const Divider(height: 22),
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: Text(
-                                      request.itemSummary,
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: const TextStyle(
-                                        color: DriverColors.text,
-                                        fontWeight: FontWeight.w700,
+                  minimum: const EdgeInsets.all(AppSpacing.md),
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(
+                      maxWidth: AppBreakpoints.customerContentMaxWidth,
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        AnimatedSwitcher(
+                          duration: AppMotion.standard,
+                          child: canScan
+                              ? Padding(
+                                  key: ValueKey(request.status),
+                                  padding: const EdgeInsets.only(
+                                    bottom: AppSpacing.sm,
+                                  ),
+                                  child: SizedBox(
+                                    width: double.infinity,
+                                    height: 54,
+                                    child: FilledButton.icon(
+                                      onPressed: provider.isLoading
+                                          ? null
+                                          : () => _openScanner(
+                                              context,
+                                              request.status!,
+                                            ),
+                                      icon: provider.isLoading
+                                          ? const SizedBox.square(
+                                              dimension: 18,
+                                              child: CircularProgressIndicator(
+                                                strokeWidth: 2,
+                                                color: Colors.white,
+                                              ),
+                                            )
+                                          : const Icon(
+                                              Icons.qr_code_scanner_rounded,
+                                            ),
+                                      label: Text(
+                                        request.status == 'ARRIVED_AT_PICKUP'
+                                            ? 'Scan sender pickup QR'
+                                            : 'Scan recipient completion QR',
+                                      ),
+                                      style: FilledButton.styleFrom(
+                                        backgroundColor: DriverColors.blue,
+                                        foregroundColor: Colors.white,
+                                        elevation: 5,
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(
+                                            AppRadius.lg,
+                                          ),
+                                        ),
                                       ),
                                     ),
                                   ),
-                                  Text(
-                                    request.fee,
-                                    style: const TextStyle(
-                                      color: DriverColors.blue,
-                                      fontWeight: FontWeight.w800,
+                                )
+                              : const SizedBox.shrink(),
+                        ),
+                        Material(
+                          color: Colors.white,
+                          elevation: 7,
+                          borderRadius: BorderRadius.circular(AppRadius.xl),
+                          child: Padding(
+                            padding: const EdgeInsets.all(AppSpacing.md),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                _RouteLine(
+                                  icon: Icons.inventory_2_rounded,
+                                  color: DriverColors.blue,
+                                  label: 'Pickup',
+                                  value: request.pickup,
+                                ),
+                                const SizedBox(height: AppSpacing.sm),
+                                _RouteLine(
+                                  icon: Icons.location_on_rounded,
+                                  color: DriverColors.danger,
+                                  label: 'Drop-off',
+                                  value: request.dropOff,
+                                ),
+                                const Divider(height: AppSpacing.xl),
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: Text(
+                                        request.itemSummary,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: const TextStyle(
+                                          color: DriverColors.text,
+                                          fontWeight: FontWeight.w700,
+                                        ),
+                                      ),
                                     ),
-                                  ),
-                                ],
-                              ),
-                            ],
+                                    const SizedBox(width: AppSpacing.sm),
+                                    Text(
+                                      request.fee,
+                                      style: const TextStyle(
+                                        color: DriverColors.blue,
+                                        fontWeight: FontWeight.w800,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
                           ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -232,6 +350,10 @@ class DriverActiveDeliveryMapScreen extends StatelessWidget {
     );
     if (!context.mounted) return;
     if (success == true) {
+      if (status == 'ARRIVED_AT_DROPOFF') {
+        await _showCompletionDialog(context);
+        return;
+      }
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Delivery QR verified successfully.'),
@@ -243,6 +365,57 @@ class DriverActiveDeliveryMapScreen extends StatelessWidget {
         context,
       ).showSnackBar(SnackBar(content: Text(provider.lastError!)));
     }
+  }
+
+  Future<void> _showCompletionDialog(BuildContext context) async {
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) => AlertDialog(
+        icon: Container(
+          width: 72,
+          height: 72,
+          decoration: BoxDecoration(
+            color: DriverColors.success.withValues(alpha: 0.12),
+            shape: BoxShape.circle,
+          ),
+          child: const Icon(
+            Icons.check_rounded,
+            color: DriverColors.success,
+            size: 40,
+          ),
+        ),
+        title: const Text(
+          'Delivery completed!',
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            color: DriverColors.text,
+            fontWeight: FontWeight.w900,
+          ),
+        ),
+        content: const Text(
+          'The recipient QR was verified and the delivery has been added to your history.',
+          textAlign: TextAlign.center,
+          style: TextStyle(color: DriverColors.muted, height: 1.4),
+        ),
+        actionsAlignment: MainAxisAlignment.center,
+        actions: [
+          FilledButton.icon(
+            onPressed: () {
+              Navigator.pop(dialogContext);
+              Navigator.maybePop(context);
+            },
+            icon: const Icon(Icons.home_rounded),
+            label: const Text('Return to dashboard'),
+            style: FilledButton.styleFrom(
+              backgroundColor: DriverColors.blue,
+              foregroundColor: Colors.white,
+              minimumSize: const Size(220, 50),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   static IconData _statusIcon(String? status) {

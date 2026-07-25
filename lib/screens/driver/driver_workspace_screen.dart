@@ -9,6 +9,7 @@ import 'data/driver_demo_data.dart';
 import '../../shared/models/driver_request.dart';
 import 'screens/driver_map_detail_screen.dart';
 import 'screens/driver_active_delivery_map_screen.dart';
+import 'screens/driver_history_detail_screen.dart';
 import 'screens/driver_request_detail_screen.dart';
 import 'screens/driver_requests_screen.dart';
 import 'tabs/driver_branch_logistics_tab.dart';
@@ -155,6 +156,14 @@ class _DriverWorkspaceScreenState extends State<DriverWorkspaceScreen> {
     );
   }
 
+  void _openHistoryDetail(DriverRequest request) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => DriverHistoryDetailScreen(request: request),
+      ),
+    );
+  }
+
   Future<void> _logout() async {
     if (_loggingOut) return;
 
@@ -269,7 +278,7 @@ class _DriverWorkspaceScreenState extends State<DriverWorkspaceScreen> {
                     _openActiveDeliveryMap();
                   },
                 ),
-              DriverHistoryTab(onOpenDetail: _openRequestDetail),
+              DriverHistoryTab(onOpenDetail: _openHistoryDetail),
               DriverProfileTab(
                 request: primaryRequest,
                 onOpenMap: () {

@@ -1,5 +1,7 @@
 import 'package:latlong2/latlong.dart';
 
+import '../utils/route_motion.dart';
+
 enum OrderStatus {
   searching,
   accepted,
@@ -321,21 +323,14 @@ class CustomerOrder {
   }
 
   LatLng? get simulatedDriverLocation {
-    final points = activeRoutePoints;
-    if (points.isEmpty) return driverStartLocation;
-    if (points.length == 1) return points.first;
-    final progress = effectiveSimulationProgress;
-    final scaled = progress * (points.length - 1);
-    final lower = scaled.floor().clamp(0, points.length - 1);
-    final upper = (lower + 1).clamp(0, points.length - 1);
-    final fraction = scaled - lower;
-    return LatLng(
-      points[lower].latitude +
-          (points[upper].latitude - points[lower].latitude) * fraction,
-      points[lower].longitude +
-          (points[upper].longitude - points[lower].longitude) * fraction,
-    );
+    return motionSnapshot?.position ?? driverStartLocation;
   }
+
+  double get simulatedDriverBearingRadians =>
+      motionSnapshot?.bearingRadians ?? 0;
+
+  RouteMotionSnapshot? get motionSnapshot =>
+      sampleRouteMotion(activeRoutePoints, effectiveSimulationProgress);
 
   static List<LatLng> _parseRoutePoints(dynamic raw) {
     if (raw is! List) return const [];

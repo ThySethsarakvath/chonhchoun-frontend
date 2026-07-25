@@ -12,6 +12,8 @@ import '../../../global/base_url.dart';
 import '../../../shared/colors/app_colors.dart';
 import '../../../shared/data/map_data.dart';
 import '../../../shared/models/order.dart';
+import '../../../shared/theme/app_tokens.dart';
+import '../../../shared/utils/route_motion.dart';
 import 'customer_order_detail_screen.dart';
 
 class CustomerExpressTrackingScreen extends StatefulWidget {
@@ -25,10 +27,12 @@ class CustomerExpressTrackingScreen extends StatefulWidget {
 }
 
 class _CustomerExpressTrackingScreenState
-    extends State<CustomerExpressTrackingScreen> {
+    extends State<CustomerExpressTrackingScreen>
+    with SingleTickerProviderStateMixin {
   final MapController _mapController = MapController();
+  final SmoothRouteProgress _progressSmoother = SmoothRouteProgress();
   Timer? _pollTimer;
-  Timer? _animationTimer;
+  late final AnimationController _frameController;
   CustomerOrder? _order;
   bool _mapReady = false;
   bool _loading = true;
@@ -44,19 +48,23 @@ class _CustomerExpressTrackingScreenState
       const Duration(seconds: 2),
       (_) => _sync(silent: true),
     );
-    _animationTimer = Timer.periodic(const Duration(milliseconds: 400), (_) {
-      if (mounted &&
-          (_order?.status == OrderStatus.accepted ||
-              _order?.status == OrderStatus.inTransit)) {
-        setState(() {});
-      }
-    });
+    _frameController =
+        AnimationController(vsync: this, duration: const Duration(seconds: 1))
+          ..addListener(_onAnimationFrame)
+          ..repeat();
+  }
+
+  void _onAnimationFrame() {
+    if (_order?.status == OrderStatus.accepted ||
+        _order?.status == OrderStatus.inTransit) {
+      setState(() {});
+    }
   }
 
   @override
   void dispose() {
     _pollTimer?.cancel();
-    _animationTimer?.cancel();
+    _frameController.dispose();
     super.dispose();
   }
 
@@ -127,14 +135,81 @@ class _CustomerExpressTrackingScreenState
       context: context,
       barrierColor: Colors.black.withValues(alpha: 0.72),
       builder: (dialogContext) => Dialog(
-        backgroundColor: Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        child: Padding(
-          padding: const EdgeInsets.all(22),
-          child: QrImageView(
-            data: 'chonhchoun:pickup:$token',
-            version: QrVersions.auto,
-            size: 250,
+        backgroundColor: Colors.transparent,
+        insetPadding: const EdgeInsets.all(AppSpacing.xl),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 360),
+          child: Material(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(AppRadius.xl),
+            clipBehavior: Clip.antiAlias,
+            child: Padding(
+              padding: const EdgeInsets.all(AppSpacing.xl),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: IconButton(
+                      tooltip: 'Close',
+                      onPressed: () => Navigator.pop(dialogContext),
+                      icon: const Icon(Icons.close_rounded),
+                    ),
+                  ),
+                  const Icon(
+                    Icons.inventory_2_rounded,
+                    color: AppColors.blue,
+                    size: 34,
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
+                  Text(
+                    'Pickup confirmation',
+                    style: Theme.of(dialogContext).textTheme.titleLarge
+                        ?.copyWith(fontWeight: FontWeight.w800),
+                  ),
+                  const SizedBox(height: AppSpacing.xs),
+                  const Text(
+                    'Let your assigned driver scan this code before the delivery starts.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(color: AppColors.textSecondary),
+                  ),
+                  const SizedBox(height: AppSpacing.lg),
+                  Container(
+                    padding: const EdgeInsets.all(AppSpacing.sm),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(AppRadius.lg),
+                      border: Border.all(color: AppColors.line),
+                    ),
+                    child: QrImageView(
+                      data: 'chonhchoun:pickup:$token',
+                      version: QrVersions.auto,
+                      size: 220,
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                  const Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.shield_outlined,
+                        size: 16,
+                        color: AppColors.success,
+                      ),
+                      SizedBox(width: AppSpacing.xs),
+                      Text(
+                        'One-time secure confirmation',
+                        style: TextStyle(
+                          color: AppColors.textSecondary,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
           ),
         ),
       ),
@@ -179,6 +254,19 @@ class _CustomerExpressTrackingScreenState
 
     final order = _order!;
     final routePoints = order.activeRoutePoints;
+    final driverMotion = sampleRouteMotion(
+      routePoints,
+      _progressSmoother.update(
+        phaseKey: order.status.name,
+        serverProgress: order.simulationProgress,
+        durationSeconds: order.simulationDurationSeconds,
+        completed: const {
+          OrderStatus.arrivedAtPickup,
+          OrderStatus.arrivedAtDropoff,
+          OrderStatus.delivered,
+        }.contains(order.status),
+      ),
+    );
     return Scaffold(
       body: Stack(
         children: [
@@ -206,8 +294,13 @@ class _CustomerExpressTrackingScreenState
                     polylines: [
                       Polyline(
                         points: routePoints,
+                        color: Colors.white.withValues(alpha: 0.9),
+                        strokeWidth: 9,
+                      ),
+                      Polyline(
+                        points: routePoints,
                         color: AppColors.blue,
-                        strokeWidth: 5,
+                        strokeWidth: 5.5,
                       ),
                     ],
                   ),
@@ -233,26 +326,19 @@ class _CustomerExpressTrackingScreenState
                     ),
                     if (order.simulatedDriverLocation != null)
                       Marker(
-                        point: order.simulatedDriverLocation!,
-                        width: 62,
-                        height: 62,
-                        child: Container(
-                          padding: const EdgeInsets.all(7),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            shape: BoxShape.circle,
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.22),
-                                blurRadius: 10,
-                              ),
-                            ],
-                          ),
+                        point:
+                            driverMotion?.position ??
+                            order.simulatedDriverLocation!,
+                        width: 54,
+                        height: 70,
+                        child: Transform.rotate(
+                          angle: driverMotion?.bearingRadians ?? 0,
                           child: Image.asset(
                             order.vehicleType == VehicleType.tuktuk
                                 ? 'assets/images/rickshaw_topview.png'
                                 : 'assets/images/motorbike_topview.png',
                             fit: BoxFit.contain,
+                            filterQuality: FilterQuality.high,
                           ),
                         ),
                       ),
@@ -261,170 +347,264 @@ class _CustomerExpressTrackingScreenState
               ],
             ),
           ),
-          Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
+          Align(
+            alignment: Alignment.topCenter,
             child: SafeArea(
               bottom: false,
               child: Padding(
-                padding: const EdgeInsets.all(14),
-                child: Material(
-                  color: Colors.white,
-                  elevation: 7,
-                  borderRadius: BorderRadius.circular(18),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 10,
-                    ),
-                    child: Row(
-                      children: [
-                        IconButton(
-                          tooltip: 'Back',
-                          onPressed: () => Navigator.maybePop(context),
-                          icon: const Icon(Icons.arrow_back),
-                        ),
-                        Container(
-                          padding: const EdgeInsets.all(10),
-                          decoration: BoxDecoration(
-                            color: AppColors.blue.withValues(alpha: 0.1),
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Icon(
-                            Icons.delivery_dining,
-                            color: AppColors.blue,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                order.statusText,
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(
-                                  color: AppColors.text,
-                                  fontWeight: FontWeight.w800,
-                                  fontSize: 15,
-                                ),
-                              ),
-                              if (order.driverName != null)
-                                Text(
-                                  '${order.driverName} • ${order.vehicleText}',
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(
-                                    color: AppColors.muted,
-                                    fontSize: 12,
-                                  ),
-                                ),
-                            ],
-                          ),
-                        ),
-                        IconButton(
-                          tooltip: 'Fit route',
-                          onPressed: _fitRoute,
-                          icon: const Icon(Icons.center_focus_strong),
-                        ),
-                      ],
-                    ),
+                padding: const EdgeInsets.all(AppSpacing.md),
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(
+                    maxWidth: AppBreakpoints.customerContentMaxWidth,
+                  ),
+                  child: _TrackingHeader(
+                    order: order,
+                    onBack: () => Navigator.maybePop(context),
+                    onFitRoute: _fitRoute,
                   ),
                 ),
               ),
             ),
           ),
-          Positioned(
-            left: 14,
-            right: 14,
-            bottom: 14,
+          Align(
+            alignment: Alignment.bottomCenter,
             child: SafeArea(
               top: false,
-              child: Material(
-                color: Colors.white,
-                elevation: 9,
-                borderRadius: BorderRadius.circular(20),
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              '${order.itemName} • ${order.quantity} item${order.quantity == 1 ? '' : 's'}',
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                color: AppColors.text,
-                                fontWeight: FontWeight.w800,
+              minimum: const EdgeInsets.all(AppSpacing.md),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(
+                  maxWidth: AppBreakpoints.customerContentMaxWidth,
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    AnimatedSwitcher(
+                      duration: AppMotion.standard,
+                      switchInCurve: AppMotion.standardCurve,
+                      child: order.status == OrderStatus.arrivedAtPickup
+                          ? Padding(
+                              key: const ValueKey('pickup-qr-action'),
+                              padding: const EdgeInsets.only(
+                                bottom: AppSpacing.sm,
                               ),
-                            ),
-                            const SizedBox(height: 5),
-                            Text(
-                              '${order.pickupAddress} → ${order.dropoffAddress}',
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                color: AppColors.muted,
-                                fontSize: 12,
-                                height: 1.25,
+                              child: FilledButton.icon(
+                                onPressed: _showPickupQr,
+                                icon: const Icon(Icons.qr_code_2_rounded),
+                                label: const Text(
+                                  'Show pickup confirmation QR',
+                                ),
+                                style: FilledButton.styleFrom(
+                                  minimumSize: const Size.fromHeight(54),
+                                  backgroundColor: AppColors.blue,
+                                  foregroundColor: Colors.white,
+                                  elevation: 4,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(
+                                      AppRadius.lg,
+                                    ),
+                                  ),
+                                ),
                               ),
+                            )
+                          : const SizedBox.shrink(),
+                    ),
+                    _DeliverySummaryCard(
+                      order: order,
+                      onDetails: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => CustomerOrderDetailScreen(
+                              packageId: widget.packageId,
                             ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      FilledButton(
-                        onPressed: () {
-                          Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (_) => CustomerOrderDetailScreen(
-                                packageId: widget.packageId,
-                              ),
-                            ),
-                          );
-                        },
-                        style: FilledButton.styleFrom(
-                          backgroundColor: AppColors.blue,
-                        ),
-                        child: const Text('Details'),
-                      ),
-                    ],
-                  ),
+                          ),
+                        );
+                      },
+                    ),
+                  ],
                 ),
               ),
             ),
           ),
-          if (order.status == OrderStatus.arrivedAtPickup)
-            Positioned(
-              left: 28,
-              right: 28,
-              bottom: 142,
-              child: SafeArea(
-                top: false,
-                child: FilledButton.icon(
-                  onPressed: _showPickupQr,
-                  icon: const Icon(Icons.qr_code_2_rounded),
-                  label: const Text('Show pickup confirmation QR'),
-                  style: FilledButton.styleFrom(
-                    minimumSize: const Size.fromHeight(52),
-                    backgroundColor: AppColors.blue,
-                    foregroundColor: Colors.white,
-                    elevation: 7,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
+        ],
+      ),
+    );
+  }
+}
+
+class _TrackingHeader extends StatelessWidget {
+  const _TrackingHeader({
+    required this.order,
+    required this.onBack,
+    required this.onFitRoute,
+  });
+
+  final CustomerOrder order;
+  final VoidCallback onBack;
+  final VoidCallback onFitRoute;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(AppRadius.lg),
+      clipBehavior: Clip.antiAlias,
+      elevation: 0,
+      child: Container(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.xs,
+          vertical: AppSpacing.xs,
+        ),
+        decoration: BoxDecoration(
+          border: Border.all(color: AppColors.line),
+          borderRadius: BorderRadius.circular(AppRadius.lg),
+          boxShadow: AppShadows.floating,
+        ),
+        child: Row(
+          children: [
+            IconButton(
+              tooltip: 'Back',
+              onPressed: onBack,
+              icon: const Icon(Icons.arrow_back_rounded),
+            ),
+            Container(
+              width: 42,
+              height: 42,
+              decoration: const BoxDecoration(
+                color: AppColors.softBlue,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.delivery_dining_rounded,
+                color: AppColors.blue,
+              ),
+            ),
+            const SizedBox(width: AppSpacing.sm),
+            Expanded(
+              child: Semantics(
+                liveRegion: true,
+                label: 'Delivery status: ${order.statusText}',
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      order.statusText,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: AppColors.text,
+                        fontWeight: FontWeight.w800,
+                        fontSize: 15,
+                      ),
                     ),
-                  ),
+                    const SizedBox(height: 2),
+                    Text(
+                      order.driverName == null
+                          ? 'Live delivery tracking'
+                          : '${order.driverName} • ${order.vehicleText}',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: AppColors.textSecondary,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
-        ],
+            IconButton(
+              tooltip: 'Show the full route',
+              onPressed: onFitRoute,
+              icon: const Icon(Icons.my_location_rounded),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _DeliverySummaryCard extends StatelessWidget {
+  const _DeliverySummaryCard({required this.order, required this.onDetails});
+
+  final CustomerOrder order;
+  final VoidCallback onDetails;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(AppRadius.xl),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onDetails,
+        child: Container(
+          padding: const EdgeInsets.all(AppSpacing.md),
+          decoration: BoxDecoration(
+            border: Border.all(color: AppColors.line),
+            borderRadius: BorderRadius.circular(AppRadius.xl),
+            boxShadow: AppShadows.floating,
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 46,
+                height: 46,
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceContainerLow,
+                  borderRadius: BorderRadius.circular(AppRadius.md),
+                ),
+                child: const Icon(
+                  Icons.inventory_2_outlined,
+                  color: AppColors.blue,
+                ),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '${order.itemName} • ${order.quantity} item${order.quantity == 1 ? '' : 's'}',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: AppColors.text,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.xxs),
+                    Text(
+                      '${order.pickupAddress} → ${order.dropoffAddress}',
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: AppColors.textSecondary,
+                        fontSize: 12,
+                        height: 1.3,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Semantics(
+                button: true,
+                label: 'View delivery details',
+                child: const CircleAvatar(
+                  radius: 20,
+                  backgroundColor: AppColors.softBlue,
+                  child: Icon(
+                    Icons.chevron_right_rounded,
+                    color: AppColors.blue,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

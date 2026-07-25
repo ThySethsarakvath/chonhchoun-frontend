@@ -1,11 +1,9 @@
-import 'dart:async';
-import 'dart:math' as math;
-
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 
 import '../../../shared/data/map_data.dart';
+import '../../../shared/utils/route_motion.dart';
 import '../models/dispatch_receipt_models.dart';
 
 class OptimizedDispatchMap extends StatefulWidget {
@@ -22,21 +20,24 @@ class OptimizedDispatchMap extends StatefulWidget {
   State<OptimizedDispatchMap> createState() => _OptimizedDispatchMapState();
 }
 
-class _OptimizedDispatchMapState extends State<OptimizedDispatchMap> {
+class _OptimizedDispatchMapState extends State<OptimizedDispatchMap>
+    with SingleTickerProviderStateMixin {
   final MapController _mapController = MapController();
-  final Distance _distance = const Distance();
+  final SmoothRouteProgress _progressSmoother = SmoothRouteProgress();
   final Set<int> _reportedStops = {};
-  Timer? _timer;
+  late final AnimationController _frameController;
+  late List<LatLng> _cachedRoutePoints;
   double _progress = 0;
 
   @override
   void initState() {
     super.initState();
+    _cachedRoutePoints = _resolveRoutePoints();
     _updateProgress();
-    _timer = Timer.periodic(
-      const Duration(milliseconds: 500),
-      (_) => _updateProgress(),
-    );
+    _frameController =
+        AnimationController(vsync: this, duration: const Duration(seconds: 1))
+          ..addListener(_updateProgress)
+          ..repeat();
   }
 
   @override
@@ -46,29 +47,35 @@ class _OptimizedDispatchMapState extends State<OptimizedDispatchMap> {
         widget.receipt.simulationStartedAt) {
       _reportedStops.clear();
     }
+    if (!identical(
+          oldWidget.receipt.routeGeometry,
+          widget.receipt.routeGeometry,
+        ) ||
+        !identical(oldWidget.receipt.stops, widget.receipt.stops)) {
+      _cachedRoutePoints = _resolveRoutePoints();
+    }
     _updateProgress();
   }
 
   @override
   void dispose() {
-    _timer?.cancel();
+    _frameController.dispose();
     super.dispose();
   }
 
   void _updateProgress() {
     final segmentStartedAt = widget.receipt.simulationSegmentStartedAt;
-    var fullRouteProgress = widget.receipt.simulationProgress;
-    if (widget.receipt.status == DispatchReceiptStatus.completed) {
-      fullRouteProgress = 1;
-    } else if (segmentStartedAt != null) {
-      final elapsedMs = DateTime.now()
-          .difference(segmentStartedAt)
-          .inMilliseconds
-          .toDouble();
-      final durationMs = widget.receipt.simulationDurationSeconds * 1000.0;
-      fullRouteProgress += elapsedMs / durationMs;
-    }
-    fullRouteProgress = fullRouteProgress.clamp(0.0, 1.0);
+    final completed = widget.receipt.status == DispatchReceiptStatus.completed;
+    final simulationStarted = widget.receipt.simulationStartedAt != null;
+    final fullRouteProgress = _progressSmoother.update(
+      phaseKey:
+          '${widget.receipt.id}:'
+          '${widget.receipt.simulationStartedAt?.millisecondsSinceEpoch ?? 'ready'}',
+      serverProgress: widget.receipt.simulationProgress,
+      durationSeconds: widget.receipt.simulationDurationSeconds,
+      completed: completed,
+      paused: !simulationStarted || segmentStartedAt == null,
+    );
     final viewerEnd = widget.receipt.viewerRouteEndProgress.clamp(0.05, 1.0);
     final nextProgress = (fullRouteProgress / viewerEnd).clamp(0.0, 1.0);
 
@@ -121,7 +128,7 @@ class _OptimizedDispatchMapState extends State<OptimizedDispatchMap> {
     return _isValidPoint(point) ? point : null;
   }
 
-  List<LatLng> get _routePoints {
+  List<LatLng> _resolveRoutePoints() {
     final decoded = widget.receipt.routeGeometry
         .where(_isValidPoint)
         .toList(growable: false);
@@ -141,6 +148,8 @@ class _OptimizedDispatchMapState extends State<OptimizedDispatchMap> {
     }
     return fallback;
   }
+
+  List<LatLng> get _routePoints => _cachedRoutePoints;
 
   List<LatLng> get _allPoints {
     final points = <LatLng>[..._routePoints];
@@ -174,45 +183,9 @@ class _OptimizedDispatchMapState extends State<OptimizedDispatchMap> {
     _mapController.move(camera.center, (camera.zoom + delta).clamp(3, 18));
   }
 
-  ({LatLng point, double angle})? get _truckPosition {
+  RouteMotionSnapshot? get _truckPosition {
     final points = _routePoints;
-    if (points.length < 2) return null;
-
-    final segmentLengths = <double>[];
-    var totalLength = 0.0;
-    for (var index = 0; index < points.length - 1; index += 1) {
-      final length = _distance.as(
-        LengthUnit.Meter,
-        points[index],
-        points[index + 1],
-      );
-      segmentLengths.add(length);
-      totalLength += length;
-    }
-    if (totalLength <= 0) return (point: points.first, angle: 0);
-
-    var remaining = totalLength * _progress;
-    for (var index = 0; index < segmentLengths.length; index += 1) {
-      final segmentLength = segmentLengths[index];
-      if (remaining <= segmentLength || index == segmentLengths.length - 1) {
-        final fraction = segmentLength == 0
-            ? 0.0
-            : (remaining / segmentLength).clamp(0, 1);
-        final from = points[index];
-        final to = points[index + 1];
-        final point = LatLng(
-          from.latitude + (to.latitude - from.latitude) * fraction,
-          from.longitude + (to.longitude - from.longitude) * fraction,
-        );
-        final angle = math.atan2(
-          to.longitude - from.longitude,
-          to.latitude - from.latitude,
-        );
-        return (point: point, angle: angle);
-      }
-      remaining -= segmentLength;
-    }
-    return (point: points.last, angle: 0);
+    return sampleRouteMotion(points, _progress);
   }
 
   @override
@@ -299,14 +272,15 @@ class _OptimizedDispatchMapState extends State<OptimizedDispatchMap> {
                       ),
                   if (truck != null)
                     Marker(
-                      point: truck.point,
+                      point: truck.position,
                       width: 46,
                       height: 70,
                       child: Transform.rotate(
-                        angle: truck.angle,
+                        angle: truck.bearingRadians,
                         child: Image.asset(
                           'assets/images/truck_topview.png',
                           fit: BoxFit.contain,
+                          filterQuality: FilterQuality.high,
                         ),
                       ),
                     ),

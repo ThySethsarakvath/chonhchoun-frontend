@@ -1,11 +1,10 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 
 import '../../../shared/data/map_data.dart';
 import '../../../shared/models/driver_request.dart';
+import '../../../shared/utils/route_motion.dart';
 import '../../../shared/widgets/driver_colors.dart';
 
 class ExpressDriverRouteMap extends StatefulWidget {
@@ -24,25 +23,31 @@ class ExpressDriverRouteMap extends StatefulWidget {
   State<ExpressDriverRouteMap> createState() => _ExpressDriverRouteMapState();
 }
 
-class _ExpressDriverRouteMapState extends State<ExpressDriverRouteMap> {
+class _ExpressDriverRouteMapState extends State<ExpressDriverRouteMap>
+    with SingleTickerProviderStateMixin {
   final MapController _controller = MapController();
-  Timer? _animationTimer;
+  final SmoothRouteProgress _progressSmoother = SmoothRouteProgress();
+  late final AnimationController _frameController;
 
   @override
   void initState() {
     super.initState();
-    _animationTimer = Timer.periodic(const Duration(milliseconds: 400), (_) {
-      if (mounted &&
-          (widget.request.status == 'ACCEPTED' ||
-              widget.request.status == 'IN_TRANSIT')) {
-        setState(() {});
-      }
-    });
+    _frameController =
+        AnimationController(vsync: this, duration: const Duration(seconds: 1))
+          ..addListener(_onAnimationFrame)
+          ..repeat();
+  }
+
+  void _onAnimationFrame() {
+    if (widget.request.status == 'ACCEPTED' ||
+        widget.request.status == 'IN_TRANSIT') {
+      setState(() {});
+    }
   }
 
   @override
   void dispose() {
-    _animationTimer?.cancel();
+    _frameController.dispose();
     super.dispose();
   }
 
@@ -81,7 +86,22 @@ class _ExpressDriverRouteMapState extends State<ExpressDriverRouteMap> {
     final isPending = request.status == null || request.status == 'PENDING';
     final pickupActive =
         request.status == 'ACCEPTED' || request.status == 'ARRIVED_AT_PICKUP';
-    final movingPoint = isPending ? null : request.simulatedLocation;
+    final completed = const {
+      'ARRIVED_AT_PICKUP',
+      'ARRIVED_AT_DROPOFF',
+      'DELIVERED',
+    }.contains(request.status);
+    final smoothProgress = _progressSmoother.update(
+      phaseKey: request.status ?? 'PENDING',
+      serverProgress: request.simulationProgress,
+      durationSeconds: request.simulationDurationSeconds,
+      completed: completed,
+    );
+    final motion = isPending
+        ? null
+        : sampleRouteMotion(request.activeRoutePoints, smoothProgress);
+    final movingPoint =
+        motion?.position ?? (isPending ? null : request.driverStartLocation);
     final center = movingPoint ?? request.pickupLatLng;
 
     return ClipRRect(
@@ -163,24 +183,16 @@ class _ExpressDriverRouteMapState extends State<ExpressDriverRouteMap> {
                     if (movingPoint != null)
                       Marker(
                         point: movingPoint,
-                        width: 64,
-                        height: 64,
-                        child: Container(
-                          padding: const EdgeInsets.all(4),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            shape: BoxShape.circle,
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.22),
-                                blurRadius: 10,
-                              ),
-                            ],
-                          ),
+                        width: 54,
+                        height: 70,
+                        child: Transform.rotate(
+                          angle: motion?.bearingRadians ?? 0,
                           child: Image.asset(
                             request.vehicleType == 'RICKSHAW'
                                 ? 'assets/images/rickshaw_topview.png'
                                 : 'assets/images/motorbike_topview.png',
+                            fit: BoxFit.contain,
+                            filterQuality: FilterQuality.high,
                           ),
                         ),
                       ),
