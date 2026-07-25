@@ -25,6 +25,7 @@ class VehicleCapacityPreset {
 }
 
 const String driverOwnMotorcycleType = 'MOTORCYCLE';
+const String driverRickshawType = 'RICKSHAW';
 const String driverTruckType = 'TRUCK';
 const String driverLargeTruckType = 'TRUCK_LARGE';
 const String driverBranchTruckChoice = 'BRANCH_TRUCK';
@@ -34,6 +35,11 @@ const List<VehicleTypeOption> vehicleTypeOptions = [
     value: driverOwnMotorcycleType,
     label: 'Motorcycle',
     icon: Icons.two_wheeler_rounded,
+  ),
+  VehicleTypeOption(
+    value: driverRickshawType,
+    label: 'Rickshaw',
+    icon: Icons.electric_rickshaw_rounded,
   ),
   VehicleTypeOption(
     value: driverTruckType,
@@ -90,6 +96,7 @@ String vehicleTypeLabel(String? value) {
 
 String reviewVehicleTypeLabel(String? value) {
   if (value == driverOwnMotorcycleType) return 'Own Motorcycle';
+  if (value == driverRickshawType) return 'Own Rickshaw';
   if (value == driverTruckType) return 'Own Truck';
   if (value == driverLargeTruckType) return 'Own Large Truck';
   if (value == driverBranchTruckChoice) return 'Branch Vehicle';
@@ -97,7 +104,9 @@ String reviewVehicleTypeLabel(String? value) {
 }
 
 String deliveryCategoryLabel(String? value) {
-  if (value == driverOwnMotorcycleType) return 'City Express';
+  if (value == driverOwnMotorcycleType || value == driverRickshawType) {
+    return 'City Express';
+  }
   if (value == driverTruckType || value == driverLargeTruckType) {
     return 'Warehouse Route';
   }
@@ -105,7 +114,9 @@ String deliveryCategoryLabel(String? value) {
 }
 
 String deliveryOperationLabel(String? value) {
-  if (value == driverOwnMotorcycleType) return 'City express delivery';
+  if (value == driverOwnMotorcycleType || value == driverRickshawType) {
+    return 'City express delivery';
+  }
   if (value == driverTruckType || value == driverLargeTruckType) {
     return 'Warehouse-to-warehouse province delivery';
   }
@@ -113,7 +124,9 @@ String deliveryOperationLabel(String? value) {
 }
 
 String deliveryRouteLabel(String? value) {
-  if (value == driverOwnMotorcycleType) return 'Inside the city';
+  if (value == driverOwnMotorcycleType || value == driverRickshawType) {
+    return 'Inside the city';
+  }
   if (value == driverTruckType || value == driverLargeTruckType) {
     return 'Branch warehouse to branch warehouse';
   }
@@ -128,7 +141,10 @@ IconData vehicleTypeIcon(String? value) {
 }
 
 VehicleCapacityPreset? vehicleCapacityPresetFor(String? value) {
-  if (value == null || value.isEmpty || value == driverOwnMotorcycleType) {
+  if (value == null ||
+      value.isEmpty ||
+      value == driverOwnMotorcycleType ||
+      value == driverRickshawType) {
     return null;
   }
   return vehicleCapacityPresets[value];

@@ -3,9 +3,9 @@ import 'package:flutter/material.dart';
 import '../../../shared/models/driver_request.dart';
 import '../../../shared/widgets/driver_button_widgets.dart';
 import '../../../shared/widgets/driver_colors.dart';
-import '../../../shared/widgets/driver_map_widgets.dart';
 import '../../../shared/widgets/driver_request_widgets.dart';
 import '../../../shared/widgets/driver_shell_widgets.dart';
+import '../widgets/express_driver_route_map.dart';
 
 class DriverRequestDetailScreen extends StatelessWidget {
   const DriverRequestDetailScreen({
@@ -43,26 +43,18 @@ class DriverRequestDetailScreen extends StatelessWidget {
             child: SafeArea(
               bottom: false,
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(16, 12, 16, 118),
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 72),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     DriverBackChip(onTap: () => Navigator.of(context).pop()),
                     const SizedBox(height: 18),
-                    Center(
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(28),
-                        child: SizedBox(
-                          height: 152,
-                          width: 230,
-                          child: DriverLeafletMapCard(
-                            interactive: false,
-                            showAttribution: false,
-                            overlay: const DriverPreviewRouteOverlay(),
-                            pickupLatLng: request.pickupLatLng,
-                            dropOffLatLng: request.dropOffLatLng,
-                          ),
-                        ),
+                    SizedBox(
+                      height: 360,
+                      width: double.infinity,
+                      child: ExpressDriverRouteMap(
+                        request: request,
+                        onFocus: onOpenMap,
                       ),
                     ),
                   ],
@@ -71,7 +63,7 @@ class DriverRequestDetailScreen extends StatelessWidget {
             ),
           ),
           Transform.translate(
-            offset: const Offset(0, -82),
+            offset: const Offset(0, -38),
             child: Padding(
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
               child: DriverSurfaceCard(
@@ -82,7 +74,9 @@ class DriverRequestDetailScreen extends StatelessWidget {
                       children: [
                         CircleAvatar(
                           radius: 26,
-                          backgroundColor: request.accent.withValues(alpha: 0.15),
+                          backgroundColor: request.accent.withValues(
+                            alpha: 0.15,
+                          ),
                           child: Text(
                             request.senderInitials,
                             style: TextStyle(
@@ -108,7 +102,9 @@ class DriverRequestDetailScreen extends StatelessWidget {
                               const SizedBox(height: 4),
                               Text(
                                 '${request.deliveries} Deliveries',
-                                style: const TextStyle(color: DriverColors.muted),
+                                style: const TextStyle(
+                                  color: DriverColors.muted,
+                                ),
                               ),
                               const SizedBox(height: 6),
                               Row(

@@ -1,10 +1,4 @@
-enum DeliveryStatus {
-  pending,
-  inTransit,
-  arrived,
-  delivered,
-  canceled,
-}
+enum DeliveryStatus { pending, inTransit, arrived, delivered, canceled }
 
 extension DeliveryStatusLabel on DeliveryStatus {
   String get label {
@@ -35,9 +29,9 @@ class DeliveryItem {
   final String trackingNumber;
   final String itemName;
   final DeliveryStatus status;
-  final String date;        
-  final String origin;      
-  final String destination; 
+  final String date;
+  final String origin;
+  final String destination;
   final List<TrackingPoint> checkpoints;
   final String? dropoffContactName;
   final String? dropoffContactNumber;
@@ -61,19 +55,40 @@ class DeliveryItem {
     final status = _parseStatus(json['status']);
     final name = (json['package'] ?? {})['name'] ?? 'Package';
     final id = json['_id'] ?? json['id'] ?? '';
-    final shortId = id.toString().length > 8 ? id.toString().substring(0, 8) : id.toString();
-    
+    final shortId = id.toString().length > 8
+        ? id.toString().substring(0, 8)
+        : id.toString();
+
     // Generate default checkpoints based on status if backend doesn't provide them
-    List<TrackingPoint> checkpoints = (json['checkpoints'] as List?)
-        ?.map((e) => TrackingPoint(label: e['label'], completed: e['completed']))
-        .toList() ?? [];
+    List<TrackingPoint> checkpoints =
+        (json['checkpoints'] as List?)
+            ?.map(
+              (e) =>
+                  TrackingPoint(label: e['label'], completed: e['completed']),
+            )
+            .toList() ??
+        [];
 
     if (checkpoints.isEmpty) {
       checkpoints = [
-        TrackingPoint(label: 'ទទួល', completed: true), 
-        TrackingPoint(label: 'ចាកចេញ', completed: status == DeliveryStatus.inTransit || status == DeliveryStatus.arrived || status == DeliveryStatus.delivered),
-        TrackingPoint(label: 'កំពុង', completed: status == DeliveryStatus.arrived || status == DeliveryStatus.delivered),
-        TrackingPoint(label: 'ទៅដល់', completed: status == DeliveryStatus.delivered),
+        TrackingPoint(label: 'ទទួល', completed: true),
+        TrackingPoint(
+          label: 'ចាកចេញ',
+          completed:
+              status == DeliveryStatus.inTransit ||
+              status == DeliveryStatus.arrived ||
+              status == DeliveryStatus.delivered,
+        ),
+        TrackingPoint(
+          label: 'កំពុង',
+          completed:
+              status == DeliveryStatus.arrived ||
+              status == DeliveryStatus.delivered,
+        ),
+        TrackingPoint(
+          label: 'ទៅដល់',
+          completed: status == DeliveryStatus.delivered,
+        ),
       ];
     }
 
@@ -82,7 +97,11 @@ class DeliveryItem {
       itemName: name,
       trackingNumber: "$name - #${shortId.toUpperCase()}",
       status: status,
-      date: json['date'] ?? (json['createdAt'] != null ? _formatDate(json['createdAt']) : 'Just now'),
+      date:
+          json['date'] ??
+          (json['createdAt'] != null
+              ? _formatDate(json['createdAt'])
+              : 'Just now'),
       origin: (json['pickup'] ?? {})['address'] ?? '',
       destination: (json['dropoff'] ?? {})['address'] ?? '',
       checkpoints: checkpoints,
@@ -98,10 +117,13 @@ class DeliveryItem {
       case 'PENDING':
         return DeliveryStatus.pending;
       case 'ACCEPTED':
+      case 'ARRIVED_AT_PICKUP':
         return DeliveryStatus.inTransit;
       case 'PICKED_UP':
       case 'IN_TRANSIT':
         return DeliveryStatus.inTransit;
+      case 'ARRIVED_AT_DROPOFF':
+        return DeliveryStatus.arrived;
       case 'DELIVERED':
         return DeliveryStatus.delivered;
       case 'CANCELLED':
@@ -117,16 +139,18 @@ class DeliveryItem {
     try {
       final dt = DateTime.parse(iso);
       return "${dt.day}/${dt.month}";
-    } catch (_) { return "Just now"; }
+    } catch (_) {
+      return "Just now";
+    }
   }
 }
 
 class PromoBanner {
   final String title;
   final String subtitle;
-  final String imagePath;   
-  final String backgroundColor; 
-  
+  final String imagePath;
+  final String backgroundColor;
+
   const PromoBanner({
     required this.title,
     required this.subtitle,
@@ -148,7 +172,8 @@ class HomeData {
   static const List<PromoBanner> banners = [
     PromoBanner(
       title: 'Buy GPS',
-      subtitle: 'Liveasy GPS system allows you to track your vehicles from the app.',
+      subtitle:
+          'Liveasy GPS system allows you to track your vehicles from the app.',
       imagePath: 'assets/images/banner_gps.png',
       backgroundColor: '#2C5F8A',
     ),

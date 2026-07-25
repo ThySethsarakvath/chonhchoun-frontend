@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../colors/app_colors.dart';
+import '../theme/app_tokens.dart';
+
 class QuickNavItem {
   final IconData? icon;
   final Widget? customIcon;
@@ -21,23 +24,31 @@ class QuickNavGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 20),
-      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF2C5F8A).withOpacity(0.10),
-            blurRadius: 20,
-            offset: const Offset(0, 6),
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(
+          maxWidth: AppBreakpoints.customerContentMaxWidth,
+        ),
+        child: Container(
+          margin: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+          padding: const EdgeInsets.symmetric(
+            vertical: AppSpacing.md,
+            horizontal: AppSpacing.xs,
           ),
-        ],
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: items.map((item) => _NavCell(item: item)).toList(),
+          decoration: BoxDecoration(
+            color: AppColors.surfaceContainer,
+            borderRadius: BorderRadius.circular(AppRadius.xl),
+            border: Border.all(color: AppColors.line.withValues(alpha: 0.6)),
+            boxShadow: AppShadows.floating,
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              for (final item in items)
+                Expanded(child: _NavCell(item: item)),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -50,35 +61,47 @@ class _NavCell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: item.onTap,
-      behavior: HitTestBehavior.opaque,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 56,
-            height: 56,
-            decoration: BoxDecoration(
-              color: const Color(0xFFEEF3FB),
-              borderRadius: BorderRadius.circular(14),
+    return Semantics(
+      button: true,
+      label: item.label,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: item.onTap,
+          borderRadius: BorderRadius.circular(AppRadius.lg),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.xxs,
+              vertical: AppSpacing.xs,
             ),
-            child: Center(
-              child:
-                  item.customIcon ??
-                  Icon(item.icon, color: const Color(0xFF2C5F8A), size: 26),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 54,
+                  height: 54,
+                  decoration: BoxDecoration(
+                    color: AppColors.softBlue,
+                    borderRadius: BorderRadius.circular(AppRadius.md),
+                  ),
+                  child: Center(
+                    child:
+                        item.customIcon ??
+                        Icon(item.icon, color: AppColors.blue, size: 26),
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.xs),
+                Text(
+                  item.label,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.labelMedium,
+                ),
+              ],
             ),
           ),
-          const SizedBox(height: 8),
-          Text(
-            item.label,
-            style: const TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              color: Color(0xFF2D3A4E),
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }

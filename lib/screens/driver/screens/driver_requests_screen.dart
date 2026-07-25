@@ -26,6 +26,26 @@ class DriverRequestsScreen extends StatelessWidget {
           DriverHeroSection(
             subtitle: 'Welcome Back',
             name: driverDisplayName,
+            searchHint: 'Search available requests',
+            onSearchSubmitted: (query) {
+              final normalized = query.trim().toLowerCase();
+              final matches = requests.where(
+                (request) =>
+                    request.title.toLowerCase().contains(normalized) ||
+                    request.id?.toLowerCase().contains(normalized) == true ||
+                    request.pickup.toLowerCase().contains(normalized) ||
+                    request.dropOff.toLowerCase().contains(normalized),
+              );
+              if (normalized.isNotEmpty && matches.isNotEmpty) {
+                onOpenDetail(matches.first);
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('No available request matched your search.'),
+                  ),
+                );
+              }
+            },
             leading: DriverBackChip(onTap: () => Navigator.of(context).pop()),
             content: const DriverBalanceCard(amount: driverAvailableBalance),
           ),

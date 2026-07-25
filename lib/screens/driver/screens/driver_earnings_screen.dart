@@ -7,7 +7,7 @@ import '../models/driver_earnings.dart';
 import '../services/driver_dashboard_service.dart';
 import '../widgets/driver_button_widgets.dart';
 import '../widgets/driver_colors.dart';
-import '../widgets/driver_shell_widgets.dart';
+import '../../../shared/widgets/driver_shell_widgets.dart';
 
 class DriverEarningsScreen extends StatefulWidget {
   const DriverEarningsScreen({super.key});
@@ -74,13 +74,19 @@ class _DriverEarningsScreenState extends State<DriverEarningsScreen> {
       case DriverEarningsRange.week:
         return (total: _weekTotal, deliveries: _weekDeliveries);
       case DriverEarningsRange.month:
-        return (total: _weekTotal * 4.3, deliveries: (_weekDeliveries * 4.3).round());
+        return (
+          total: _weekTotal * 4.3,
+          deliveries: (_weekDeliveries * 4.3).round(),
+        );
       case DriverEarningsRange.all:
         final s = _summary;
         if (s != null && s.totalEarnings > 0) {
           return (total: s.totalEarnings, deliveries: s.completedDeliveries);
         }
-        return (total: _weekTotal * 26.8, deliveries: (_weekDeliveries * 26.8).round());
+        return (
+          total: _weekTotal * 26.8,
+          deliveries: (_weekDeliveries * 26.8).round(),
+        );
     }
   }
 
@@ -105,6 +111,7 @@ class _DriverEarningsScreenState extends State<DriverEarningsScreen> {
             DriverHeroSection(
               subtitle: 'Earnings',
               name: 'Your wallet',
+              searchHint: 'Weekly earnings overview',
               leading: DriverBackChip(onTap: () => Navigator.of(context).pop()),
               content: _EarningsTotalCard(
                 total: total,
@@ -157,8 +164,9 @@ class _DriverEarningsScreenState extends State<DriverEarningsScreen> {
                               days: _days,
                               selectedIndex: _selectedBar,
                               onBarTapped: (index) => setState(
-                                () => _selectedBar =
-                                    _selectedBar == index ? null : index,
+                                () => _selectedBar = _selectedBar == index
+                                    ? null
+                                    : index,
                               ),
                             ),
                           ),
@@ -235,8 +243,19 @@ class _EarningsTotalCard extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: DriverColors.softBlue,
+        gradient: const LinearGradient(
+          begin: Alignment.centerLeft,
+          end: Alignment.centerRight,
+          colors: [Color(0xFFE17A00), Color(0xFFF39A16)],
+        ),
         borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFFE17A00).withValues(alpha: 0.26),
+            blurRadius: 18,
+            offset: const Offset(0, 8),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -246,7 +265,7 @@ class _EarningsTotalCard extends StatelessWidget {
               Expanded(
                 child: Text(
                   'Earned · $rangeLabel',
-                  style: const TextStyle(color: DriverColors.text, fontSize: 13),
+                  style: const TextStyle(color: Colors.white, fontSize: 13),
                 ),
               ),
               if (loading)
@@ -255,32 +274,34 @@ class _EarningsTotalCard extends StatelessWidget {
                   width: 14,
                   child: CircularProgressIndicator(
                     strokeWidth: 2,
-                    color: DriverColors.blue,
+                    color: Colors.white,
                   ),
                 )
               else
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
-                    color: (isLive ? DriverColors.success : DriverColors.muted)
-                        .withValues(alpha: 0.16),
+                    color: Colors.white.withValues(alpha: 0.18),
                     borderRadius: BorderRadius.circular(999),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Icon(
-                        isLive ? Icons.cloud_done_rounded : Icons.cloud_off_rounded,
+                        isLive
+                            ? Icons.cloud_done_rounded
+                            : Icons.cloud_off_rounded,
                         size: 14,
-                        color: isLive ? DriverColors.success : DriverColors.muted,
+                        color: Colors.white,
                       ),
                       const SizedBox(width: 4),
                       Text(
                         isLive ? 'Live' : 'Offline',
                         style: TextStyle(
-                          color:
-                              isLive ? DriverColors.success : DriverColors.muted,
+                          color: Colors.white,
                           fontWeight: FontWeight.w700,
                           fontSize: 12,
                         ),
@@ -297,7 +318,7 @@ class _EarningsTotalCard extends StatelessWidget {
               const Text(
                 '\$',
                 style: TextStyle(
-                  color: DriverColors.text,
+                  color: Colors.white,
                   fontSize: 24,
                   fontWeight: FontWeight.w700,
                 ),
@@ -306,7 +327,7 @@ class _EarningsTotalCard extends StatelessWidget {
               Text(
                 total.toStringAsFixed(2),
                 style: const TextStyle(
-                  color: DriverColors.text,
+                  color: Colors.white,
                   fontSize: 34,
                   fontWeight: FontWeight.w800,
                   height: 1,
@@ -401,8 +422,10 @@ class _WeeklyBarChart extends StatelessWidget {
           touchTooltipData: BarTouchTooltipData(
             getTooltipColor: (_) => DriverColors.blueDark,
             tooltipBorderRadius: BorderRadius.circular(10),
-            tooltipPadding:
-                const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            tooltipPadding: const EdgeInsets.symmetric(
+              horizontal: 10,
+              vertical: 6,
+            ),
             getTooltipItem: (group, _, rod, rodIndex) {
               final day = days[group.x];
               return BarTooltipItem(
@@ -443,12 +466,15 @@ class _WeeklyBarChart extends StatelessWidget {
         ),
         borderData: FlBorderData(show: false),
         titlesData: FlTitlesData(
-          topTitles:
-              const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-          rightTitles:
-              const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-          leftTitles:
-              const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          topTitles: const AxisTitles(
+            sideTitles: SideTitles(showTitles: false),
+          ),
+          rightTitles: const AxisTitles(
+            sideTitles: SideTitles(showTitles: false),
+          ),
+          leftTitles: const AxisTitles(
+            sideTitles: SideTitles(showTitles: false),
+          ),
           bottomTitles: AxisTitles(
             sideTitles: SideTitles(
               showTitles: true,
@@ -464,10 +490,12 @@ class _WeeklyBarChart extends StatelessWidget {
                   child: Text(
                     days[index].label,
                     style: TextStyle(
-                      color:
-                          isSelected ? DriverColors.blue : DriverColors.muted,
-                      fontWeight:
-                          isSelected ? FontWeight.w800 : FontWeight.w600,
+                      color: isSelected
+                          ? DriverColors.blue
+                          : DriverColors.muted,
+                      fontWeight: isSelected
+                          ? FontWeight.w800
+                          : FontWeight.w600,
                       fontSize: 12,
                     ),
                   ),
@@ -641,8 +669,10 @@ class _CashOutCard extends StatelessWidget {
                   color: DriverColors.success.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(16),
                 ),
-                child: const Icon(Icons.account_balance_wallet_rounded,
-                    color: DriverColors.success),
+                child: const Icon(
+                  Icons.account_balance_wallet_rounded,
+                  color: DriverColors.success,
+                ),
               ),
               const SizedBox(width: 14),
               Expanded(
@@ -651,10 +681,7 @@ class _CashOutCard extends StatelessWidget {
                   children: [
                     const Text(
                       'Available to cash out',
-                      style: TextStyle(
-                        color: DriverColors.muted,
-                        fontSize: 13,
-                      ),
+                      style: TextStyle(color: DriverColors.muted, fontSize: 13),
                     ),
                     const SizedBox(height: 2),
                     Text(
@@ -673,10 +700,7 @@ class _CashOutCard extends StatelessWidget {
           const SizedBox(height: 16),
           SizedBox(
             width: double.infinity,
-            child: DriverPrimaryButton(
-              label: 'Cash out',
-              onPressed: onCashOut,
-            ),
+            child: DriverPrimaryButton(label: 'Cash out', onPressed: onCashOut),
           ),
         ],
       ),
@@ -760,10 +784,7 @@ class _TransactionRow extends StatelessWidget {
                 transaction.subtitle,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  color: DriverColors.muted,
-                  fontSize: 12,
-                ),
+                style: const TextStyle(color: DriverColors.muted, fontSize: 12),
               ),
             ],
           ),
@@ -774,18 +795,12 @@ class _TransactionRow extends StatelessWidget {
           children: [
             Text(
               '$sign\$${transaction.amount.abs().toStringAsFixed(2)}',
-              style: TextStyle(
-                color: amountColor,
-                fontWeight: FontWeight.w800,
-              ),
+              style: TextStyle(color: amountColor, fontWeight: FontWeight.w800),
             ),
             const SizedBox(height: 2),
             Text(
               transaction.time,
-              style: const TextStyle(
-                color: DriverColors.muted,
-                fontSize: 11,
-              ),
+              style: const TextStyle(color: DriverColors.muted, fontSize: 11),
             ),
           ],
         ),
@@ -844,8 +859,10 @@ class _CashOutSheet extends StatelessWidget {
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.account_balance_wallet_rounded,
-                      color: DriverColors.blue),
+                  const Icon(
+                    Icons.account_balance_wallet_rounded,
+                    color: DriverColors.blue,
+                  ),
                   const SizedBox(width: 12),
                   const Expanded(
                     child: Text(

@@ -5,7 +5,7 @@ import '../models/driver_route.dart';
 import '../services/driver_dashboard_service.dart';
 import '../widgets/driver_colors.dart';
 import '../widgets/driver_route_map.dart';
-import '../widgets/driver_shell_widgets.dart';
+import '../../../shared/widgets/driver_shell_widgets.dart';
 
 class DriverRouteTab extends StatefulWidget {
   const DriverRouteTab({super.key});
@@ -82,10 +82,7 @@ class _DriverRouteTabState extends State<DriverRouteTab> {
           DriverHeroSection(
             subtitle: 'Auto-mapped route',
             name: "Today's route",
-            content: _RouteSummaryCard(
-              plan: plan,
-              loading: _loading,
-            ),
+            content: _RouteSummaryCard(plan: plan, loading: _loading),
           ),
           Transform.translate(
             offset: const Offset(0, -30),
@@ -134,7 +131,9 @@ class _DriverRouteTabState extends State<DriverRouteTab> {
                   if (plan.isSample)
                     Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 10, vertical: 4),
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
                         color: DriverColors.muted.withValues(alpha: 0.14),
                         borderRadius: BorderRadius.circular(999),
@@ -153,10 +152,7 @@ class _DriverRouteTabState extends State<DriverRouteTab> {
               const SizedBox(height: 14),
               ClipRRect(
                 borderRadius: BorderRadius.circular(20),
-                child: SizedBox(
-                  height: 260,
-                  child: DriverRouteMap(plan: plan),
-                ),
+                child: SizedBox(height: 260, child: DriverRouteMap(plan: plan)),
               ),
               const SizedBox(height: 16),
               Row(
@@ -201,10 +197,7 @@ class _DriverRouteTabState extends State<DriverRouteTab> {
                 ),
               ),
               const SizedBox(height: 16),
-              _RouteTimeline(
-                plan: plan,
-                etaLabel: _etaLabel,
-              ),
+              _RouteTimeline(plan: plan, etaLabel: _etaLabel),
             ],
           ),
         ),
@@ -284,8 +277,11 @@ class _RouteSummaryCard extends StatelessWidget {
               color: Colors.white.withValues(alpha: 0.6),
               borderRadius: BorderRadius.circular(18),
             ),
-            child: const Icon(Icons.route_rounded,
-                color: DriverColors.blueDark, size: 28),
+            child: const Icon(
+              Icons.route_rounded,
+              color: DriverColors.blueDark,
+              size: 28,
+            ),
           ),
         ],
       ),
@@ -333,10 +329,7 @@ class _RouteMetric extends StatelessWidget {
 }
 
 class _RouteTimeline extends StatelessWidget {
-  const _RouteTimeline({
-    required this.plan,
-    required this.etaLabel,
-  });
+  const _RouteTimeline({required this.plan, required this.etaLabel});
 
   final DriverRoutePlan plan;
   final String Function(int) etaLabel;
@@ -350,8 +343,11 @@ class _RouteTimeline extends StatelessWidget {
           _TimelineRow(
             isFirst: true,
             isLast: plan.stops.isEmpty,
-            badge: const Icon(Icons.warehouse_rounded,
-                color: Colors.white, size: 16),
+            badge: const Icon(
+              Icons.warehouse_rounded,
+              color: Colors.white,
+              size: 16,
+            ),
             badgeColor: DriverColors.blueDark,
             title: source.branchName,
             subtitle: 'Pickup origin · start here',
@@ -480,8 +476,11 @@ class _RouteEmptyState extends StatelessWidget {
               color: DriverColors.blue.withValues(alpha: 0.09),
               borderRadius: BorderRadius.circular(20),
             ),
-            child: const Icon(Icons.map_outlined,
-                color: DriverColors.blue, size: 30),
+            child: const Icon(
+              Icons.map_outlined,
+              color: DriverColors.blue,
+              size: 30,
+            ),
           ),
           const SizedBox(height: 16),
           const Text(

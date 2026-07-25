@@ -5,6 +5,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:http/http.dart' as http; // Use http package
 import 'package:geolocator/geolocator.dart';
 import '../../../shared/models/order.dart';
+import '../../../shared/models/home_models.dart';
 import '../../../shared/models/warehouse.dart';
 import '../../../shared/colors/app_colors.dart';
 import '../../../shared/widgets/app_map_widgets.dart';
@@ -18,7 +19,7 @@ class CustomerBookingScreen extends StatefulWidget {
     required this.serviceType,
   });
 
-  final Function(CustomerOrder) onOrderCreated;
+  final Future<DeliveryItem?> Function(CustomerOrder) onOrderCreated;
   final DeliveryServiceType serviceType;
 
   @override
@@ -34,6 +35,7 @@ class _CustomerBookingScreenState extends State<CustomerBookingScreen> {
   List<LatLng> _routePoints = [];
   final MapController _mapController = MapController();
   LatLng? _userLocation;
+  bool _isResolvingLocation = false;
 
   @override
   void initState() {
@@ -50,7 +52,8 @@ class _CustomerBookingScreenState extends State<CustomerBookingScreen> {
         if (permission == LocationPermission.denied) {
           permission = await Geolocator.requestPermission();
         }
-        if (permission == LocationPermission.whileInUse || permission == LocationPermission.always) {
+        if (permission == LocationPermission.whileInUse ||
+            permission == LocationPermission.always) {
           Position position = await Geolocator.getCurrentPosition(
             desiredAccuracy: LocationAccuracy.high,
           );
@@ -65,9 +68,9 @@ class _CustomerBookingScreenState extends State<CustomerBookingScreen> {
 
     setState(() {
       if (widget.serviceType == DeliveryServiceType.express) {
-        _pickupLocation = userLoc;
-        _pickupName = "My Current Location";
-        _isSelectingPickup = false; // Immediately prompt destination selection
+        _pickupLocation = null;
+        _pickupName = null;
+        _isSelectingPickup = true;
       } else {
         final closest = _findClosestWarehouse(userLoc);
         _pickupLocation = closest.location;
@@ -76,20 +79,17 @@ class _CustomerBookingScreenState extends State<CustomerBookingScreen> {
       }
     });
 
-    if (_pickupLocation != null) {
-      // MapController might not be fully initialized yet, wait a frame
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) {
-          _mapController.move(_pickupLocation!, 15);
-        }
-      });
-    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _mapController.move(_pickupLocation ?? userLoc, 15);
+      }
+    });
   }
 
   Warehouse _findClosestWarehouse(LatLng userLoc) {
     Warehouse closest = WarehouseData.allWarehouses.first;
     double minDistance = double.infinity;
-    
+
     for (var w in WarehouseData.allWarehouses) {
       double dist = Geolocator.distanceBetween(
         userLoc.latitude,
@@ -115,29 +115,55 @@ class _CustomerBookingScreenState extends State<CustomerBookingScreen> {
     return "${loc.latitude.toStringAsFixed(4)}, ${loc.longitude.toStringAsFixed(4)}";
   }
 
-  void _confirmCenterLocation() {
+  Future<void> _confirmCenterLocation() async {
     if (widget.serviceType == DeliveryServiceType.warehouse) {
       _showWarehousePicker();
       return;
     }
 
     final point = _mapController.camera.center;
+    setState(() => _isResolvingLocation = true);
+    final address = await _reverseGeocode(point);
+    if (!mounted) return;
     setState(() {
       if (_isSelectingPickup) {
         _pickupLocation = point;
-        _pickupName = null;
+        _pickupName = address;
         if (_dropoffLocation == null) {
           _isSelectingPickup = false;
         }
       } else {
         _dropoffLocation = point;
-        _dropoffName = null;
+        _dropoffName = address;
       }
+      _isResolvingLocation = false;
     });
 
     if (_pickupLocation != null && _dropoffLocation != null) {
       _fetchRoute();
     }
+  }
+
+  Future<String> _reverseGeocode(LatLng point) async {
+    try {
+      final uri = Uri.parse(
+        'https://nominatim.openstreetmap.org/reverse'
+        '?format=jsonv2&lat=${point.latitude}&lon=${point.longitude}',
+      );
+      final response = await http.get(
+        uri,
+        headers: const {'User-Agent': 'chonhchoun-app'},
+      );
+      if (response.statusCode == 200) {
+        final body = json.decode(response.body) as Map<String, dynamic>;
+        final displayName = body['display_name']?.toString().trim();
+        if (displayName?.isNotEmpty == true) return displayName!;
+      }
+    } catch (_) {
+      // Coordinates remain a reliable fallback when geocoding is unavailable.
+    }
+    return '${point.latitude.toStringAsFixed(6)}, '
+        '${point.longitude.toStringAsFixed(6)}';
   }
 
   void _showWarehousePicker() {
@@ -385,7 +411,9 @@ class _CustomerBookingScreenState extends State<CustomerBookingScreen> {
                       width: double.infinity,
                       height: 50,
                       child: ElevatedButton(
-                        onPressed: _confirmCenterLocation,
+                        onPressed: _isResolvingLocation
+                            ? null
+                            : _confirmCenterLocation,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: _isSelectingPickup
                               ? AppColors.blue
@@ -395,26 +423,29 @@ class _CustomerBookingScreenState extends State<CustomerBookingScreen> {
                           ),
                           elevation: 4,
                         ),
-                        child: Text(
-                          _isSelectingPickup
-                              ? (_pickupLocation == null
-                                    ? (widget.serviceType ==
-                                              DeliveryServiceType.express
-                                          ? "Set Pickup Location"
-                                          : "Select Pickup Warehouse")
-                                    : "Update Selection")
-                              : (_dropoffLocation == null
-                                    ? (widget.serviceType ==
-                                              DeliveryServiceType.express
-                                          ? "Set Drop-off Location"
-                                          : "Select Drop-off Warehouse")
-                                    : "Update Selection"),
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
+                        child: _isResolvingLocation
+                            ? const SizedBox(
+                                width: 22,
+                                height: 22,
+                                child: CircularProgressIndicator(
+                                  color: Colors.white,
+                                  strokeWidth: 2.5,
+                                ),
+                              )
+                            : Text(
+                                _isSelectingPickup
+                                    ? (_pickupLocation == null
+                                          ? "Confirm Pickup Location"
+                                          : "Update Pickup Location")
+                                    : (_dropoffLocation == null
+                                          ? "Confirm Drop-off Location"
+                                          : "Update Drop-off Location"),
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
                       ),
                     ),
                   ),
@@ -453,7 +484,9 @@ class _CustomerBookingScreenState extends State<CustomerBookingScreen> {
                                   _formatLocation(_dropoffLocation, null),
                               serviceType: widget.serviceType,
                               onOrderCreated: widget.onOrderCreated,
-                              userLocation: _userLocation ?? const LatLng(11.5710, 104.8990),
+                              userLocation:
+                                  _userLocation ??
+                                  const LatLng(11.5710, 104.8990),
                             ),
                           ),
                         );
@@ -478,8 +511,9 @@ class _CustomerBookingScreenState extends State<CustomerBookingScreen> {
                 const SizedBox(height: 12),
                 FloatingActionButton(
                   onPressed: () {
-                    if (_pickupLocation != null) {
-                      _mapController.move(_pickupLocation!, 15);
+                    final target = _pickupLocation ?? _userLocation;
+                    if (target != null) {
+                      _mapController.move(target, 15);
                     }
                   },
                   backgroundColor: Colors.white,

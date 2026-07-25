@@ -1,4 +1,7 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import '../../router/app_router.dart';
 import '../../features/auth/models/user_model.dart';
 import '../../features/auth/services/user_service.dart';
@@ -23,6 +26,8 @@ class ProfileScreen extends StatefulWidget {
 class _ProfileScreenState extends State<ProfileScreen> {
   final _userService = UserService();
   final _authService = AuthService();
+  final _imagePicker = ImagePicker();
+  static final _phoneReg = RegExp(r'^(\+?855|0)[0-9]{8,9}$');
 
   UserProfile? _userProfile;
   bool _loading = false;
@@ -65,6 +70,260 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
         );
       }
+    }
+  }
+
+  Future<void> _openEditProfileSheet() async {
+    final profile = _userProfile;
+    if (profile == null) return;
+
+    final nameController = TextEditingController(text: profile.name);
+    final phoneController = TextEditingController(
+      text: profile.phone == null || profile.phone!.isEmpty
+          ? ''
+          : _formatPhone(profile.phone),
+    );
+    Uint8List? avatarBytes;
+    String? avatarFileName;
+    String? errorText;
+    bool saving = false;
+
+    final updatedProfile = await showModalBottomSheet<UserProfile>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) {
+        return StatefulBuilder(
+          builder: (context, setSheetState) {
+            Future<void> pickAvatar() async {
+              try {
+                final image = await _imagePicker.pickImage(
+                  source: ImageSource.gallery,
+                  imageQuality: 85,
+                  maxWidth: 1200,
+                  maxHeight: 1200,
+                );
+                if (image == null) return;
+                final bytes = await image.readAsBytes();
+                setSheetState(() {
+                  avatarBytes = bytes;
+                  avatarFileName = image.name;
+                  errorText = null;
+                });
+              } catch (error) {
+                setSheetState(
+                  () => errorText =
+                      'Unable to select that image. Please try another one.',
+                );
+              }
+            }
+
+            Future<void> submit() async {
+              final name = nameController.text.trim();
+              final phone = phoneController.text.trim();
+              if (name.length < 2) {
+                setSheetState(
+                  () => errorText = 'Please enter a valid full name.',
+                );
+                return;
+              }
+              if (!_phoneReg.hasMatch(phone)) {
+                setSheetState(
+                  () => errorText =
+                      'Please enter a valid Cambodian phone number.',
+                );
+                return;
+              }
+
+              setSheetState(() {
+                saving = true;
+                errorText = null;
+              });
+              try {
+                final accessToken = await TokenStorage.getAccessToken();
+                if (accessToken == null || accessToken.isEmpty) {
+                  throw Exception('Please log in again.');
+                }
+
+                await _userService.updateProfile(
+                  accessToken: accessToken,
+                  name: name,
+                  phone: phone,
+                );
+                if (avatarBytes != null && avatarFileName != null) {
+                  await _userService.uploadAvatarBytes(
+                    imageBytes: avatarBytes!,
+                    fileName: avatarFileName!,
+                    accessToken: accessToken,
+                  );
+                }
+                final refreshed = await _userService.getMe(
+                  accessToken: accessToken,
+                );
+                if (sheetContext.mounted) {
+                  Navigator.pop(sheetContext, refreshed);
+                }
+              } catch (error) {
+                setSheetState(() {
+                  saving = false;
+                  errorText = error
+                      .toString()
+                      .replaceFirst('Exception: ', '');
+                });
+              }
+            }
+
+            final bottomInset = MediaQuery.viewInsetsOf(sheetContext).bottom;
+            return Padding(
+              padding: EdgeInsets.only(top: 40, bottom: bottomInset),
+              child: Container(
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(26)),
+                ),
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Center(
+                        child: Container(
+                          width: 42,
+                          height: 4,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFD5DDE8),
+                            borderRadius: BorderRadius.circular(99),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 18),
+                      const Text(
+                        'Edit profile',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w800,
+                          color: Color(0xFF1E2D3D),
+                        ),
+                      ),
+                      const SizedBox(height: 18),
+                      Center(
+                        child: InkWell(
+                          onTap: saving ? null : pickAvatar,
+                          borderRadius: BorderRadius.circular(60),
+                          child: Stack(
+                            clipBehavior: Clip.none,
+                            children: [
+                              CircleAvatar(
+                                radius: 52,
+                                backgroundColor: const Color(0xFFD6E8F5),
+                                backgroundImage: avatarBytes != null
+                                    ? MemoryImage(avatarBytes!)
+                                    : profile.avatarUrl != null &&
+                                          profile.avatarUrl!.isNotEmpty
+                                    ? NetworkImage(profile.avatarUrl!)
+                                    : null,
+                                child:
+                                    avatarBytes == null &&
+                                        (profile.avatarUrl == null ||
+                                            profile.avatarUrl!.isEmpty)
+                                    ? const Icon(
+                                        Icons.person_rounded,
+                                        size: 50,
+                                        color: Color(0xFF2C5F8A),
+                                      )
+                                    : null,
+                              ),
+                              Positioned(
+                                right: -2,
+                                bottom: -2,
+                                child: Container(
+                                  width: 34,
+                                  height: 34,
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFF2C5F8A),
+                                    shape: BoxShape.circle,
+                                    border: Border.all(
+                                      color: Colors.white,
+                                      width: 3,
+                                    ),
+                                  ),
+                                  child: const Icon(
+                                    Icons.camera_alt_rounded,
+                                    color: Colors.white,
+                                    size: 17,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 22),
+                      _EditProfileField(
+                        label: 'Full name',
+                        controller: nameController,
+                      ),
+                      const SizedBox(height: 14),
+                      _EditProfileField(
+                        label: 'Phone number',
+                        controller: phoneController,
+                        keyboardType: TextInputType.phone,
+                      ),
+                      if (errorText != null) ...[
+                        const SizedBox(height: 12),
+                        Text(
+                          errorText!,
+                          style: const TextStyle(color: Colors.redAccent),
+                        ),
+                      ],
+                      const SizedBox(height: 20),
+                      SizedBox(
+                        width: double.infinity,
+                        height: 50,
+                        child: ElevatedButton(
+                          onPressed: saving ? null : submit,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF2C5F8A),
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                          ),
+                          child: saving
+                              ? const SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Colors.white,
+                                  ),
+                                )
+                              : const Text(
+                                  'Save changes',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+
+    nameController.dispose();
+    phoneController.dispose();
+    if (updatedProfile != null && mounted) {
+      setState(() => _userProfile = updatedProfile);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Profile updated successfully.')),
+      );
     }
   }
 
@@ -301,9 +560,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   Align(
                     alignment: Alignment.centerRight,
                     child: GestureDetector(
-                      onTap: () {
-                        /* TODO: navigate to edit profile */
-                      },
+                      onTap: p == null ? null : _openEditProfileSheet,
                       child: Container(
                         width: 36,
                         height: 36,
@@ -493,6 +750,40 @@ class _ProfileField extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+class _EditProfileField extends StatelessWidget {
+  const _EditProfileField({
+    required this.label,
+    required this.controller,
+    this.keyboardType,
+  });
+
+  final String label;
+  final TextEditingController controller;
+  final TextInputType? keyboardType;
+
+  @override
+  Widget build(BuildContext context) {
+    return TextField(
+      controller: controller,
+      keyboardType: keyboardType,
+      textInputAction: TextInputAction.next,
+      decoration: InputDecoration(
+        labelText: label,
+        filled: true,
+        fillColor: const Color(0xFFF5F8FC),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide.none,
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: const BorderSide(color: Color(0xFF2C5F8A)),
+        ),
+      ),
     );
   }
 }

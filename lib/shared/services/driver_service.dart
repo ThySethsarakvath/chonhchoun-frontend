@@ -16,14 +16,11 @@ class DriverService {
         Uri.parse('$_url/packages/available'),
         headers: _headers(token),
       );
-      print("DEV-LOG: fetchAvailablePackages statusCode: ${res.statusCode}");
-      print("DEV-LOG: fetchAvailablePackages body: ${res.body}");
       if (res.statusCode == 200) {
         return json.decode(res.body) as List<dynamic>;
       }
       return [];
     } catch (e) {
-      print("DEV-LOG: DriverService.fetchAvailablePackages exception: $e");
       return [];
     }
   }
@@ -34,32 +31,83 @@ class DriverService {
         Uri.parse('$_url/packages/driver/my'),
         headers: _headers(token),
       );
-      print("DEV-LOG: fetchDriverPackages statusCode: ${res.statusCode}");
-      print("DEV-LOG: fetchDriverPackages body: ${res.body}");
       if (res.statusCode == 200) {
-        final Map<String, dynamic> body = json.decode(res.body) as Map<String, dynamic>;
+        final Map<String, dynamic> body =
+            json.decode(res.body) as Map<String, dynamic>;
         return body['data'] as List<dynamic>;
       }
       return [];
     } catch (e) {
-      print("DEV-LOG: DriverService.fetchDriverPackages exception: $e");
       return [];
     }
   }
 
-  Future<bool> acceptPackage(String packageId, String token) async {
+  Future<Map<String, dynamic>> acceptPackage(
+    String packageId,
+    String token,
+  ) async {
     try {
       final res = await http.patch(
         Uri.parse('$_url/packages/$packageId/accept'),
         headers: _headers(token),
       );
-      return res.statusCode == 200 || res.statusCode == 201;
-    } catch (_) {
-      return false;
+      final body = json.decode(res.body);
+      if ((res.statusCode == 200 || res.statusCode == 201) &&
+          body is Map<String, dynamic>) {
+        return body;
+      }
+      throw DriverApiException(_message(body, 'Unable to accept delivery.'));
+    } on DriverApiException {
+      rethrow;
+    } catch (error) {
+      throw DriverApiException('Unable to accept delivery: $error');
     }
   }
 
-  Future<bool> updatePackageStatus(String packageId, String status, String token) async {
+  Future<Map<String, dynamic>> syncPackage(
+    String packageId,
+    String token,
+  ) async {
+    final response = await http.post(
+      Uri.parse('$_url/packages/$packageId/simulation/sync'),
+      headers: _headers(token),
+    );
+    final body = json.decode(response.body);
+    if (response.statusCode >= 200 &&
+        response.statusCode < 300 &&
+        body is Map<String, dynamic>) {
+      return body;
+    }
+    throw DriverApiException(_message(body, 'Unable to update delivery.'));
+  }
+
+  Future<Map<String, dynamic>> verifyDeliveryQr({
+    required String packageId,
+    required String purpose,
+    required String verificationToken,
+    required String token,
+  }) async {
+    final response = await http.post(
+      Uri.parse('$_url/packages/$packageId/verify'),
+      headers: _headers(token),
+      body: json.encode({'purpose': purpose, 'token': verificationToken}),
+    );
+    final body = json.decode(response.body);
+    if (response.statusCode >= 200 &&
+        response.statusCode < 300 &&
+        body is Map<String, dynamic>) {
+      return body;
+    }
+    throw DriverApiException(
+      _message(body, 'Unable to verify the delivery QR code.'),
+    );
+  }
+
+  Future<bool> updatePackageStatus(
+    String packageId,
+    String status,
+    String token,
+  ) async {
     try {
       final res = await http.patch(
         Uri.parse('$_url/packages/$packageId/status'),
@@ -72,23 +120,48 @@ class DriverService {
     }
   }
 
-  Future<bool> updateDriverStatus(bool isOnline, Map<String, double>? location, String token) async {
+  Future<Map<String, dynamic>> updateDriverStatus(
+    bool isOnline,
+    String token,
+  ) async {
     try {
-      final payload = <String, dynamic>{
-        'isOnline': isOnline,
-      };
-      if (location != null) {
-        payload['currentLocation'] = location;
-      }
-      
+      final payload = <String, dynamic>{'isOnline': isOnline};
+
       final res = await http.patch(
         Uri.parse('$_url/users/me/driver-status'),
         headers: _headers(token),
         body: json.encode(payload),
       );
-      return res.statusCode == 200 || res.statusCode == 201;
-    } catch (_) {
-      return false;
+      final body = json.decode(res.body);
+      if ((res.statusCode == 200 || res.statusCode == 201) &&
+          body is Map<String, dynamic>) {
+        return body;
+      }
+      throw DriverApiException(
+        _message(body, 'Unable to update driver status.'),
+      );
+    } on DriverApiException {
+      rethrow;
+    } catch (error) {
+      throw DriverApiException('Unable to update driver status: $error');
     }
   }
+
+  String _message(dynamic body, String fallback) {
+    if (body is Map<String, dynamic>) {
+      final value = body['message'];
+      if (value is List) return value.join(', ');
+      if (value is String && value.isNotEmpty) return value;
+    }
+    return fallback;
+  }
+}
+
+class DriverApiException implements Exception {
+  const DriverApiException(this.message);
+
+  final String message;
+
+  @override
+  String toString() => message;
 }

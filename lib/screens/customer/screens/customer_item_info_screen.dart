@@ -4,7 +4,11 @@ import 'package:geolocator/geolocator.dart';
 import 'pickup_map_picker.dart';
 import '../../../shared/colors/app_colors.dart';
 import '../../../shared/models/order.dart';
+import '../../../shared/models/home_models.dart';
 import '../../../shared/widgets/app_shell_widgets.dart';
+import '../../../shared/services/home_service.dart';
+import '../../../features/auth/tokens/token_storage.dart';
+import 'express_driver_matching_screen.dart';
 
 class CustomerItemInfoScreen extends StatefulWidget {
   const CustomerItemInfoScreen({
@@ -23,7 +27,7 @@ class CustomerItemInfoScreen extends StatefulWidget {
   final String pickupAddress;
   final String dropoffAddress;
   final DeliveryServiceType serviceType;
-  final Function(CustomerOrder) onOrderCreated;
+  final Future<DeliveryItem?> Function(CustomerOrder) onOrderCreated;
   final LatLng userLocation;
 
   @override
@@ -38,30 +42,92 @@ class _CustomerItemInfoScreenState extends State<CustomerItemInfoScreen> {
   PaymentMethod _selectedPayment = PaymentMethod.cash;
   bool _itemHandling = false;
   bool _driverPickup = false;
-  final TextEditingController _weightController = TextEditingController(text: "1");
+  final TextEditingController _weightController = TextEditingController(
+    text: "1",
+  );
+  final TextEditingController _quantityController = TextEditingController(
+    text: "1",
+  );
   final TextEditingController _itemNameController = TextEditingController();
   final TextEditingController _contactNameController = TextEditingController();
   final TextEditingController _contactPhoneController = TextEditingController();
   final TextEditingController _noteController = TextEditingController();
   String? _customPickupAddress;
   LatLng? _customPickupLatLng;
+  final HomeService _homeService = HomeService();
+  ExpressDeliveryQuote? _quote;
+  bool _quoteLoading = false;
+  bool _isSubmitting = false;
+  String? _quoteError;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.serviceType == DeliveryServiceType.express) {
+      _refreshQuote();
+    }
+  }
+
+  @override
+  void dispose() {
+    _weightController.dispose();
+    _quantityController.dispose();
+    _itemNameController.dispose();
+    _contactNameController.dispose();
+    _contactPhoneController.dispose();
+    _noteController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _refreshQuote() async {
+    setState(() {
+      _quoteLoading = true;
+      _quoteError = null;
+      _quote = null;
+    });
+    try {
+      final token = await TokenStorage.getAccessToken();
+      if (token == null) throw Exception('Please sign in again.');
+      final quote = await _homeService.quoteExpress(
+        pickup: widget.pickup,
+        dropoff: widget.dropoff,
+        vehicleType: _selectedVehicle,
+        token: token,
+      );
+      if (!mounted) return;
+      setState(() => _quote = quote);
+    } catch (error) {
+      if (!mounted) return;
+      setState(
+        () => _quoteError = error.toString().replaceFirst(
+          RegExp(r'^Exception:\s*'),
+          '',
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _quoteLoading = false);
+    }
+  }
 
   double _calculateDistanceFee(double distanceInKm) {
     if (distanceInKm <= 1.0) {
       return 3000.0; // minimum 3000 riels for any distance below 1km
     } else {
-      return 3000.0 + (distanceInKm - 1.0) * 2000.0; // added 0.5$ (2000 riels) per km after > 1km
+      return 3000.0 +
+          (distanceInKm - 1.0) *
+              2000.0; // added 0.5$ (2000 riels) per km after > 1km
     }
   }
 
   double get _pickupDistance {
     final origin = _customPickupLatLng ?? widget.userLocation;
     return Geolocator.distanceBetween(
-      origin.latitude,
-      origin.longitude,
-      widget.pickup.latitude,
-      widget.pickup.longitude,
-    ) / 1000.0;
+          origin.latitude,
+          origin.longitude,
+          widget.pickup.latitude,
+          widget.pickup.longitude,
+        ) /
+        1000.0;
   }
 
   double get _pickupPrice {
@@ -71,24 +137,29 @@ class _CustomerItemInfoScreenState extends State<CustomerItemInfoScreen> {
   double get _totalPrice {
     double base = 0.0;
     if (widget.serviceType == DeliveryServiceType.express) {
-      double dist = Geolocator.distanceBetween(
-        widget.pickup.latitude,
-        widget.pickup.longitude,
-        widget.dropoff.latitude,
-        widget.dropoff.longitude,
-      ) / 1000.0;
+      if (_quote != null) return _quote!.amountKhr.toDouble();
+      final dist =
+          Geolocator.distanceBetween(
+            widget.pickup.latitude,
+            widget.pickup.longitude,
+            widget.dropoff.latitude,
+            widget.dropoff.longitude,
+          ) /
+          1000.0;
       base = _calculateDistanceFee(dist);
     } else {
-      base = 4000.0; // flat rate for $1 (4000 riels) delivery for warehouse-to-warehouse
+      base =
+          4000.0; // flat rate for $1 (4000 riels) delivery for warehouse-to-warehouse
       if (_driverPickup) {
         base += _pickupPrice;
       }
     }
 
-    if (_selectedVehicle == VehicleType.tuktuk) {
+    if (widget.serviceType != DeliveryServiceType.express &&
+        _selectedVehicle == VehicleType.tuktuk) {
       base += 2000.0;
     }
-    if (_itemHandling) {
+    if (_itemHandling && widget.serviceType != DeliveryServiceType.express) {
       base += 2000.0;
     }
     return base;
@@ -99,7 +170,10 @@ class _CustomerItemInfoScreenState extends State<CustomerItemInfoScreen> {
     return Scaffold(
       backgroundColor: AppColors.surface,
       appBar: AppBar(
-        title: const Text("Complete Booking", style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text(
+          "Complete Booking",
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
         backgroundColor: Colors.white,
         foregroundColor: AppColors.text,
         elevation: 0,
@@ -167,14 +241,34 @@ class _CustomerItemInfoScreenState extends State<CustomerItemInfoScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text("Item Details", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+            const Text(
+              "Item Details",
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+            ),
             const SizedBox(height: 16),
             TextField(
               controller: _itemNameController,
               decoration: InputDecoration(
                 labelText: "Item Name",
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
+              ),
+            ),
+            const SizedBox(height: 14),
+            TextField(
+              controller: _quantityController,
+              keyboardType: TextInputType.number,
+              decoration: InputDecoration(
+                labelText: "Package quantity *",
+                prefixIcon: const Icon(Icons.numbers_rounded),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
             ),
             const SizedBox(height: 20),
@@ -184,13 +278,29 @@ class _CustomerItemInfoScreenState extends State<CustomerItemInfoScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text("Size *", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                      const Text(
+                        "Size *",
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 13,
+                        ),
+                      ),
                       const SizedBox(height: 8),
                       Row(
                         children: [
-                          _SizeChip("S", isSelected: _selectedSize == ItemSize.S, onTap: () => setState(() => _selectedSize = ItemSize.S)),
+                          _SizeChip(
+                            "S",
+                            isSelected: _selectedSize == ItemSize.S,
+                            onTap: () =>
+                                setState(() => _selectedSize = ItemSize.S),
+                          ),
                           const SizedBox(width: 8),
-                          _SizeChip("M", isSelected: _selectedSize == ItemSize.M, onTap: () => setState(() => _selectedSize = ItemSize.M)),
+                          _SizeChip(
+                            "M",
+                            isSelected: _selectedSize == ItemSize.M,
+                            onTap: () =>
+                                setState(() => _selectedSize = ItemSize.M),
+                          ),
                         ],
                       ),
                     ],
@@ -200,14 +310,25 @@ class _CustomerItemInfoScreenState extends State<CustomerItemInfoScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text("Weight (kg) *", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                      const Text(
+                        "Weight (kg) *",
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 13,
+                        ),
+                      ),
                       const SizedBox(height: 8),
                       TextField(
                         controller: _weightController,
                         keyboardType: TextInputType.number,
                         decoration: InputDecoration(
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 8,
+                          ),
                         ),
                       ),
                     ],
@@ -216,17 +337,45 @@ class _CustomerItemInfoScreenState extends State<CustomerItemInfoScreen> {
               ],
             ),
             const SizedBox(height: 20),
-            const Text("Item Type *", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+            const Text(
+              "Item Type *",
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+            ),
             const SizedBox(height: 8),
             Wrap(
               spacing: 10,
               runSpacing: 10,
               children: [
-                _TypeChip("Document", Icons.description, _selectedType == ItemType.document, () => setState(() => _selectedType = ItemType.document)),
-                _TypeChip("Food", Icons.restaurant, _selectedType == ItemType.food, () => setState(() => _selectedType = ItemType.food)),
-                _TypeChip("Clothing", Icons.checkroom, _selectedType == ItemType.clothing, () => setState(() => _selectedType = ItemType.clothing)),
-                _TypeChip("Electronics", Icons.memory, _selectedType == ItemType.electronics, () => setState(() => _selectedType = ItemType.electronics)),
-                _TypeChip("Others", Icons.more_horiz, _selectedType == ItemType.others, () => setState(() => _selectedType = ItemType.others)),
+                _TypeChip(
+                  "Document",
+                  Icons.description,
+                  _selectedType == ItemType.document,
+                  () => setState(() => _selectedType = ItemType.document),
+                ),
+                _TypeChip(
+                  "Food",
+                  Icons.restaurant,
+                  _selectedType == ItemType.food,
+                  () => setState(() => _selectedType = ItemType.food),
+                ),
+                _TypeChip(
+                  "Clothing",
+                  Icons.checkroom,
+                  _selectedType == ItemType.clothing,
+                  () => setState(() => _selectedType = ItemType.clothing),
+                ),
+                _TypeChip(
+                  "Electronics",
+                  Icons.memory,
+                  _selectedType == ItemType.electronics,
+                  () => setState(() => _selectedType = ItemType.electronics),
+                ),
+                _TypeChip(
+                  "Others",
+                  Icons.more_horiz,
+                  _selectedType == ItemType.others,
+                  () => setState(() => _selectedType = ItemType.others),
+                ),
               ],
             ),
             const SizedBox(height: 24),
@@ -234,15 +383,27 @@ class _CustomerItemInfoScreenState extends State<CustomerItemInfoScreen> {
             Container(
               width: double.infinity,
               height: 54,
-              decoration: BoxDecoration(borderRadius: BorderRadius.circular(12)),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(12),
+              ),
               child: CustomPaint(
                 painter: _DottedPainter(),
                 child: const Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(Icons.camera_alt_outlined, size: 20, color: AppColors.blue),
+                    Icon(
+                      Icons.camera_alt_outlined,
+                      size: 20,
+                      color: AppColors.blue,
+                    ),
                     SizedBox(width: 12),
-                    Text("Add photo (optional)", style: TextStyle(color: AppColors.muted, fontWeight: FontWeight.w500)),
+                    Text(
+                      "Add photo (optional)",
+                      style: TextStyle(
+                        color: AppColors.muted,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -260,22 +421,35 @@ class _CustomerItemInfoScreenState extends State<CustomerItemInfoScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text("Select Vehicle", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+            const Text(
+              "Select Vehicle",
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+            ),
             const SizedBox(height: 12),
             _VehicleTile(
               icon: Icons.motorcycle,
-              title: "Bike",
-              price: "8,200៛",
+              title: "Motorbike · up to 20 kg",
+              price: _selectedVehicle == VehicleType.bike && _quote != null
+                  ? "${_quote!.amountKhr}៛"
+                  : "Road-distance price",
               isSelected: _selectedVehicle == VehicleType.bike,
-              onTap: () => setState(() => _selectedVehicle = VehicleType.bike),
+              onTap: () {
+                setState(() => _selectedVehicle = VehicleType.bike);
+                _refreshQuote();
+              },
             ),
             const SizedBox(height: 8),
             _VehicleTile(
               icon: Icons.electric_rickshaw,
-              title: "Tuktuk",
-              price: "10,200៛",
+              title: "Rickshaw · up to 150 kg",
+              price: _selectedVehicle == VehicleType.tuktuk && _quote != null
+                  ? "${_quote!.amountKhr}៛"
+                  : "Road-distance price",
               isSelected: _selectedVehicle == VehicleType.tuktuk,
-              onTap: () => setState(() => _selectedVehicle = VehicleType.tuktuk),
+              onTap: () {
+                setState(() => _selectedVehicle = VehicleType.tuktuk);
+                _refreshQuote();
+              },
             ),
           ],
         ),
@@ -290,7 +464,10 @@ class _CustomerItemInfoScreenState extends State<CustomerItemInfoScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text("Add-ons", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+            const Text(
+              "Add-ons",
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+            ),
             const SizedBox(height: 12),
             InkWell(
               onTap: () => setState(() => _itemHandling = !_itemHandling),
@@ -300,23 +477,47 @@ class _CustomerItemInfoScreenState extends State<CustomerItemInfoScreen> {
                     height: 24,
                     width: 24,
                     decoration: BoxDecoration(
-                      color: _itemHandling ? AppColors.blue : Colors.transparent,
-                      border: Border.all(color: _itemHandling ? AppColors.blue : AppColors.line),
+                      color: _itemHandling
+                          ? AppColors.blue
+                          : Colors.transparent,
+                      border: Border.all(
+                        color: _itemHandling ? AppColors.blue : AppColors.line,
+                      ),
                       borderRadius: BorderRadius.circular(6),
                     ),
-                    child: _itemHandling ? const Icon(Icons.check, size: 16, color: Colors.white) : null,
+                    child: _itemHandling
+                        ? const Icon(Icons.check, size: 16, color: Colors.white)
+                        : null,
                   ),
                   const SizedBox(width: 16),
                   const Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text("Extra Item Handling", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                        Text("Careful handling for fragile items", style: TextStyle(color: AppColors.muted, fontSize: 12)),
+                        Text(
+                          "Extra Item Handling",
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                          ),
+                        ),
+                        Text(
+                          "Careful handling for fragile items",
+                          style: TextStyle(
+                            color: AppColors.muted,
+                            fontSize: 12,
+                          ),
+                        ),
                       ],
                     ),
                   ),
-                  const Text("+2,000៛", style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.blue)),
+                  const Text(
+                    "+2,000៛",
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.blue,
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -330,24 +531,45 @@ class _CustomerItemInfoScreenState extends State<CustomerItemInfoScreen> {
                       height: 24,
                       width: 24,
                       decoration: BoxDecoration(
-                        color: _driverPickup ? AppColors.blue : Colors.transparent,
-                        border: Border.all(color: _driverPickup ? AppColors.blue : AppColors.line),
+                        color: _driverPickup
+                            ? AppColors.blue
+                            : Colors.transparent,
+                        border: Border.all(
+                          color: _driverPickup
+                              ? AppColors.blue
+                              : AppColors.line,
+                        ),
                         borderRadius: BorderRadius.circular(6),
                       ),
-                      child: _driverPickup ? const Icon(Icons.check, size: 16, color: Colors.white) : null,
+                      child: _driverPickup
+                          ? const Icon(
+                              Icons.check,
+                              size: 16,
+                              color: Colors.white,
+                            )
+                          : null,
                     ),
                     const SizedBox(width: 16),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text("Driver Pick-Up", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                          const Text(
+                            "Driver Pick-Up",
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                            ),
+                          ),
                           const SizedBox(height: 4),
                           Text(
                             _customPickupAddress != null
                                 ? "Pick up from: ${_customPickupAddress!}"
                                 : "Pick up from your location to warehouse (${_pickupDistance.toStringAsFixed(1)} km)",
-                            style: const TextStyle(color: AppColors.muted, fontSize: 12),
+                            style: const TextStyle(
+                              color: AppColors.muted,
+                              fontSize: 12,
+                            ),
                           ),
                           const SizedBox(height: 8),
                           Row(
@@ -356,16 +578,25 @@ class _CustomerItemInfoScreenState extends State<CustomerItemInfoScreen> {
                                 onTap: _showChangePickupDialog,
                                 child: const Text(
                                   "Change Pick-Up Location",
-                                  style: TextStyle(color: AppColors.blue, fontSize: 13, fontWeight: FontWeight.w600),
+                                  style: TextStyle(
+                                    color: AppColors.blue,
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w600,
+                                  ),
                                 ),
                               ),
                               const SizedBox(width: 12),
                               if (_customPickupAddress != null)
                                 GestureDetector(
-                                  onTap: () => setState(() => _customPickupAddress = null),
+                                  onTap: () => setState(
+                                    () => _customPickupAddress = null,
+                                  ),
                                   child: const Text(
                                     "Use Current Location",
-                                    style: TextStyle(color: AppColors.muted, fontSize: 12),
+                                    style: TextStyle(
+                                      color: AppColors.muted,
+                                      fontSize: 12,
+                                    ),
                                   ),
                                 ),
                             ],
@@ -375,7 +606,10 @@ class _CustomerItemInfoScreenState extends State<CustomerItemInfoScreen> {
                     ),
                     Text(
                       "+${_pickupPrice.toInt()}៛",
-                      style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.blue),
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.blue,
+                      ),
                     ),
                   ],
                 ),
@@ -394,20 +628,27 @@ class _CustomerItemInfoScreenState extends State<CustomerItemInfoScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text("Payment & Offers", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+            const Text(
+              "Payment & Offers",
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+            ),
             const SizedBox(height: 12),
             Row(
               children: [
                 _PaymentBtn(
-                  widget.serviceType == DeliveryServiceType.express ? "Cash" : "Sender Pay", 
-                  _selectedPayment == PaymentMethod.cash, 
-                  () => setState(() => _selectedPayment = PaymentMethod.cash)
+                  widget.serviceType == DeliveryServiceType.express
+                      ? "Cash"
+                      : "Sender Pay",
+                  _selectedPayment == PaymentMethod.cash,
+                  () => setState(() => _selectedPayment = PaymentMethod.cash),
                 ),
                 const SizedBox(width: 8),
                 _PaymentBtn(
-                  widget.serviceType == DeliveryServiceType.express ? "Online" : "Receiver Pay", 
-                  _selectedPayment == PaymentMethod.online, 
-                  () => setState(() => _selectedPayment = PaymentMethod.online)
+                  widget.serviceType == DeliveryServiceType.express
+                      ? "Online"
+                      : "Receiver Pay",
+                  _selectedPayment == PaymentMethod.online,
+                  () => setState(() => _selectedPayment = PaymentMethod.online),
                 ),
               ],
             ),
@@ -418,7 +659,10 @@ class _CustomerItemInfoScreenState extends State<CustomerItemInfoScreen> {
                 children: [
                   Icon(Icons.local_offer, color: Colors.orange, size: 20),
                   SizedBox(width: 12),
-                  Text("Apply Promo Code", style: TextStyle(fontWeight: FontWeight.w500)),
+                  Text(
+                    "Apply Promo Code",
+                    style: TextStyle(fontWeight: FontWeight.w500),
+                  ),
                   Spacer(),
                   Icon(Icons.chevron_right, color: AppColors.muted),
                 ],
@@ -435,10 +679,18 @@ class _CustomerItemInfoScreenState extends State<CustomerItemInfoScreen> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text("Promo Code"),
-        content: const TextField(decoration: InputDecoration(hintText: "Enter code here")),
+        content: const TextField(
+          decoration: InputDecoration(hintText: "Enter code here"),
+        ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancel")),
-          ElevatedButton(onPressed: () => Navigator.pop(context), child: const Text("Apply")),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("Cancel"),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("Apply"),
+          ),
         ],
       ),
     );
@@ -472,7 +724,13 @@ class _CustomerItemInfoScreenState extends State<CustomerItemInfoScreen> {
       padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
       decoration: const BoxDecoration(
         color: Colors.white,
-        boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 10, offset: Offset(0, -4))],
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black12,
+            blurRadius: 10,
+            offset: Offset(0, -4),
+          ),
+        ],
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -480,59 +738,156 @@ class _CustomerItemInfoScreenState extends State<CustomerItemInfoScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text("Total Payable", style: TextStyle(fontSize: 16, color: AppColors.muted)),
-              Text("${_totalPrice.toInt()}៛", style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.blueDark)),
+              const Text(
+                "Total Payable",
+                style: TextStyle(fontSize: 16, color: AppColors.muted),
+              ),
+              Text(
+                "${_totalPrice.toInt()}៛",
+                style: const TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.blueDark,
+                ),
+              ),
             ],
           ),
+          if (widget.serviceType == DeliveryServiceType.express) ...[
+            const SizedBox(height: 6),
+            Align(
+              alignment: Alignment.centerRight,
+              child: Text(
+                _quoteLoading
+                    ? "Calculating road-distance price…"
+                    : _quoteError ??
+                          (_quote == null
+                              ? "Estimated price"
+                              : "${_quote!.distanceKm.toStringAsFixed(1)} km • "
+                                    "${(_quote!.durationSeconds / 60).ceil()} min estimated"),
+                style: TextStyle(
+                  color: _quoteError == null
+                      ? AppColors.muted
+                      : AppColors.danger,
+                  fontSize: 12,
+                ),
+              ),
+            ),
+          ],
           const SizedBox(height: 12),
           ElevatedButton(
-            onPressed: () {
-              try {
-                final order = CustomerOrder(
-                  id: "ORDER-${DateTime.now().millisecondsSinceEpoch}",
-                  pickup: _driverPickup ? (_customPickupLatLng ?? widget.userLocation) : widget.pickup,
-                  dropoff: widget.dropoff,
-                  pickupAddress: widget.pickupAddress,
-                  dropoffAddress: widget.dropoffAddress,
-                  itemName: _itemNameController.text.trim().isEmpty ? "កញ្ចប់អីវ៉ាន់" : _itemNameController.text.trim(),
-                  size: _selectedSize,
-                  weight: double.tryParse(_weightController.text) ?? 1.0,
-                  itemType: _selectedType,
-                  vehicleType: _selectedVehicle,
-                  paymentMethod: _selectedPayment,
-                  serviceType: widget.serviceType,
-                  itemHandling: _itemHandling,
-                  driverPickup: _driverPickup,
-                  status: OrderStatus.searching,
-                  createdAt: DateTime.now(),
-                  price: _totalPrice,
-                  dropoffContactName: _contactNameController.text.trim(),
-                  dropoffContactNumber: _contactPhoneController.text.trim(),
-                  noteToDriver: _noteController.text.trim(),
-                );
-                
-                widget.onOrderCreated(order);
-                
-                // Navigate back to the very first screen (Home)
-                Navigator.of(context).popUntil((route) => route.isFirst);
-              } catch (e) {
-                debugPrint("Booking Error: $e");
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text("Error creating order: $e")),
-                );
-              }
-            },
+            onPressed: _isSubmitting || _quoteLoading ? null : _submitBooking,
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.blue,
               minimumSize: const Size(double.infinity, 54),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
+              ),
               elevation: 0,
             ),
-            child: const Text("Confirm & Book Now", style: TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.bold)),
+            child: _isSubmitting
+                ? const SizedBox(
+                    width: 22,
+                    height: 22,
+                    child: CircularProgressIndicator(
+                      color: Colors.white,
+                      strokeWidth: 2.5,
+                    ),
+                  )
+                : Text(
+                    _quoteError != null
+                        ? "Retry Price Calculation"
+                        : "Confirm & Book Now",
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 17,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
           ),
         ],
       ),
     );
+  }
+
+  Future<void> _submitBooking() async {
+    if (_quoteError != null) {
+      await _refreshQuote();
+      return;
+    }
+    final itemName = _itemNameController.text.trim();
+    final contactName = _contactNameController.text.trim();
+    final contactPhone = _contactPhoneController.text.trim();
+    final weight = double.tryParse(_weightController.text.trim());
+    final quantity = int.tryParse(_quantityController.text.trim());
+    if (itemName.isEmpty ||
+        weight == null ||
+        weight <= 0 ||
+        quantity == null ||
+        quantity <= 0 ||
+        (widget.serviceType == DeliveryServiceType.express &&
+            (contactName.isEmpty || contactPhone.isEmpty))) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            "Enter the item name, valid weight, and recipient contact details.",
+          ),
+        ),
+      );
+      return;
+    }
+    final maxWeight = _selectedVehicle == VehicleType.bike ? 20.0 : 150.0;
+    final maxQuantity = _selectedVehicle == VehicleType.bike ? 5 : 30;
+    if (weight > maxWeight || quantity > maxQuantity) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            "${_selectedVehicle == VehicleType.bike ? 'Motorbike' : 'Rickshaw'} "
+            "supports up to ${maxWeight.toInt()} kg and $maxQuantity packages.",
+          ),
+        ),
+      );
+      return;
+    }
+
+    setState(() => _isSubmitting = true);
+    try {
+      final order = CustomerOrder(
+        id: "ORDER-${DateTime.now().millisecondsSinceEpoch}",
+        pickup: _driverPickup
+            ? (_customPickupLatLng ?? widget.userLocation)
+            : widget.pickup,
+        dropoff: widget.dropoff,
+        pickupAddress: widget.pickupAddress,
+        dropoffAddress: widget.dropoffAddress,
+        itemName: itemName,
+        size: _selectedSize,
+        weight: weight,
+        itemType: _selectedType,
+        vehicleType: _selectedVehicle,
+        paymentMethod: _selectedPayment,
+        serviceType: widget.serviceType,
+        itemHandling: _itemHandling,
+        driverPickup: _driverPickup,
+        status: OrderStatus.searching,
+        createdAt: DateTime.now(),
+        price: _totalPrice,
+        quantity: quantity,
+        dropoffContactName: contactName,
+        dropoffContactNumber: contactPhone,
+        noteToDriver: _noteController.text.trim(),
+      );
+      final created = await widget.onOrderCreated(order);
+      if (created != null && mounted) {
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(
+            builder: (_) => ExpressDriverMatchingScreen(packageId: created.id),
+          ),
+          (route) => route.isFirst,
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isSubmitting = false);
+    }
   }
 
   Widget _buildDropoffContactCard() {
@@ -542,14 +897,19 @@ class _CustomerItemInfoScreenState extends State<CustomerItemInfoScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text("Drop-off Contact Info", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+            const Text(
+              "Drop-off Contact Info",
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+            ),
             const SizedBox(height: 16),
             TextField(
               controller: _contactNameController,
               decoration: InputDecoration(
                 labelText: "Contact Name",
                 prefixIcon: const Icon(Icons.person_outline, size: 20),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
             ),
             const SizedBox(height: 12),
@@ -559,7 +919,9 @@ class _CustomerItemInfoScreenState extends State<CustomerItemInfoScreen> {
               decoration: InputDecoration(
                 labelText: "Contact Number",
                 prefixIcon: const Icon(Icons.phone_outlined, size: 20),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
             ),
             const SizedBox(height: 12),
@@ -569,7 +931,9 @@ class _CustomerItemInfoScreenState extends State<CustomerItemInfoScreen> {
               decoration: InputDecoration(
                 labelText: "Note to Driver (e.g. Call me when arrive)",
                 prefixIcon: const Icon(Icons.note_alt_outlined, size: 20),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
             ),
           ],
@@ -580,7 +944,12 @@ class _CustomerItemInfoScreenState extends State<CustomerItemInfoScreen> {
 }
 
 class _LocationRow extends StatelessWidget {
-  const _LocationRow({required this.icon, required this.color, required this.label, required this.value});
+  const _LocationRow({
+    required this.icon,
+    required this.color,
+    required this.label,
+    required this.value,
+  });
   final IconData icon;
   final Color color;
   final String label, value;
@@ -590,12 +959,25 @@ class _LocationRow extends StatelessWidget {
       children: [
         Icon(icon, color: color, size: 22),
         const SizedBox(width: 12),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(label, style: const TextStyle(color: AppColors.muted, fontSize: 11)),
-            Text(value, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-          ],
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: const TextStyle(color: AppColors.muted, fontSize: 11),
+              ),
+              Text(
+                value,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                ),
+              ),
+            ],
+          ),
         ),
       ],
     );
@@ -612,14 +994,23 @@ class _SizeChip extends StatelessWidget {
     return InkWell(
       onTap: onTap,
       child: Container(
-        height: 36, width: 36,
+        height: 36,
+        width: 36,
         decoration: BoxDecoration(
           color: isSelected ? AppColors.blue : Colors.white,
-          border: Border.all(color: isSelected ? AppColors.blue : AppColors.line),
+          border: Border.all(
+            color: isSelected ? AppColors.blue : AppColors.line,
+          ),
           shape: BoxShape.circle,
         ),
         child: Center(
-          child: Text(label, style: TextStyle(color: isSelected ? Colors.white : AppColors.text, fontWeight: FontWeight.bold)),
+          child: Text(
+            label,
+            style: TextStyle(
+              color: isSelected ? Colors.white : AppColors.text,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
         ),
       ),
     );
@@ -635,10 +1026,20 @@ class _TypeChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ChoiceChip(
-      label: Text(label, style: TextStyle(color: isSelected ? Colors.white : AppColors.text, fontSize: 12)),
+      label: Text(
+        label,
+        style: TextStyle(
+          color: isSelected ? Colors.white : AppColors.text,
+          fontSize: 12,
+        ),
+      ),
       selected: isSelected,
       onSelected: (v) => onTap(),
-      avatar: Icon(icon, size: 14, color: isSelected ? Colors.white : AppColors.blue),
+      avatar: Icon(
+        icon,
+        size: 14,
+        color: isSelected ? Colors.white : AppColors.blue,
+      ),
       selectedColor: AppColors.blue,
       backgroundColor: Colors.white,
       padding: EdgeInsets.zero,
@@ -647,7 +1048,13 @@ class _TypeChip extends StatelessWidget {
 }
 
 class _VehicleTile extends StatelessWidget {
-  const _VehicleTile({required this.icon, required this.title, required this.price, required this.isSelected, required this.onTap});
+  const _VehicleTile({
+    required this.icon,
+    required this.title,
+    required this.price,
+    required this.isSelected,
+    required this.onTap,
+  });
   final IconData icon;
   final String title, price;
   final bool isSelected;
@@ -659,15 +1066,24 @@ class _VehicleTile extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.blue.withValues(alpha: 0.05) : Colors.white,
-          border: Border.all(color: isSelected ? AppColors.blue : AppColors.line),
+          color: isSelected
+              ? AppColors.blue.withValues(alpha: 0.05)
+              : Colors.white,
+          border: Border.all(
+            color: isSelected ? AppColors.blue : AppColors.line,
+          ),
           borderRadius: BorderRadius.circular(12),
         ),
         child: Row(
           children: [
             Icon(icon, color: isSelected ? AppColors.blue : AppColors.muted),
             const SizedBox(width: 12),
-            Text(title, style: TextStyle(fontWeight: isSelected ? FontWeight.bold : FontWeight.normal)),
+            Text(
+              title,
+              style: TextStyle(
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+              ),
+            ),
             const Spacer(),
             Text(price, style: const TextStyle(fontWeight: FontWeight.bold)),
           ],
@@ -692,7 +1108,9 @@ class _PaymentBtn extends StatelessWidget {
           foregroundColor: isSelected ? Colors.white : AppColors.text,
           elevation: 0,
           side: BorderSide(color: isSelected ? AppColors.blue : AppColors.line),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
         ),
         child: Text(label),
       ),
@@ -708,7 +1126,12 @@ class _DottedPainter extends CustomPainter {
       ..strokeWidth = 1.5
       ..style = PaintingStyle.stroke;
     final path = Path()
-      ..addRRect(RRect.fromRectAndRadius(Rect.fromLTWH(0, 0, size.width, size.height), const Radius.circular(12)));
+      ..addRRect(
+        RRect.fromRectAndRadius(
+          Rect.fromLTWH(0, 0, size.width, size.height),
+          const Radius.circular(12),
+        ),
+      );
     const double dashWidth = 5, dashSpace = 4;
     for (final contour in path.computeMetrics()) {
       double distance = 0;
@@ -719,6 +1142,7 @@ class _DottedPainter extends CustomPainter {
       }
     }
   }
+
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

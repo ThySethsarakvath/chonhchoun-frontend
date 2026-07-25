@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 
 import '../../../features/branch_logistics/models/branch_logistics_models.dart';
 import '../../../features/branch_logistics/services/branch_logistics_service.dart';
-import '../widgets/driver_colors.dart';
+import '../../../shared/widgets/driver_colors.dart';
+import '../../../shared/widgets/driver_request_widgets.dart';
+import '../../../shared/widgets/driver_shell_widgets.dart';
 
 class DriverBranchLogisticsTab extends StatefulWidget {
   const DriverBranchLogisticsTab({super.key});
@@ -62,7 +64,9 @@ class _DriverBranchLogisticsTabState extends State<DriverBranchLogisticsTab> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('$successLabel for ${shipments.length} package ticket(s).'),
+          content: Text(
+            '$successLabel for ${shipments.length} package ticket(s).',
+          ),
         ),
       );
       await _loadShipments();
@@ -112,22 +116,36 @@ class _DriverBranchLogisticsTabState extends State<DriverBranchLogisticsTab> {
       return RefreshIndicator(
         onRefresh: _loadShipments,
         child: ListView(
-          padding: const EdgeInsets.all(24),
+          padding: EdgeInsets.zero,
           children: const [
-            SizedBox(height: 80),
-            Icon(
-              Icons.local_shipping_outlined,
-              size: 56,
-              color: DriverColors.muted,
+            DriverHeroSection(
+              subtitle: 'Warehouse routes',
+              name: 'Branch Logistics',
+              content: DriverStatusSummary(
+                amount: 'No assigned trip',
+                helperText: 'Pull down to refresh assignments',
+              ),
             ),
-            SizedBox(height: 12),
-            Text(
-              'No assigned branch logistics task yet',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w700,
-                color: DriverColors.text,
+            Padding(
+              padding: EdgeInsets.fromLTRB(24, 36, 24, 80),
+              child: Column(
+                children: [
+                  Icon(
+                    Icons.local_shipping_outlined,
+                    size: 56,
+                    color: DriverColors.muted,
+                  ),
+                  SizedBox(height: 12),
+                  Text(
+                    'No assigned branch logistics task yet',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      color: DriverColors.text,
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
@@ -138,23 +156,39 @@ class _DriverBranchLogisticsTabState extends State<DriverBranchLogisticsTab> {
     return RefreshIndicator(
       onRefresh: _loadShipments,
       child: ListView(
-        padding: const EdgeInsets.all(20),
+        padding: EdgeInsets.zero,
         children: [
-          const Text(
-            'Assigned Branch Logistics',
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.w800,
-              color: DriverColors.text,
+          DriverHeroSection(
+            subtitle: 'Warehouse routes',
+            name: 'Branch Logistics',
+            content: DriverStatusSummary(
+              amount: '${_buildTripGroups().length} active trip(s)',
+              helperText: '${_shipments.length} assigned package ticket(s)',
             ),
           ),
-          const SizedBox(height: 6),
-          const Text(
-            'See each truck trip, then update all loaded packages together from collect to arrive.',
-            style: TextStyle(color: DriverColors.muted),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 8, 20, 28),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Assigned Branch Logistics',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w800,
+                    color: DriverColors.text,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                const Text(
+                  'See each truck trip, then update all loaded packages together from collect to arrive.',
+                  style: TextStyle(color: DriverColors.muted),
+                ),
+                const SizedBox(height: 18),
+                ..._buildTripGroups().map(_tripGroupCard),
+              ],
+            ),
           ),
-          const SizedBox(height: 18),
-          ..._buildTripGroups().map(_tripGroupCard),
         ],
       ),
     );
@@ -170,20 +204,26 @@ class _DriverBranchLogisticsTabState extends State<DriverBranchLogisticsTab> {
       grouped.putIfAbsent(key, () => <BranchLogisticsShipment>[]).add(shipment);
     }
 
-    return grouped.entries.map((entry) {
-      final shipments = entry.value;
-      shipments.sort((a, b) => a.ticketNumber.compareTo(b.ticketNumber));
-      return _DriverTripGroup(
-        shipments: shipments,
-      );
-    }).toList(growable: false);
+    return grouped.entries
+        .map((entry) {
+          final shipments = entry.value;
+          shipments.sort((a, b) => a.ticketNumber.compareTo(b.ticketNumber));
+          return _DriverTripGroup(shipments: shipments);
+        })
+        .toList(growable: false);
   }
 
   Widget _tripGroupCard(_DriverTripGroup group) {
     final shipments = group.shipments;
     final lead = shipments.first;
-    final totalPieces = shipments.fold<int>(0, (sum, item) => sum + _packageCount(item));
-    final totalWeight = shipments.fold<double>(0, (sum, item) => sum + (item.weightKg ?? 0));
+    final totalPieces = shipments.fold<int>(
+      0,
+      (sum, item) => sum + _packageCount(item),
+    );
+    final totalWeight = shipments.fold<double>(
+      0,
+      (sum, item) => sum + (item.weightKg ?? 0),
+    );
     final action = _groupActionForStatus(lead.status);
     final stockIds = shipments
         .map((shipment) => _stockIdLabel(shipment.notes))
@@ -200,7 +240,7 @@ class _DriverBranchLogisticsTabState extends State<DriverBranchLogisticsTab> {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 14,
             offset: const Offset(0, 6),
           ),
@@ -240,17 +280,23 @@ class _DriverBranchLogisticsTabState extends State<DriverBranchLogisticsTab> {
           const SizedBox(height: 8),
           Text(
             _groupHelperText(lead.status),
-            style: const TextStyle(
-              fontSize: 13,
-              color: DriverColors.muted,
-            ),
+            style: const TextStyle(fontSize: 13, color: DriverColors.muted),
           ),
           const SizedBox(height: 12),
-          _detailLine('Route', '${lead.senderBranch?.name ?? '-'} -> ${lead.receiverBranch?.name ?? '-'}'),
+          _detailLine(
+            'Route',
+            '${lead.senderBranch?.name ?? '-'} -> ${lead.receiverBranch?.name ?? '-'}',
+          ),
           _detailLine('Vehicle', lead.assignedVehicle?.code ?? '-'),
           _detailLine('Assigned time', _dateLabel(lead.assignedAt)),
-          _detailLine('Package IDs', stockIds.isEmpty ? '-' : stockIds.join(', ')),
-          _detailLine('Load', '$totalPieces pieces | ${_weightLabel(totalWeight)}'),
+          _detailLine(
+            'Package IDs',
+            stockIds.isEmpty ? '-' : stockIds.join(', '),
+          ),
+          _detailLine(
+            'Load',
+            '$totalPieces pieces | ${_weightLabel(totalWeight)}',
+          ),
           if (ownerNote != null && ownerNote.isNotEmpty)
             _detailLine('Owner note', ownerNote),
           if (action != null) ...[
@@ -307,21 +353,12 @@ class _DriverBranchLogisticsTabState extends State<DriverBranchLogisticsTab> {
           const SizedBox(height: 6),
           Text(
             shipment.itemDescription,
-            style: const TextStyle(
-              fontSize: 13,
-              color: DriverColors.muted,
-            ),
+            style: const TextStyle(fontSize: 13, color: DriverColors.muted),
           ),
           const SizedBox(height: 10),
           _detailLine('Package ID', _stockIdLabel(shipment.notes)),
-          _detailLine(
-            'Package',
-            _packageCountLabel(shipment.notes),
-          ),
-          _detailLine(
-            'Weight',
-            _weightLabel(shipment.weightKg ?? 0),
-          ),
+          _detailLine('Package', _packageCountLabel(shipment.notes)),
+          _detailLine('Weight', _weightLabel(shipment.weightKg ?? 0)),
         ],
       ),
     );
@@ -373,10 +410,7 @@ class _DriverBranchLogisticsTabState extends State<DriverBranchLogisticsTab> {
           Expanded(
             child: Text(
               value,
-              style: const TextStyle(
-                fontSize: 13,
-                color: DriverColors.text,
-              ),
+              style: const TextStyle(fontSize: 13, color: DriverColors.text),
             ),
           ),
         ],
@@ -424,29 +458,37 @@ class _DriverBranchLogisticsTabState extends State<DriverBranchLogisticsTab> {
   }
 
   String _stockIdLabel(String? notes) {
-    final match = RegExp(r'Stock ID:\s*([A-Z0-9\-]+)', caseSensitive: false)
-        .firstMatch(notes ?? '');
+    final match = RegExp(
+      r'Stock ID:\s*([A-Z0-9\-]+)',
+      caseSensitive: false,
+    ).firstMatch(notes ?? '');
     return match?.group(1) ?? '-';
   }
 
   String _packageCountLabel(String? notes) {
-    final match = RegExp(r'Package stock:\s*(\d+)', caseSensitive: false)
-        .firstMatch(notes ?? '');
+    final match = RegExp(
+      r'Package stock:\s*(\d+)',
+      caseSensitive: false,
+    ).firstMatch(notes ?? '');
     if (match == null) return '-';
     return '${match.group(1)} pieces';
   }
 
   String? _tripOwnerNote(String? notes) {
-    final match = RegExp(r'Owner note:\s*(.+)', caseSensitive: false)
-        .firstMatch(notes ?? '');
+    final match = RegExp(
+      r'Owner note:\s*(.+)',
+      caseSensitive: false,
+    ).firstMatch(notes ?? '');
     final value = match?.group(1)?.trim();
     if (value == null || value.isEmpty) return null;
     return value;
   }
 
   int _packageCount(BranchLogisticsShipment shipment) {
-    final match = RegExp(r'Package stock:\s*(\d+)', caseSensitive: false)
-        .firstMatch(shipment.notes ?? '');
+    final match = RegExp(
+      r'Package stock:\s*(\d+)',
+      caseSensitive: false,
+    ).firstMatch(shipment.notes ?? '');
     return int.tryParse(match?.group(1) ?? '') ?? 0;
   }
 
@@ -486,9 +528,7 @@ class _DriverBranchLogisticsTabState extends State<DriverBranchLogisticsTab> {
 class _DriverTripGroup {
   final List<BranchLogisticsShipment> shipments;
 
-  const _DriverTripGroup({
-    required this.shipments,
-  });
+  const _DriverTripGroup({required this.shipments});
 }
 
 class _DriverGroupAction {

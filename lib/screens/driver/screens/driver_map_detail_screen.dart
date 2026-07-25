@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import '../../../shared/models/driver_request.dart';
 import '../../../shared/widgets/driver_button_widgets.dart';
 import '../../../shared/widgets/driver_colors.dart';
-import '../../../shared/widgets/driver_map_widgets.dart';
 import '../../../shared/widgets/driver_shell_widgets.dart';
+import '../widgets/express_driver_route_map.dart';
 
 class DriverMapDetailScreen extends StatelessWidget {
   const DriverMapDetailScreen({
@@ -66,19 +66,16 @@ class DriverMapDetailScreen extends StatelessWidget {
             Expanded(
               child: Stack(
                 children: [
-                  DriverLeafletMapCard(
-                    interactive: true,
-                    showAttribution: true,
-                    overlay: const DriverLiveMapOverlay(),
-                    pickupLatLng: request.pickupLatLng,
-                    dropOffLatLng: request.dropOffLatLng,
-                  ),
+                  ExpressDriverRouteMap(request: request),
                   Positioned(
                     left: 16,
                     right: 16,
                     bottom: 16,
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 12,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.white.withValues(alpha: 0.94),
                         borderRadius: BorderRadius.circular(16),
@@ -104,12 +101,19 @@ class DriverMapDetailScreen extends StatelessWidget {
                           const SizedBox(height: 6),
                           Row(
                             children: [
-                              const Icon(Icons.location_on_rounded, size: 14, color: DriverColors.danger),
+                              const Icon(
+                                Icons.location_on_rounded,
+                                size: 14,
+                                color: DriverColors.danger,
+                              ),
                               const SizedBox(width: 4),
                               Expanded(
                                 child: Text(
                                   request.pickup,
-                                  style: const TextStyle(color: DriverColors.muted, fontSize: 12),
+                                  style: const TextStyle(
+                                    color: DriverColors.muted,
+                                    fontSize: 12,
+                                  ),
                                   overflow: TextOverflow.ellipsis,
                                 ),
                               ),
@@ -118,12 +122,19 @@ class DriverMapDetailScreen extends StatelessWidget {
                           const SizedBox(height: 4),
                           Row(
                             children: [
-                              const Icon(Icons.circle_rounded, size: 14, color: DriverColors.success),
+                              const Icon(
+                                Icons.circle_rounded,
+                                size: 14,
+                                color: DriverColors.success,
+                              ),
                               const SizedBox(width: 4),
                               Expanded(
                                 child: Text(
                                   request.dropOff,
-                                  style: const TextStyle(color: DriverColors.muted, fontSize: 12),
+                                  style: const TextStyle(
+                                    color: DriverColors.muted,
+                                    fontSize: 12,
+                                  ),
                                   overflow: TextOverflow.ellipsis,
                                 ),
                               ),

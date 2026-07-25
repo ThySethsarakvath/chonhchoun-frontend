@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:http_parser/http_parser.dart';
@@ -63,6 +64,46 @@ class UserService {
         body['error'] as String? ??
         'Avatar upload failed (${response.statusCode})';
     throw Exception(msg);
+  }
+
+  Future<Map<String, dynamic>> uploadAvatarBytes({
+    required Uint8List imageBytes,
+    required String fileName,
+    required String accessToken,
+  }) async {
+    final uri = Uri.parse('$_url/users/me/avatar');
+    final extensionName = extension(fileName).toLowerCase().replaceAll('.', '');
+    final mimeSubtype = extensionName == 'png'
+        ? 'png'
+        : extensionName == 'webp'
+        ? 'webp'
+        : 'jpeg';
+    final request = http.MultipartRequest('POST', uri)
+      ..headers['Authorization'] = 'Bearer $accessToken'
+      ..files.add(
+        http.MultipartFile.fromBytes(
+          'avatar',
+          imageBytes,
+          filename: fileName,
+          contentType: MediaType('image', mimeSubtype),
+        ),
+      );
+
+    final streamed = await request.send();
+    final response = await http.Response.fromStream(streamed);
+    final body = json.decode(response.body) as Map<String, dynamic>;
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      return body;
+    }
+
+    final message = body['message'];
+    throw Exception(
+      message is List
+          ? message.join(', ')
+          : message as String? ??
+              body['error'] as String? ??
+              'Avatar upload failed (${response.statusCode})',
+    );
   }
 
   Future<UserProfile> getMe({required String accessToken}) async {

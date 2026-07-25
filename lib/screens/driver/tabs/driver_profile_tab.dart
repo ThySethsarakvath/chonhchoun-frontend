@@ -102,33 +102,32 @@ class _DriverProfileTabState extends State<DriverProfileTab> {
     final currentVehicle = driverState?.currentVehicle;
     final vehicleType = currentVehicle?.type ?? _profile?.vehicleType;
     final vehicleLabel = vehicleTypeLabel(vehicleType);
-    final assignedVehicleCode =
-        currentVehicle?.ownershipType == 'DRIVER_OWNED'
-            ? null
-            : currentVehicle?.code ?? _profile?.assignedVehicleCode;
-    final profileName =
-        profile?.name.trim().isNotEmpty == true
-            ? profile!.name
-            : (driverState?.profile.name.trim().isNotEmpty == true
-                ? driverState!.profile.name
-                : 'Driver');
+    final assignedVehicleCode = currentVehicle?.ownershipType == 'DRIVER_OWNED'
+        ? null
+        : currentVehicle?.code ?? _profile?.assignedVehicleCode;
+    final profileName = profile?.name.trim().isNotEmpty == true
+        ? profile!.name
+        : (driverState?.profile.name.trim().isNotEmpty == true
+              ? driverState!.profile.name
+              : 'Driver');
     final profileEmail =
         profile?.email ?? driverState?.profile.email ?? 'Email not available';
     final profilePhone = profile?.phone?.trim().isNotEmpty == true
         ? profile!.phone!
         : (driverState?.profile.phone?.trim().isNotEmpty == true
-            ? driverState!.profile.phone!
-            : 'Phone not available');
+              ? driverState!.profile.phone!
+              : 'Phone not available');
     final effectiveRole = profile?.role ?? driverState?.profile.role;
     final statusLabel =
         driverState?.profile.availabilityStatus?.replaceAll('_', ' ') ??
-            (profile?.isActive == false ? 'Inactive' : 'Active');
+        (profile?.isActive == false ? 'Inactive' : 'Active');
     final selectedAvailability =
         driverState?.profile.availabilityStatus ??
         profile?.availabilityStatus ??
         'OFFLINE';
-    final accountLabel =
-        effectiveRole == 'driver' ? 'Driver account' : 'Account profile';
+    final accountLabel = effectiveRole == 'driver'
+        ? 'Driver account'
+        : 'Account profile';
     final categoryLabel = deliveryCategoryLabel(vehicleType);
     final operationLabel = deliveryOperationLabel(vehicleType);
     final routeLabel = deliveryRouteLabel(vehicleType);
@@ -139,12 +138,13 @@ class _DriverProfileTabState extends State<DriverProfileTab> {
         DriverHeroSection(
           subtitle: accountLabel,
           name: profileName,
+          searchHint: 'Driver account and vehicle settings',
           content: DriverStatusSummary(
             amount: currentVehicle != null
                 ? _driverVehicleHeadline(currentVehicle)
                 : assignedVehicleCode?.isNotEmpty == true
-                    ? assignedVehicleCode!
-                    : vehicleLabel,
+                ? assignedVehicleCode!
+                : vehicleLabel,
             helperText: currentVehicle?.ownershipType == 'DRIVER_OWNED'
                 ? 'Your own vehicle'
                 : assignedVehicleCode?.isNotEmpty == true
@@ -218,7 +218,10 @@ class _DriverProfileTabState extends State<DriverProfileTab> {
                       DriverStatLine(label: 'Availability', value: statusLabel),
                       if (vehicleType != null && vehicleType.isNotEmpty) ...[
                         const SizedBox(height: 12),
-                        DriverStatLine(label: 'Operation', value: categoryLabel),
+                        DriverStatLine(
+                          label: 'Operation',
+                          value: categoryLabel,
+                        ),
                       ],
                     ],
                   ),
@@ -316,7 +319,8 @@ class _DriverProfileTabState extends State<DriverProfileTab> {
                                     color: DriverColors.muted,
                                   ),
                                 ),
-                                if (vehicleType != null && vehicleType.isNotEmpty) ...[
+                                if (vehicleType != null &&
+                                    vehicleType.isNotEmpty) ...[
                                   const SizedBox(height: 6),
                                   Text(
                                     'Route: $routeLabel',
@@ -337,7 +341,8 @@ class _DriverProfileTabState extends State<DriverProfileTab> {
                                     ),
                                   ),
                                 ],
-                                if (currentVehicle?.plateNumber?.isNotEmpty == true) ...[
+                                if (currentVehicle?.plateNumber?.isNotEmpty ==
+                                    true) ...[
                                   const SizedBox(height: 6),
                                   Text(
                                     'Plate: ${currentVehicle!.plateNumber!}',
@@ -407,7 +412,9 @@ class _DriverProfileTabState extends State<DriverProfileTab> {
                     children: [
                       CircleAvatar(
                         radius: 24,
-                        backgroundColor: (widget.request?.accent ?? DriverColors.blue).withValues(alpha: 0.12),
+                        backgroundColor:
+                            (widget.request?.accent ?? DriverColors.blue)
+                                .withValues(alpha: 0.12),
                         child: Text(
                           widget.request?.senderInitials ?? '?',
                           style: TextStyle(
@@ -430,7 +437,9 @@ class _DriverProfileTabState extends State<DriverProfileTab> {
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              provider.isOnline ? 'Online and ready' : 'Currently Offline',
+                              provider.isOnline
+                                  ? 'Online and ready'
+                                  : 'Currently Offline',
                               style: const TextStyle(color: DriverColors.muted),
                             ),
                           ],
@@ -438,7 +447,9 @@ class _DriverProfileTabState extends State<DriverProfileTab> {
                       ),
                       DriverStatusChip(
                         label: provider.isOnline ? 'Online' : 'Offline',
-                        color: provider.isOnline ? DriverColors.green : DriverColors.muted,
+                        color: provider.isOnline
+                            ? DriverColors.green
+                            : DriverColors.muted,
                       ),
                     ],
                   ),
@@ -489,8 +500,9 @@ class _DriverProfileAvatar extends StatelessWidget {
     return CircleAvatar(
       radius: 32,
       backgroundColor: DriverColors.blue.withValues(alpha: 0.10),
-      backgroundImage:
-          avatarUrl != null && avatarUrl.isNotEmpty ? NetworkImage(avatarUrl) : null,
+      backgroundImage: avatarUrl != null && avatarUrl.isNotEmpty
+          ? NetworkImage(avatarUrl)
+          : null,
       child: avatarUrl == null || avatarUrl.isEmpty
           ? Text(
               initials.isEmpty ? 'DR' : initials,

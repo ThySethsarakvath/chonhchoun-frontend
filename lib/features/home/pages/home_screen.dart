@@ -13,6 +13,9 @@ import '../../../shared/widgets/delivery_card.dart';
 import '../../../shared/widgets/home_bottom_nav.dart';
 import '../../../shared/widgets/section_header.dart';
 import '../../../shared/widgets/app_drawer_wrapper.dart';
+import '../../../shared/widgets/app_feedback_widgets.dart';
+import '../../../shared/colors/app_colors.dart';
+import '../../../shared/theme/app_tokens.dart';
 import '../../../shared/models/order.dart';
 import '../../../screens/customer/screens/customer_booking_screen.dart';
 import '../../../screens/customer/screens/qr_scanner_screen.dart';
@@ -23,7 +26,6 @@ import '../../auth/tokens/token_storage.dart';
 import '../../branch_logistics/models/branch_logistics_models.dart';
 import '../../branch_logistics/services/branch_logistics_service.dart';
 import '../../../router/app_router.dart';
-import '../../chatbot/screens/chatbot_screen.dart';
 import '../../chat/screens/conversations_screen.dart';
 import '../../chat/services/conversation_service.dart';
 import '../../chat/models/conversation.dart';
@@ -38,7 +40,8 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   final HomeService _service = HomeService();
   final UserService _userService = UserService();
-  final BranchLogisticsService _branchLogisticsService = BranchLogisticsService();
+  final BranchLogisticsService _branchLogisticsService =
+      BranchLogisticsService();
   final TextEditingController _searchCtrl = TextEditingController();
 
   List<PromoBanner> _banners = [];
@@ -65,7 +68,10 @@ class _HomeScreenState extends State<HomeScreen> {
     _loadData();
     _fetchLiveLocation();
     // Poll every 10 seconds for live status updates
-    _pollTimer = Timer.periodic(const Duration(seconds: 10), (_) => _silentRefresh());
+    _pollTimer = Timer.periodic(
+      const Duration(seconds: 10),
+      (_) => _silentRefresh(),
+    );
   }
 
   @override
@@ -107,7 +113,8 @@ class _HomeScreenState extends State<HomeScreen> {
       if (permission == LocationPermission.denied) {
         permission = await Geolocator.requestPermission();
       }
-      if (permission == LocationPermission.deniedForever || permission == LocationPermission.denied) {
+      if (permission == LocationPermission.deniedForever ||
+          permission == LocationPermission.denied) {
         setState(() {
           _city = 'ភ្នំពេញ';
           _userLocation = 'មិនអាចរកទីតាំងបាន';
@@ -123,21 +130,34 @@ class _HomeScreenState extends State<HomeScreen> {
       final url = Uri.parse(
         'https://nominatim.openstreetmap.org/reverse?format=json&lat=${position.latitude}&lon=${position.longitude}&accept-language=km',
       );
-      final response = await http.get(url, headers: {'User-Agent': 'ChonhchounApp/1.0'});
+      final response = await http.get(
+        url,
+        headers: {'User-Agent': 'ChonhchounApp/1.0'},
+      );
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         final address = data['address'] as Map<String, dynamic>?;
 
         if (address != null) {
-          final city = address['city'] ?? address['town'] ?? address['state'] ?? 'ភ្នំពេញ';
+          final city =
+              address['city'] ??
+              address['town'] ??
+              address['state'] ??
+              'ភ្នំពេញ';
           final road = address['road'] ?? '';
           final suburb = address['suburb'] ?? address['neighbourhood'] ?? '';
           final district = address['city_district'] ?? address['county'] ?? '';
 
           // Build a readable address line from available parts
-          final parts = [road, suburb, district].where((s) => s.isNotEmpty).toList();
-          final locationStr = parts.isNotEmpty ? parts.join(', ') : 'ទីតាំងបច្ចុប្បន្ន';
+          final parts = [
+            road,
+            suburb,
+            district,
+          ].where((s) => s.isNotEmpty).toList();
+          final locationStr = parts.isNotEmpty
+              ? parts.join(', ')
+              : 'ទីតាំងបច្ចុប្បន្ន';
 
           if (mounted) {
             setState(() {
@@ -158,13 +178,10 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-
-
-
-  Future<void> _addOrder(CustomerOrder order) async {
+  Future<DeliveryItem?> _addOrder(CustomerOrder order) async {
     try {
       final token = await TokenStorage.getAccessToken();
-      if (token == null) return;
+      if (token == null) return null;
 
       final newItem = await _service.createPackage(order, token);
 
@@ -173,6 +190,7 @@ class _HomeScreenState extends State<HomeScreen> {
         _history = [newItem, ..._history];
         _navIndex = 1; // Switch to Shipping tab
       });
+      return newItem;
     } catch (e) {
       debugPrint("Booking Error: $e");
       if (mounted) {
@@ -180,6 +198,7 @@ class _HomeScreenState extends State<HomeScreen> {
           context,
         ).showSnackBar(SnackBar(content: Text("ការកក់មិនបានជោគជ័យ: $e")));
       }
+      return null;
     }
   }
 
@@ -313,8 +332,13 @@ class _HomeScreenState extends State<HomeScreen> {
         _service.fetchBanners(),
         _service.fetchRecentDeliveries(accessToken),
         _service.fetchDeliveryHistory(accessToken),
-        _userService.getMe(accessToken: accessToken).then<UserProfile?>((v) => v).catchError((_) => null),
-        _branchLogisticsService.listCustomerShipments().catchError((_) => const <BranchLogisticsShipment>[]),
+        _userService
+            .getMe(accessToken: accessToken)
+            .then<UserProfile?>((v) => v)
+            .catchError((_) => null),
+        _branchLogisticsService.listCustomerShipments().catchError(
+          (_) => const <BranchLogisticsShipment>[],
+        ),
       ]);
 
       if (mounted) {
@@ -323,7 +347,8 @@ class _HomeScreenState extends State<HomeScreen> {
           _recent = List<DeliveryItem>.from(results[1] as List);
           _history = List<DeliveryItem>.from(results[2] as List);
           _userProfile = results[3] as UserProfile?;
-          _branchLogisticsShipments = results[4] as List<BranchLogisticsShipment>;
+          _branchLogisticsShipments =
+              results[4] as List<BranchLogisticsShipment>;
           _loading = false;
         });
       }
@@ -365,8 +390,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final screenHeight = MediaQuery.of(context).size.height;
-    final bluePanelHeight = screenHeight * 0.41;
+    final screenHeight = MediaQuery.sizeOf(context).height;
+    final bluePanelHeight = (screenHeight * 0.42).clamp(330.0, 400.0);
     final avatarUrl = _userProfile?.avatarUrl ?? 'assets/images/avatar.png';
 
     return AppDrawerWrapper(
@@ -384,25 +409,15 @@ class _HomeScreenState extends State<HomeScreen> {
         );
       },
       child: Scaffold(
-        backgroundColor: const Color(0xFFEEF3FB),
+        backgroundColor: AppColors.surface,
         extendBody: true,
-        // Chatbot is only available to customer accounts.
-        floatingActionButton: _userProfile?.role == 'customer'
-            ? _ChatbotFab(
-                onTap: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => ChatbotScreen(userId: _userProfile?.id),
-                    ),
-                  );
-                },
-              )
-            : null,
         bottomNavigationBar: HomeBottomNav(
           currentIndex: _navIndex,
           onTap: (i) {
             if (i == 4) {
-              Navigator.of(context).push(MaterialPageRoute(builder: (_) => const QRScannerScreen()));
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const QRScannerScreen()),
+              );
             } else if (i == 3) {
               Navigator.pushNamed(context, AppRoutes.settings);
             } else {
@@ -411,9 +426,7 @@ class _HomeScreenState extends State<HomeScreen> {
           },
         ),
         body: _loading
-            ? const Center(
-                child: CircularProgressIndicator(color: Color(0xFF2C5F8A)),
-              )
+            ? const _HomeLoadingState()
             : IndexedStack(
                 index: _navIndex,
                 children: [
@@ -427,8 +440,11 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildHomeView(double bluePanelHeight, String avatarUrl) {
+    final recentPreview = _recent.take(1);
+    final historyPreview = _history.take(5);
     return RefreshIndicator(
-      color: const Color(0xFF2C5F8A),
+      color: AppColors.blue,
+      backgroundColor: AppColors.surfaceContainer,
       onRefresh: _loadData,
       child: CustomScrollView(
         slivers: [
@@ -442,7 +458,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     gradient: LinearGradient(
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
-                      colors: [Color(0xFF1E4D73), Color(0xFF2C6B9E)],
+                      colors: AppColors.gradientPrimary,
                     ),
                   ),
                 ),
@@ -450,11 +466,14 @@ class _HomeScreenState extends State<HomeScreen> {
                   bottom: 0,
                   left: 0,
                   right: 0,
-                  child: Image.asset(
-                    'assets/images/footer.png',
-                    fit: BoxFit.fitWidth,
-                    alignment: Alignment.bottomCenter,
-                    errorBuilder: (_, _, _) => const SizedBox(height: 60),
+                  child: Opacity(
+                    opacity: 0.34,
+                    child: Image.asset(
+                      'assets/images/footer.png',
+                      fit: BoxFit.fitWidth,
+                      alignment: Alignment.bottomCenter,
+                      errorBuilder: (_, _, _) => const SizedBox(height: 60),
+                    ),
                   ),
                 ),
                 Column(
@@ -498,28 +517,45 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
           SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 72, 20, 24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(
+                  maxWidth: AppBreakpoints.customerContentMaxWidth,
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                    AppSpacing.lg,
+                    72,
+                    AppSpacing.lg,
+                    112,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
                   SectionHeader(
                     title: 'ការដឹកជញ្ជូនថ្មីៗ',
-                    onLinkTap: () => setState(() => _navIndex = 1),
+                    onLinkTap: () => _openDeliveryList(
+                      title: 'ការដឹកជញ្ជូនថ្មីៗ',
+                      items: _recent,
+                      showTracking: true,
+                      compactAddresses: true,
+                    ),
                   ),
                   const SizedBox(height: 12),
                   if (_recent.isEmpty)
                     const _EmptyState(message: 'មិនមានការដឹកជញ្ជូនថ្មីៗទេ')
                   else
-                    ...(_recent.map(
+                    ...(recentPreview.map(
                       (item) => DeliveryCard(
                         item: item,
                         showTracking: true,
+                        compactAddresses: true,
                         onTap: () {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (_) => CustomerOrderDetailScreen(packageId: item.id),
+                              builder: (_) =>
+                                  CustomerOrderDetailScreen(packageId: item.id),
                             ),
                           );
                         },
@@ -530,13 +566,18 @@ class _HomeScreenState extends State<HomeScreen> {
                   const SizedBox(height: 24),
                   SectionHeader(
                     title: 'ការជញ្ជូនកន្លងទៅ',
-                    onLinkTap: () => setState(() => _navIndex = 1),
+                    onLinkTap: () => _openDeliveryList(
+                      title: 'ការជញ្ជូនកន្លងទៅ',
+                      items: _history,
+                      showTracking: true,
+                      compactAddresses: true,
+                    ),
                   ),
                   const SizedBox(height: 12),
                   if (_history.isEmpty)
                     const _EmptyState(message: 'មិនមានការជញ្ជូនកន្លងទៅទេ')
                   else
-                    ...(_history.map(
+                    ...(historyPreview.map(
                       (item) => DeliveryCard(
                         item: item,
                         showTracking: false,
@@ -544,14 +585,17 @@ class _HomeScreenState extends State<HomeScreen> {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (_) => CustomerOrderDetailScreen(packageId: item.id),
+                              builder: (_) =>
+                                  CustomerOrderDetailScreen(packageId: item.id),
                             ),
                           );
                         },
                       ),
                     )),
-                  const SizedBox(height: 16),
-                ],
+                      const SizedBox(height: AppSpacing.md),
+                    ],
+                  ),
+                ),
               ),
             ),
           ),
@@ -587,11 +631,14 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: DeliveryCard(
                     item: _history[index],
                     showTracking: true,
+                    compactAddresses: true,
                     onTap: () {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (_) => CustomerOrderDetailScreen(packageId: _history[index].id),
+                          builder: (_) => CustomerOrderDetailScreen(
+                            packageId: _history[index].id,
+                          ),
                         ),
                       );
                     },
@@ -606,8 +653,10 @@ class _HomeScreenState extends State<HomeScreen> {
     final profile = _userProfile;
     if (profile == null) {
       return const Center(
-        child: Text('សូមចូលគណនីជាមុនសិន',
-            style: TextStyle(color: Color(0xFF8BA4C8))),
+        child: Text(
+          'សូមចូលគណនីជាមុនសិន',
+          style: TextStyle(color: Color(0xFF8BA4C8)),
+        ),
       );
     }
     return ConversationsScreen(
@@ -621,18 +670,24 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildBranchLogisticsSection() {
+    final sortedShipments = [..._branchLogisticsShipments]
+      ..sort(
+        (a, b) => (b.createdAt ?? DateTime.fromMillisecondsSinceEpoch(0))
+            .compareTo(a.createdAt ?? DateTime.fromMillisecondsSinceEpoch(0)),
+      );
+    final visibleShipments = sortedShipments.take(2);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         SectionHeader(
           title: 'My Branch Logistics Tickets',
-          onLinkTap: () {},
+          onLinkTap: () => _openBranchTickets(sortedShipments),
         ),
         const SizedBox(height: 12),
         if (_branchLogisticsShipments.isEmpty)
           const _EmptyState(message: 'No branch logistics ticket yet')
         else
-          ..._branchLogisticsShipments.take(4).map((shipment) {
+          ...visibleShipments.map((shipment) {
             final status = _customerShipmentStatusLabel(shipment.status);
             final stockId = _stockIdLabel(shipment.notes);
             final route =
@@ -720,6 +775,59 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  void _openDeliveryList({
+    required String title,
+    required List<DeliveryItem> items,
+    required bool showTracking,
+    bool compactAddresses = false,
+  }) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => _CustomerDeliveryListScreen(
+          title: title,
+          items: items,
+          showTracking: showTracking,
+          compactAddresses: compactAddresses,
+        ),
+      ),
+    );
+  }
+
+  void _openBranchTickets(List<BranchLogisticsShipment> shipments) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => Scaffold(
+          backgroundColor: const Color(0xFFEEF3FB),
+          appBar: AppBar(
+            title: const Text(
+              'My Branch Logistics Tickets',
+              style: TextStyle(fontWeight: FontWeight.w700),
+            ),
+            backgroundColor: Colors.white,
+            foregroundColor: const Color(0xFF203247),
+          ),
+          body: shipments.isEmpty
+              ? const _EmptyState(message: 'No branch logistics ticket yet')
+              : ListView.separated(
+                  padding: const EdgeInsets.fromLTRB(20, 18, 20, 32),
+                  itemCount: shipments.length,
+                  separatorBuilder: (_, _) => const SizedBox(height: 12),
+                  itemBuilder: (_, index) {
+                    final shipment = shipments[index];
+                    return _CustomerBranchTicketCard(
+                      shipment: shipment,
+                      statusLabel: _customerShipmentStatusLabel(
+                        shipment.status,
+                      ),
+                      stockId: _stockIdLabel(shipment.notes),
+                    );
+                  },
+                ),
+        ),
+      ),
+    );
+  }
+
   String _customerShipmentStatusLabel(String status) {
     switch (status) {
       case 'CREATED':
@@ -744,8 +852,10 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   String _stockIdLabel(String? notes) {
-    final match = RegExp(r'Stock ID:\s*([A-Z0-9\-]+)', caseSensitive: false)
-        .firstMatch(notes ?? '');
+    final match = RegExp(
+      r'Stock ID:\s*([A-Z0-9\-]+)',
+      caseSensitive: false,
+    ).firstMatch(notes ?? '');
     return match?.group(1) ?? '-';
   }
 }
@@ -756,82 +866,33 @@ class _SearchBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: Container(
-        height: 46,
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(14),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.08),
-              blurRadius: 12,
-              offset: const Offset(0, 3),
-            ),
-          ],
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(
+          maxWidth: AppBreakpoints.customerContentMaxWidth,
         ),
-        child: TextField(
-          controller: controller,
-          onSubmitted: (value) {
-            if (value.isNotEmpty) {
-              // Same flow as scanning
-              Navigator.of(context).push(MaterialPageRoute(
-                builder: (_) => const QRScannerScreen(),
-              ));
-              // Since the QRScannerScreen relies on camera, we would actually just call
-              // the API directly, but for simplicity, we navigate there. 
-              // Wait, let's just show a snackbar for now.
-            }
-          },
-          style: const TextStyle(fontSize: 13, color: Color(0xFF2D3A4E)),
-          decoration: const InputDecoration(
-            hintText: 'Enter your tracking number',
-            hintStyle: TextStyle(fontSize: 13, color: Color(0xFFB0BEC5)),
-            prefixIcon: Icon(
-              Icons.search_rounded,
-              color: Color(0xFFB0BEC5),
-              size: 20,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+          child: DecoratedBox(
+            decoration: const BoxDecoration(boxShadow: AppShadows.card),
+            child: TextField(
+              controller: controller,
+              textInputAction: TextInputAction.search,
+              onSubmitted: (value) {
+                if (value.isNotEmpty) {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const QRScannerScreen()),
+                  );
+                }
+              },
+              style: Theme.of(context).textTheme.bodyMedium,
+              decoration: const InputDecoration(
+                hintText: 'Enter your tracking number',
+                prefixIcon: Icon(Icons.search_rounded),
+                suffixIcon: Icon(Icons.qr_code_scanner_rounded, size: 20),
+              ),
             ),
-            border: InputBorder.none,
-            contentPadding: EdgeInsets.symmetric(vertical: 13, horizontal: 4),
           ),
-        ),
-      ),
-    );
-  }
-}
-
-class _ChatbotFab extends StatelessWidget {
-  final VoidCallback onTap;
-  const _ChatbotFab({required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 56,
-        height: 56,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          gradient: const LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [Color(0xFF2C6B9E), Color(0xFF1E4D73)],
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: const Color(0xFF1E3A5F).withOpacity(0.35),
-              blurRadius: 14,
-              offset: const Offset(0, 5),
-            ),
-          ],
-        ),
-        child: const Icon(
-          Icons.support_agent_rounded,
-          color: Colors.white,
-          size: 28,
         ),
       ),
     );
@@ -844,13 +905,184 @@ class _EmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 24),
-        child: Text(
-          message,
-          style: const TextStyle(fontSize: 13, color: Color(0xFF8BA4C8)),
+    return AppEmptyState(message: message);
+  }
+}
+
+class _HomeLoadingState extends StatelessWidget {
+  const _HomeLoadingState();
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(
+            maxWidth: AppBreakpoints.customerContentMaxWidth,
+          ),
+          child: ListView(
+            physics: const NeverScrollableScrollPhysics(),
+            padding: const EdgeInsets.all(AppSpacing.lg),
+            children: const [
+              Row(
+                children: [
+                  AppSkeleton(height: 48, width: 48),
+                  SizedBox(width: AppSpacing.md),
+                  Expanded(child: AppSkeleton(height: 20)),
+                  SizedBox(width: AppSpacing.md),
+                  AppSkeleton(height: 48, width: 48, borderRadius: 24),
+                ],
+              ),
+              SizedBox(height: AppSpacing.xl),
+              AppSkeleton(height: 52),
+              SizedBox(height: AppSpacing.lg),
+              AppSkeleton(height: 128, borderRadius: AppRadius.lg),
+              SizedBox(height: AppSpacing.xl),
+              AppSkeleton(height: 108, borderRadius: AppRadius.xl),
+              SizedBox(height: AppSpacing.section),
+              AppSkeleton(height: 20, width: 180),
+              SizedBox(height: AppSpacing.md),
+              AppSkeleton(height: 168, borderRadius: AppRadius.lg),
+            ],
+          ),
         ),
+      ),
+    );
+  }
+}
+
+class _CustomerDeliveryListScreen extends StatelessWidget {
+  const _CustomerDeliveryListScreen({
+    required this.title,
+    required this.items,
+    required this.showTracking,
+    this.compactAddresses = false,
+  });
+
+  final String title;
+  final List<DeliveryItem> items;
+  final bool showTracking;
+  final bool compactAddresses;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFFEEF3FB),
+      appBar: AppBar(
+        title: Text(title, style: const TextStyle(fontWeight: FontWeight.w700)),
+        backgroundColor: Colors.white,
+        foregroundColor: const Color(0xFF203247),
+      ),
+      body: items.isEmpty
+          ? const _EmptyState(message: 'No delivery found')
+          : ListView.separated(
+              padding: const EdgeInsets.fromLTRB(20, 18, 20, 32),
+              itemCount: items.length,
+              separatorBuilder: (_, _) => const SizedBox(height: 12),
+              itemBuilder: (_, index) {
+                final item = items[index];
+                return DeliveryCard(
+                  item: item,
+                  showTracking: showTracking,
+                  compactAddresses: compactAddresses,
+                  onTap: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) =>
+                            CustomerOrderDetailScreen(packageId: item.id),
+                      ),
+                    );
+                  },
+                );
+              },
+            ),
+    );
+  }
+}
+
+class _CustomerBranchTicketCard extends StatelessWidget {
+  const _CustomerBranchTicketCard({
+    required this.shipment,
+    required this.statusLabel,
+    required this.stockId,
+  });
+
+  final BranchLogisticsShipment shipment;
+  final String statusLabel;
+  final String stockId;
+
+  @override
+  Widget build(BuildContext context) {
+    final route =
+        '${shipment.senderBranch?.name ?? '-'} → ${shipment.receiverBranch?.name ?? '-'}';
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  shipment.ticketNumber,
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w800,
+                    color: Color(0xFF1E3A5F),
+                  ),
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 6,
+                ),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFEFF6FF),
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                child: Text(
+                  statusLabel,
+                  style: const TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF1D4ED8),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Text(
+            shipment.itemDescription,
+            style: const TextStyle(color: Color(0xFF475569)),
+          ),
+          const SizedBox(height: 10),
+          Text(
+            'Package ID: $stockId',
+            style: const TextStyle(
+              color: Color(0xFF334155),
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 5),
+          Text(
+            route,
+            style: const TextStyle(color: Color(0xFF64748B), fontSize: 12),
+          ),
+        ],
       ),
     );
   }

@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../colors/app_colors.dart';
+import '../theme/app_tokens.dart';
+
 class HomeAppBar extends StatelessWidget {
   final String? avatarUrl;
   final String city;
@@ -19,23 +22,19 @@ class HomeAppBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.lg,
+        vertical: AppSpacing.xs,
+      ),
       child: Row(
         children: [
-          GestureDetector(
+          _HeaderAction(
+            tooltip: 'Open navigation menu',
             onTap: onMenuTap,
-            child: Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.15),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: const Icon(
-                Icons.menu_rounded,
-                color: Colors.white,
-                size: 22,
-              ),
+            child: const Icon(
+              Icons.menu_rounded,
+              color: Colors.white,
+              size: 22,
             ),
           ),
           Expanded(
@@ -46,10 +45,8 @@ class HomeAppBar extends StatelessWidget {
                   children: [
                     Text(
                       city,
-                      style: const TextStyle(
+                      style: Theme.of(context).textTheme.labelLarge?.copyWith(
                         color: Colors.white,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w700,
                       ),
                     ),
                     const SizedBox(width: 4),
@@ -63,9 +60,8 @@ class HomeAppBar extends StatelessWidget {
                 Text(
                   userLocation,
                   style: TextStyle(
-                    color: Colors.white.withOpacity(0.8),
-                    fontSize: 11,
-                    fontWeight: FontWeight.w400,
+                    color: Colors.white.withValues(alpha: 0.76),
+                    fontSize: 12,
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -73,15 +69,23 @@ class HomeAppBar extends StatelessWidget {
               ],
             ),
           ),
-          GestureDetector(
-            onTap: onProfileTap,
-            child: Container(
-              width: 40,
-              height: 40,
+          Semantics(
+            button: true,
+            label: 'Open profile',
+            child: InkResponse(
+              onTap: onProfileTap,
+              radius: 28,
+              child: Container(
+                width: 44,
+                height: 44,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                border: Border.all(color: Colors.white, width: 2),
-                color: const Color(0xFF4A8DDB),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.9),
+                    width: 2,
+                  ),
+                  color: AppColors.blueLight,
+                  boxShadow: const AppShadows.card,
               ),
               child: ClipOval(
                 child: avatarUrl != null && avatarUrl!.isNotEmpty
@@ -104,9 +108,42 @@ class HomeAppBar extends StatelessWidget {
                         ),
                       ),
               ),
+              ),
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _HeaderAction extends StatelessWidget {
+  const _HeaderAction({
+    required this.tooltip,
+    required this.onTap,
+    required this.child,
+  });
+
+  final String tooltip;
+  final VoidCallback onTap;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      button: true,
+      label: tooltip,
+      child: Tooltip(
+        message: tooltip,
+        child: Material(
+          color: Colors.white.withValues(alpha: 0.14),
+          borderRadius: BorderRadius.circular(AppRadius.sm),
+          child: InkWell(
+            onTap: onTap,
+            borderRadius: BorderRadius.circular(AppRadius.sm),
+            child: SizedBox(width: 48, height: 48, child: Center(child: child)),
+          ),
+        ),
       ),
     );
   }

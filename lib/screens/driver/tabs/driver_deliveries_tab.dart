@@ -7,6 +7,8 @@ import '../../../shared/widgets/driver_colors.dart';
 import '../../../shared/widgets/driver_request_widgets.dart';
 import '../../../shared/widgets/driver_shell_widgets.dart';
 import '../driver_provider.dart';
+import '../screens/driver_verification_scanner_screen.dart';
+import '../widgets/express_driver_route_map.dart';
 
 class DriverDeliveriesTab extends StatelessWidget {
   const DriverDeliveriesTab({
@@ -26,7 +28,7 @@ class DriverDeliveriesTab extends StatelessWidget {
   Widget build(BuildContext context) {
     final provider = DriverScope.of(context);
     final currentReq = provider.currentDelivery;
-    
+
     final deliveriesCount = provider.historyRequests.length;
     final totalMinutes = deliveriesCount * 25;
     final hours = totalMinutes ~/ 60;
@@ -39,7 +41,10 @@ class DriverDeliveriesTab extends StatelessWidget {
         DriverHeroSection(
           subtitle: 'Weekly Overview',
           name: 'Driver',
-          content: DriverBalanceCard(amount: provider.balance.toStringAsFixed(2)),
+          searchHint: 'Active delivery and route',
+          content: DriverBalanceCard(
+            amount: provider.balance.toStringAsFixed(2),
+          ),
         ),
         Transform.translate(
           offset: const Offset(0, -30),
@@ -77,10 +82,7 @@ class DriverDeliveriesTab extends StatelessWidget {
                         ],
                       ),
                       const SizedBox(height: 26),
-                      DriverStatLine(
-                        label: 'Time',
-                        value: timeStr,
-                      ),
+                      DriverStatLine(label: 'Time', value: timeStr),
                       const SizedBox(height: 18),
                       DriverStatLine(
                         label: 'Deliveries',
@@ -122,26 +124,58 @@ class DriverDeliveriesTab extends StatelessWidget {
                           ),
                         )
                       else ...[
+                        SizedBox(
+                          height: 430,
+                          child: ExpressDriverRouteMap(
+                            request: currentReq,
+                            onFocus: onOpenDetail,
+                          ),
+                        ),
+                        const SizedBox(height: 14),
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(14),
+                          decoration: BoxDecoration(
+                            color: DriverColors.blue.withValues(alpha: 0.08),
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: Text(
+                            _statusMessage(currentReq.status ?? 'ACCEPTED'),
+                            style: const TextStyle(
+                              color: DriverColors.text,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 14),
                         DriverHomeRequestPreview(
                           request: currentReq,
                           onTap: onOpenDetail,
                           showButtons: false,
                         ),
                         const SizedBox(height: 16),
-                        SizedBox(
-                          width: double.infinity,
-                          child: provider.isLoading 
-                              ? const Center(child: CircularProgressIndicator())
-                              : DriverPrimaryButton(
-                                  label: _getNextStatusLabel(currentReq.status ?? 'ACCEPTED'),
-                                  onPressed: () {
-                                    final next = _getNextStatus(currentReq.status ?? 'ACCEPTED');
-                                    if (next != null) {
-                                      provider.updateDeliveryStatus(next);
-                                    }
-                                  },
-                                ),
-                        ),
+                        if (currentReq.status == 'ARRIVED_AT_PICKUP' ||
+                            currentReq.status == 'ARRIVED_AT_DROPOFF')
+                          SizedBox(
+                            width: double.infinity,
+                            child: provider.isLoading
+                                ? const Center(
+                                    child: CircularProgressIndicator(),
+                                  )
+                                : DriverPrimaryButton(
+                                    label:
+                                        currentReq.status == 'ARRIVED_AT_PICKUP'
+                                        ? 'Scan Sender Pickup QR'
+                                        : 'Scan Recipient Delivery QR',
+                                    onPressed: () => _openVerificationScanner(
+                                      context,
+                                      provider,
+                                      currentReq.status == 'ARRIVED_AT_PICKUP'
+                                          ? 'Verify Sender Handoff'
+                                          : 'Verify Recipient Delivery',
+                                    ),
+                                  ),
+                          ),
                       ],
                       const SizedBox(height: 16),
                       Align(
@@ -168,21 +202,43 @@ class DriverDeliveriesTab extends StatelessWidget {
     );
   }
 
-  String _getNextStatusLabel(String current) {
+  String _statusMessage(String current) {
     switch (current) {
-      case 'ACCEPTED': return 'Mark as Picked Up';
-      case 'PICKED_UP': return 'Mark as In Transit';
-      case 'IN_TRANSIT': return 'Mark as Delivered';
-      default: return 'Finished';
+      case 'ACCEPTED':
+        return 'Follow the blue route to the sender pickup.';
+      case 'ARRIVED_AT_PICKUP':
+        return 'You have arrived. Check the package, then scan the sender QR.';
+      case 'IN_TRANSIT':
+        return 'Follow the green route to the recipient.';
+      case 'ARRIVED_AT_DROPOFF':
+        return 'Check the recipient and package quantity, then scan their QR.';
+      default:
+        return 'Delivery status is updating.';
     }
   }
 
-  String? _getNextStatus(String current) {
-    switch (current) {
-      case 'ACCEPTED': return 'PICKED_UP';
-      case 'PICKED_UP': return 'IN_TRANSIT';
-      case 'IN_TRANSIT': return 'DELIVERED';
-      default: return null;
+  Future<void> _openVerificationScanner(
+    BuildContext context,
+    DriverProvider provider,
+    String title,
+  ) async {
+    final success = await Navigator.of(context).push<bool>(
+      MaterialPageRoute(
+        builder: (_) => DriverVerificationScannerScreen(
+          title: title,
+          onVerify: provider.verifyDeliveryQr,
+        ),
+      ),
+    );
+    if (!context.mounted) return;
+    if (success == true) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Delivery QR verified successfully.')),
+      );
+    } else if (provider.lastError != null) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(provider.lastError!)));
     }
   }
 }

@@ -7,10 +7,7 @@ import '../../../shared/widgets/driver_shell_widgets.dart';
 import '../driver_provider.dart';
 
 class DriverHistoryTab extends StatelessWidget {
-  const DriverHistoryTab({
-    super.key,
-    required this.onOpenDetail,
-  });
+  const DriverHistoryTab({super.key, required this.onOpenDetail});
 
   final ValueChanged<DriverRequest> onOpenDetail;
 
@@ -29,7 +26,29 @@ class DriverHistoryTab extends StatelessWidget {
           DriverHeroSection(
             subtitle: 'Completed Deliveries',
             name: 'History',
-            content: DriverBalanceCard(amount: provider.balance.toStringAsFixed(2)),
+            searchHint: 'Search completed deliveries',
+            onSearchSubmitted: (query) {
+              final normalized = query.trim().toLowerCase();
+              final matches = history.where(
+                (request) =>
+                    request.title.toLowerCase().contains(normalized) ||
+                    request.id?.toLowerCase().contains(normalized) == true ||
+                    request.pickup.toLowerCase().contains(normalized) ||
+                    request.dropOff.toLowerCase().contains(normalized),
+              );
+              if (normalized.isNotEmpty && matches.isNotEmpty) {
+                onOpenDetail(matches.first);
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('No completed delivery matched your search.'),
+                  ),
+                );
+              }
+            },
+            content: DriverBalanceCard(
+              amount: provider.balance.toStringAsFixed(2),
+            ),
           ),
           Transform.translate(
             offset: const Offset(0, -30),
@@ -63,7 +82,10 @@ class DriverHistoryTab extends StatelessWidget {
                           ],
                         ),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 8,
+                          ),
                           decoration: BoxDecoration(
                             color: DriverColors.green.withValues(alpha: 0.12),
                             borderRadius: BorderRadius.circular(999),
@@ -110,7 +132,10 @@ class DriverHistoryTab extends StatelessWidget {
                             SizedBox(height: 12),
                             Text(
                               'No completed deliveries yet.',
-                              style: TextStyle(color: DriverColors.muted, fontSize: 15),
+                              style: TextStyle(
+                                color: DriverColors.muted,
+                                fontSize: 15,
+                              ),
                             ),
                           ],
                         ),

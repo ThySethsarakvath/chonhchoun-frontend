@@ -17,6 +17,8 @@ class DriverHomeTab extends StatelessWidget {
     required this.onOpenDetail,
     required this.driverState,
     required this.loadingDriverState,
+    required this.onOpenActive,
+    required this.onOpenProfile,
   });
 
   final List<DriverRequest> requests;
@@ -24,6 +26,8 @@ class DriverHomeTab extends StatelessWidget {
   final ValueChanged<DriverRequest> onOpenDetail;
   final DriverStateSnapshot? driverState;
   final bool loadingDriverState;
+  final VoidCallback onOpenActive;
+  final VoidCallback onOpenProfile;
 
   @override
   Widget build(BuildContext context) {
@@ -36,13 +40,17 @@ class DriverHomeTab extends StatelessWidget {
     final heroAmount = loadingDriverState
         ? 'Loading...'
         : currentVehicle != null
-            ? _vehicleHeadline(currentVehicle)
-            : 'No vehicle';
+        ? _vehicleHeadline(currentVehicle)
+        : driverState?.profile.vehicleType != null
+        ? vehicleTypeLabel(driverState!.profile.vehicleType)
+        : 'No vehicle';
     final heroHelper = loadingDriverState
         ? 'Checking assignment'
         : currentVehicle != null
-            ? '${deliveryCategoryLabel(currentVehicle.type)} | ${currentVehicle.status.replaceAll('_', ' ')}'
-            : 'No active vehicle assigned';
+        ? '${deliveryCategoryLabel(currentVehicle.type)} | ${currentVehicle.status.replaceAll('_', ' ')}'
+        : driverState?.profile.vehicleType != null
+        ? '${deliveryCategoryLabel(driverState!.profile.vehicleType)} | Demo location'
+        : 'No active vehicle assigned';
 
     return RefreshIndicator(
       onRefresh: () async {
@@ -56,6 +64,24 @@ class DriverHomeTab extends StatelessWidget {
           DriverHeroSection(
             subtitle: provider.isOnline ? 'Online' : 'Offline',
             name: driverName,
+            onSearchSubmitted: (query) {
+              final normalized = query.trim().toLowerCase();
+              if (normalized.isEmpty) return;
+              final matches = provider.availableRequests.where(
+                (request) =>
+                    request.title.toLowerCase().contains(normalized) ||
+                    request.id?.toLowerCase().contains(normalized) == true ||
+                    request.pickup.toLowerCase().contains(normalized) ||
+                    request.dropOff.toLowerCase().contains(normalized),
+              );
+              if (matches.isNotEmpty) {
+                onOpenDetail(matches.first);
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('No matching delivery found.')),
+                );
+              }
+            },
             content: DriverStatusSummary(
               amount: heroAmount,
               helperText: heroHelper,
@@ -67,6 +93,39 @@ class DriverHomeTab extends StatelessWidget {
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 32),
               child: Column(
                 children: [
+                  DriverQuickActionStrip(
+                    actions: [
+                      DriverQuickAction(
+                        icon: provider.isOnline
+                            ? Icons.wifi_rounded
+                            : Icons.wifi_off_rounded,
+                        label: provider.isOnline ? 'Online' : 'Go online',
+                        color: provider.isOnline
+                            ? DriverColors.success
+                            : DriverColors.muted,
+                        onTap: provider.isLoading
+                            ? () {}
+                            : () => provider.toggleOnline(),
+                      ),
+                      DriverQuickAction(
+                        icon: Icons.notifications_active_rounded,
+                        label: 'Requests',
+                        onTap: onViewAll,
+                      ),
+                      DriverQuickAction(
+                        icon: Icons.route_rounded,
+                        label: 'Active',
+                        color: DriverColors.success,
+                        onTap: onOpenActive,
+                      ),
+                      DriverQuickAction(
+                        icon: Icons.person_rounded,
+                        label: 'Profile',
+                        onTap: onOpenProfile,
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
                   DriverSurfaceCard(
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -84,7 +143,9 @@ class DriverHomeTab extends StatelessWidget {
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              provider.isOnline ? 'Receiving requests...' : 'Offline (No requests)',
+                              provider.isOnline
+                                  ? 'Receiving requests...'
+                                  : 'Offline (No requests)',
                               style: const TextStyle(
                                 color: DriverColors.muted,
                                 fontSize: 13,
@@ -97,8 +158,16 @@ class DriverHomeTab extends StatelessWidget {
                             : Switch(
                                 value: provider.isOnline,
                                 activeThumbColor: DriverColors.blue,
-                                onChanged: (val) {
-                                  provider.toggleOnline();
+                                onChanged: (val) async {
+                                  await provider.toggleOnline();
+                                  if (context.mounted &&
+                                      provider.lastError != null) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text(provider.lastError!),
+                                      ),
+                                    );
+                                  }
                                 },
                               ),
                       ],

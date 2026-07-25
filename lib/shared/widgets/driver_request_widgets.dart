@@ -6,10 +6,7 @@ import 'driver_colors.dart';
 import 'driver_shell_widgets.dart';
 
 class DriverBalanceCard extends StatelessWidget {
-  const DriverBalanceCard({
-    super.key,
-    required this.amount,
-  });
+  const DriverBalanceCard({super.key, required this.amount});
 
   final String amount;
 
@@ -17,20 +14,28 @@ class DriverBalanceCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(18),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: DriverColors.softBlue,
+        gradient: const LinearGradient(
+          begin: Alignment.centerLeft,
+          end: Alignment.centerRight,
+          colors: [Color(0xFFE17A00), Color(0xFFF39A16)],
+        ),
         borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFFE17A00).withValues(alpha: 0.26),
+            blurRadius: 18,
+            offset: const Offset(0, 8),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
             'Available balance',
-            style: TextStyle(
-              color: DriverColors.text,
-              fontSize: 13,
-            ),
+            style: TextStyle(color: Colors.white, fontSize: 13),
           ),
           const SizedBox(height: 10),
           Row(
@@ -39,7 +44,7 @@ class DriverBalanceCard extends StatelessWidget {
               const Text(
                 '\$',
                 style: TextStyle(
-                  color: DriverColors.text,
+                  color: Colors.white,
                   fontSize: 24,
                   fontWeight: FontWeight.w700,
                 ),
@@ -48,7 +53,7 @@ class DriverBalanceCard extends StatelessWidget {
               Text(
                 amount,
                 style: const TextStyle(
-                  color: DriverColors.text,
+                  color: Colors.white,
                   fontSize: 30,
                   fontWeight: FontWeight.w700,
                 ),
@@ -59,7 +64,7 @@ class DriverBalanceCard extends StatelessWidget {
                 child: Icon(
                   Icons.visibility_off_outlined,
                   size: 18,
-                  color: DriverColors.muted,
+                  color: Colors.white70,
                 ),
               ),
             ],
@@ -84,10 +89,21 @@ class DriverStatusSummary extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(18),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: DriverColors.softBlue,
+        gradient: const LinearGradient(
+          begin: Alignment.centerLeft,
+          end: Alignment.centerRight,
+          colors: [Color(0xFFE17A00), Color(0xFFF39A16)],
+        ),
         borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFFE17A00).withValues(alpha: 0.26),
+            blurRadius: 18,
+            offset: const Offset(0, 8),
+          ),
+        ],
       ),
       child: Row(
         children: [
@@ -97,13 +113,13 @@ class DriverStatusSummary extends StatelessWidget {
               children: [
                 Text(
                   helperText,
-                  style: const TextStyle(color: DriverColors.text, fontSize: 13),
+                  style: const TextStyle(color: Colors.white, fontSize: 13),
                 ),
                 const SizedBox(height: 8),
                 Text(
                   amount,
                   style: const TextStyle(
-                    color: DriverColors.text,
+                    color: Colors.white,
                     fontSize: 24,
                     fontWeight: FontWeight.w700,
                   ),
@@ -111,7 +127,19 @@ class DriverStatusSummary extends StatelessWidget {
               ],
             ),
           ),
-          DriverStatusChip(label: 'Online'),
+          Container(
+            width: 58,
+            height: 58,
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.18),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.local_shipping_rounded,
+              color: Colors.white,
+              size: 30,
+            ),
+          ),
         ],
       ),
     );
@@ -134,11 +162,11 @@ class DriverHomeRequestPreview extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(28),
+      borderRadius: BorderRadius.circular(22),
       child: Ink(
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(28),
+          borderRadius: BorderRadius.circular(22),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withValues(alpha: 0.04),
@@ -148,7 +176,7 @@ class DriverHomeRequestPreview extends StatelessWidget {
           ],
         ),
         child: Padding(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.all(18),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -165,7 +193,10 @@ class DriverHomeRequestPreview extends StatelessWidget {
                     ),
                   ),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
                     decoration: BoxDecoration(
                       color: request.accent.withValues(alpha: 0.12),
                       borderRadius: BorderRadius.circular(999),
@@ -193,7 +224,10 @@ class DriverHomeRequestPreview extends StatelessWidget {
               const SizedBox(height: 16),
               Row(
                 children: [
-                  DriverDetailChip(icon: Icons.timer_outlined, text: request.eta),
+                  DriverDetailChip(
+                    icon: Icons.timer_outlined,
+                    text: request.eta,
+                  ),
                   const SizedBox(width: 10),
                   DriverDetailChip(
                     icon: Icons.credit_card_outlined,
@@ -272,18 +306,12 @@ class DriverRequestCard extends StatelessWidget {
             style: const TextStyle(color: DriverColors.muted),
           ),
           const SizedBox(height: 16),
-          DriverMiniRouteLine(
-            pickup: request.pickup,
-            dropOff: request.dropOff,
-          ),
+          DriverMiniRouteLine(pickup: request.pickup, dropOff: request.dropOff),
           const SizedBox(height: 18),
           Row(
             children: [
               Expanded(
-                child: DriverSoftButton(
-                  label: 'Reject',
-                  onPressed: () {},
-                ),
+                child: DriverSoftButton(label: 'Reject', onPressed: () {}),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -317,7 +345,11 @@ class DriverMiniRouteLine extends StatelessWidget {
       children: [
         const Column(
           children: [
-            Icon(Icons.location_on_rounded, size: 18, color: DriverColors.danger),
+            Icon(
+              Icons.location_on_rounded,
+              size: 18,
+              color: DriverColors.danger,
+            ),
             SizedBox(height: 2),
             Icon(Icons.more_vert_rounded, size: 16, color: DriverColors.line),
             SizedBox(height: 2),
@@ -331,10 +363,7 @@ class DriverMiniRouteLine extends StatelessWidget {
             children: [
               Text(
                 'Pickup  $pickup',
-                style: const TextStyle(
-                  color: DriverColors.muted,
-                  fontSize: 13,
-                ),
+                style: const TextStyle(color: DriverColors.muted, fontSize: 13),
               ),
               const SizedBox(height: 10),
               Text(
@@ -353,11 +382,7 @@ class DriverMiniRouteLine extends StatelessWidget {
 }
 
 class DriverDetailChip extends StatelessWidget {
-  const DriverDetailChip({
-    super.key,
-    required this.icon,
-    required this.text,
-  });
+  const DriverDetailChip({super.key, required this.icon, required this.text});
 
   final IconData icon;
   final String text;

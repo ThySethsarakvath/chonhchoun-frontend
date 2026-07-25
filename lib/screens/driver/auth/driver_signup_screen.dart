@@ -37,15 +37,20 @@ class _DriverSignupScreenState extends State<DriverSignupScreen> {
   }
 
   Future<void> _submit() async {
-    if (_nameController.text.isEmpty || _phoneController.text.isEmpty || _passwordController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please fill all fields')));
+    if (_nameController.text.isEmpty ||
+        _phoneController.text.isEmpty ||
+        _passwordController.text.isEmpty) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Please fill all fields')));
       return;
     }
     setState(() => _loading = true);
     try {
       await _service.driverRegister({
         'name': _nameController.text.trim(),
-        'email': 'driver_${DateTime.now().millisecondsSinceEpoch}@example.com', // dummy email for now since UI doesn't have it
+        'email':
+            'driver_${DateTime.now().millisecondsSinceEpoch}@example.com', // dummy email for now since UI doesn't have it
         'phone': _phoneController.text.trim(),
         'password': _passwordController.text,
         'vehicleType': _selectedVehicle,
@@ -56,7 +61,10 @@ class _DriverSignupScreenState extends State<DriverSignupScreen> {
         );
       }
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+      if (mounted)
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(e.toString())));
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -72,10 +80,7 @@ class _DriverSignupScreenState extends State<DriverSignupScreen> {
           const SizedBox(height: 18),
           const Text(
             'Driver auth',
-            style: TextStyle(
-              color: Colors.white70,
-              fontSize: 14,
-            ),
+            style: TextStyle(color: Colors.white70, fontSize: 14),
           ),
           const SizedBox(height: 8),
           const Text(
@@ -90,11 +95,7 @@ class _DriverSignupScreenState extends State<DriverSignupScreen> {
           const SizedBox(height: 14),
           const Text(
             'Set up the vehicle, access request cards, and move into the new driver dashboard flow.',
-            style: TextStyle(
-              color: Colors.white70,
-              fontSize: 15,
-              height: 1.5,
-            ),
+            style: TextStyle(color: Colors.white70, fontSize: 15, height: 1.5),
           ),
           const SizedBox(height: 18),
           const Row(
@@ -103,7 +104,7 @@ class _DriverSignupScreenState extends State<DriverSignupScreen> {
                 child: DriverFeatureTile(
                   icon: Icons.two_wheeler_rounded,
                   title: 'Vehicle Type',
-                  subtitle: 'Motorbike or truck',
+                  subtitle: 'Motorbike or rickshaw',
                 ),
               ),
               SizedBox(width: 12),
@@ -140,10 +141,7 @@ class _DriverSignupScreenState extends State<DriverSignupScreen> {
           const SizedBox(height: 8),
           const Text(
             'Only the driver side is being redesigned here. Customer flow stays as-is.',
-            style: TextStyle(
-              color: DriverColors.muted,
-              height: 1.5,
-            ),
+            style: TextStyle(color: DriverColors.muted, height: 1.5),
           ),
           const SizedBox(height: 24),
           const Text(
@@ -169,11 +167,11 @@ class _DriverSignupScreenState extends State<DriverSignupScreen> {
               const SizedBox(width: 12),
               Expanded(
                 child: DriverVehicleOptionCard(
-                  label: 'Truck',
-                  icon: Icons.local_shipping_rounded,
-                  isSelected: _selectedVehicle == 'Truck',
+                  label: 'Rickshaw',
+                  icon: Icons.electric_rickshaw_rounded,
+                  isSelected: _selectedVehicle == 'RICKSHAW',
                   onTap: () {
-                    setState(() => _selectedVehicle = 'Truck');
+                    setState(() => _selectedVehicle = 'RICKSHAW');
                   },
                 ),
               ),
@@ -261,9 +259,7 @@ class _DriverSignupScreenState extends State<DriverSignupScreen> {
               label: 'Already Have an Account',
               onPressed: () {
                 Navigator.of(context).pushReplacement(
-                  MaterialPageRoute(
-                    builder: (_) => const DriverLoginScreen(),
-                  ),
+                  MaterialPageRoute(builder: (_) => const DriverLoginScreen()),
                 );
               },
             ),

@@ -3,16 +3,50 @@ import '../models/home_models.dart';
 import 'tracking_progress_bar.dart';
 
 class DeliveryCard extends StatelessWidget {
+  static final _villagePattern = RegExp(
+    r'\b(phum|village)\b',
+    caseSensitive: false,
+  );
+
   final DeliveryItem item;
   final bool showTracking;
+  final bool compactAddresses;
   final VoidCallback? onTap;
 
   const DeliveryCard({
     super.key,
     required this.item,
     this.showTracking = true,
+    this.compactAddresses = false,
     this.onTap,
   });
+
+  String _displayAddress(String address) {
+    if (!compactAddresses) return address;
+
+    final parts = address
+        .split(',')
+        .map((part) => part.trim())
+        .where((part) => part.isNotEmpty)
+        .toList();
+    String? village;
+    for (final part in parts) {
+      final isVillage =
+          _villagePattern.hasMatch(part) || part.contains('ភូមិ');
+      if (isVillage) {
+        village = part;
+        break;
+      }
+    }
+    final city = parts.any(
+      (part) => part.toLowerCase().contains('phnom penh'),
+    );
+
+    if (village != null) {
+      return city ? '$village, Phnom Penh' : village;
+    }
+    return city ? 'Phnom Penh' : address;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -149,7 +183,9 @@ class DeliveryCard extends StatelessWidget {
                   children: [
                     Expanded(
                       child: Text(
-                        item.origin,
+                        _displayAddress(item.origin),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w500,
@@ -159,8 +195,10 @@ class DeliveryCard extends StatelessWidget {
                     ),
                     Expanded(
                       child: Text(
-                        item.destination,
+                        _displayAddress(item.destination),
                         textAlign: TextAlign.right,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w500,

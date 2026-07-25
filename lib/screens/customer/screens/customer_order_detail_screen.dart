@@ -26,21 +26,31 @@ class CustomerOrderDetailScreen extends StatefulWidget {
   final CustomerOrder? order;
   final String? packageId;
   final bool? allowCancel;
+
   /// When true the screen was opened by scanning a QR code, so we hide the
   /// QR code section (no need to show the code you just scanned).
   final bool fromQR;
 
   @override
-  State<CustomerOrderDetailScreen> createState() => _CustomerOrderDetailScreenState();
+  State<CustomerOrderDetailScreen> createState() =>
+      _CustomerOrderDetailScreenState();
 }
 
 class _CustomerOrderDetailScreenState extends State<CustomerOrderDetailScreen> {
   CustomerOrder? _currentOrderNullable;
   CustomerOrder get _currentOrder => _currentOrderNullable!;
+  bool get _recipientTrackingUnlocked => {
+    OrderStatus.inTransit,
+    OrderStatus.arrivedAtDropoff,
+    OrderStatus.delivered,
+  }.contains(_currentOrder.status);
   List<LatLng> _routePoints = [];
   bool _isLoadingRoute = true;
   bool _isLoadingPackage = false;
   Timer? _pollTimer;
+  Timer? _animationTimer;
+  final MapController _mapController = MapController();
+  bool _mapReady = false;
 
   @override
   void initState() {
@@ -51,12 +61,23 @@ class _CustomerOrderDetailScreenState extends State<CustomerOrderDetailScreen> {
     } else if (widget.packageId != null) {
       _fetchPackageAndRoute();
     }
-    _pollTimer = Timer.periodic(const Duration(seconds: 10), (_) => _silentRefresh());
+    _pollTimer = Timer.periodic(
+      const Duration(seconds: 2),
+      (_) => _silentRefresh(),
+    );
+    _animationTimer = Timer.periodic(const Duration(milliseconds: 400), (_) {
+      if (!mounted || _currentOrderNullable == null) return;
+      if (_currentOrder.status == OrderStatus.accepted ||
+          _currentOrder.status == OrderStatus.inTransit) {
+        setState(() {});
+      }
+    });
   }
 
   @override
   void dispose() {
     _pollTimer?.cancel();
+    _animationTimer?.cancel();
     super.dispose();
   }
 
@@ -65,16 +86,22 @@ class _CustomerOrderDetailScreenState extends State<CustomerOrderDetailScreen> {
     if (id == null || !mounted) return;
     try {
       final token = await TokenStorage.getAccessToken();
-      final url = Uri.parse('$baseUrl/packages/$id');
-      final response = await http.get(url, headers: {
-        'Content-Type': 'application/json',
-        if (token != null) 'Authorization': 'Bearer $token',
-      });
+      final url = Uri.parse('$baseUrl/packages/$id/simulation/sync');
+      final response = await http.post(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+          if (token != null) 'Authorization': 'Bearer $token',
+        },
+      );
       if (response.statusCode == 200 && mounted) {
         final data = json.decode(response.body);
+        final previousStatus = _currentOrderNullable?.status;
         setState(() {
           _currentOrderNullable = CustomerOrder.fromJson(data);
+          _routePoints = _currentOrder.activeRoutePoints;
         });
+        if (previousStatus != _currentOrder.status) _fitLiveMap();
       }
     } catch (_) {}
   }
@@ -84,10 +111,13 @@ class _CustomerOrderDetailScreenState extends State<CustomerOrderDetailScreen> {
     try {
       final token = await TokenStorage.getAccessToken();
       final url = Uri.parse('$baseUrl/packages/${widget.packageId}');
-      final response = await http.get(url, headers: {
-        'Content-Type': 'application/json',
-        if (token != null) 'Authorization': 'Bearer $token',
-      });
+      final response = await http.get(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+          if (token != null) 'Authorization': 'Bearer $token',
+        },
+      );
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         setState(() {
@@ -110,6 +140,15 @@ class _CustomerOrderDetailScreenState extends State<CustomerOrderDetailScreen> {
 
   Future<void> _fetchRoute() async {
     if (_currentOrderNullable == null) return;
+    final serverRoute = _currentOrder.activeRoutePoints;
+    if (serverRoute.length >= 2) {
+      setState(() {
+        _routePoints = serverRoute;
+        _isLoadingRoute = false;
+      });
+      _fitLiveMap();
+      return;
+    }
     try {
       final url =
           'https://router.project-osrm.org/route/v1/driving/${_currentOrder.pickup.longitude},${_currentOrder.pickup.latitude};${_currentOrder.dropoff.longitude},${_currentOrder.dropoff.latitude}?overview=full&geometries=geojson';
@@ -118,9 +157,12 @@ class _CustomerOrderDetailScreenState extends State<CustomerOrderDetailScreen> {
         final data = json.decode(response.body);
         final List coords = data['routes'][0]['geometry']['coordinates'];
         setState(() {
-          _routePoints = coords.map((c) => LatLng(c[1].toDouble(), c[0].toDouble())).toList();
+          _routePoints = coords
+              .map((c) => LatLng(c[1].toDouble(), c[0].toDouble()))
+              .toList();
           _isLoadingRoute = false;
         });
+        _fitLiveMap();
       } else {
         _useFallbackRoute();
       }
@@ -137,20 +179,37 @@ class _CustomerOrderDetailScreenState extends State<CustomerOrderDetailScreen> {
     });
   }
 
+  void _fitLiveMap() {
+    if (!_mapReady || _routePoints.length < 2) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _mapController.fitCamera(
+        CameraFit.bounds(
+          bounds: LatLngBounds.fromPoints([
+            ..._routePoints,
+            _currentOrder.pickup,
+            _currentOrder.dropoff,
+          ]),
+          padding: const EdgeInsets.all(42),
+        ),
+      );
+    });
+  }
+
   void _shareTrackingLink() {
-    final trackingId = _currentOrderNullable?.id ?? widget.packageId ?? '';
-    if (trackingId.isEmpty) return;
-    final link = 'https://chonhchoun.app/track/$trackingId';
+    final token = _currentOrderNullable?.recipientTrackingToken;
+    if (token == null || token.isEmpty) return;
+    final link = 'chonhchoun:recipient:$token';
     Share.share(
-      'Track my package on Chonhchoun:\n$link',
+      'Track this Chonhchoun express delivery in the app:\n$link',
       subject: 'Chonhchoun Delivery Tracking',
     );
   }
 
   void _copyTrackingLink() {
-    final trackingId = _currentOrderNullable?.id ?? widget.packageId ?? '';
-    if (trackingId.isEmpty) return;
-    final link = 'https://chonhchoun.app/track/$trackingId';
+    final token = _currentOrderNullable?.recipientTrackingToken;
+    if (token == null || token.isEmpty) return;
+    final link = 'chonhchoun:recipient:$token';
     Clipboard.setData(ClipboardData(text: link));
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Tracking link copied to clipboard')),
@@ -163,7 +222,10 @@ class _CustomerOrderDetailScreenState extends State<CustomerOrderDetailScreen> {
       return Scaffold(
         backgroundColor: AppColors.surface,
         appBar: AppBar(
-          title: const Text("Loading Delivery...", style: TextStyle(fontWeight: FontWeight.bold)),
+          title: const Text(
+            "Loading Delivery...",
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
           backgroundColor: Colors.white,
           foregroundColor: AppColors.text,
           elevation: 0,
@@ -176,18 +238,23 @@ class _CustomerOrderDetailScreenState extends State<CustomerOrderDetailScreen> {
     return Scaffold(
       backgroundColor: AppColors.surface,
       appBar: AppBar(
-        title: const Text("Delivery Summary", style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text(
+          "Delivery Summary",
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
         backgroundColor: Colors.white,
         foregroundColor: AppColors.text,
         elevation: 0,
         centerTitle: true,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.share_rounded),
-            tooltip: 'Share tracking link',
-            onPressed: _shareTrackingLink,
-          ),
-        ],
+        actions: _recipientTrackingUnlocked
+            ? [
+                IconButton(
+                  icon: const Icon(Icons.share_rounded),
+                  tooltip: 'Share tracking link',
+                  onPressed: _shareTrackingLink,
+                ),
+              ]
+            : null,
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -199,7 +266,7 @@ class _CustomerOrderDetailScreenState extends State<CustomerOrderDetailScreen> {
             const SizedBox(height: 16),
             _buildJourneyTimeline(),
             const SizedBox(height: 16),
-            _buildShareCard(),
+            if (_recipientTrackingUnlocked) _buildShareCard(),
             if (!widget.fromQR && (widget.allowCancel ?? true)) ...[
               const SizedBox(height: 16),
               _buildQRCode(),
@@ -216,8 +283,7 @@ class _CustomerOrderDetailScreenState extends State<CustomerOrderDetailScreen> {
             ],
             const SizedBox(height: 16),
             _buildBillingInfo(),
-            if (_currentOrder.status != OrderStatus.canceled &&
-                _currentOrder.status != OrderStatus.delivered &&
+            if (_currentOrder.status == OrderStatus.searching &&
                 (widget.allowCancel ?? true)) ...[
               const SizedBox(height: 24),
               _buildCancelButton(),
@@ -237,15 +303,16 @@ class _CustomerOrderDetailScreenState extends State<CustomerOrderDetailScreen> {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: (isCanceled ? AppColors.danger : AppColors.blue).withValues(alpha: 0.1),
+              color: (isCanceled ? AppColors.danger : AppColors.blue)
+                  .withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
             child: Icon(
               isCanceled
                   ? Icons.cancel_outlined
                   : (_currentOrder.serviceType == DeliveryServiceType.warehouse
-                      ? Icons.warehouse
-                      : Icons.delivery_dining),
+                        ? Icons.warehouse
+                        : Icons.delivery_dining),
               color: isCanceled ? AppColors.danger : AppColors.blue,
             ),
           ),
@@ -254,7 +321,10 @@ class _CustomerOrderDetailScreenState extends State<CustomerOrderDetailScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text("Order Status", style: TextStyle(color: AppColors.muted, fontSize: 12)),
+                const Text(
+                  "Order Status",
+                  style: TextStyle(color: AppColors.muted, fontSize: 12),
+                ),
                 Text(
                   _currentOrder.statusText,
                   style: TextStyle(
@@ -274,7 +344,7 @@ class _CustomerOrderDetailScreenState extends State<CustomerOrderDetailScreen> {
   Widget _buildLiveMap() {
     if (_isLoadingRoute) {
       return Container(
-        height: 220,
+        height: 360,
         width: double.infinity,
         decoration: BoxDecoration(
           color: Colors.white,
@@ -285,12 +355,29 @@ class _CustomerOrderDetailScreenState extends State<CustomerOrderDetailScreen> {
       );
     }
 
-    final centerLat = (_currentOrder.pickup.latitude + _currentOrder.dropoff.latitude) / 2;
-    final centerLng = (_currentOrder.pickup.longitude + _currentOrder.dropoff.longitude) / 2;
+    final visiblePoints = <LatLng>[
+      ..._routePoints,
+      _currentOrder.pickup,
+      _currentOrder.dropoff,
+    ];
+    final minLat = visiblePoints
+        .map((point) => point.latitude)
+        .reduce((a, b) => a < b ? a : b);
+    final maxLat = visiblePoints
+        .map((point) => point.latitude)
+        .reduce((a, b) => a > b ? a : b);
+    final minLng = visiblePoints
+        .map((point) => point.longitude)
+        .reduce((a, b) => a < b ? a : b);
+    final maxLng = visiblePoints
+        .map((point) => point.longitude)
+        .reduce((a, b) => a > b ? a : b);
+    final centerLat = (minLat + maxLat) / 2;
+    final centerLng = (minLng + maxLng) / 2;
     final center = LatLng(centerLat, centerLng);
 
-    final latDiff = (_currentOrder.pickup.latitude - _currentOrder.dropoff.latitude).abs();
-    final lngDiff = (_currentOrder.pickup.longitude - _currentOrder.dropoff.longitude).abs();
+    final latDiff = maxLat - minLat;
+    final lngDiff = maxLng - minLng;
     final maxDiff = latDiff > lngDiff ? latDiff : lngDiff;
     double zoomLevel = 14;
     if (maxDiff > 0.05) zoomLevel = 12;
@@ -298,7 +385,7 @@ class _CustomerOrderDetailScreenState extends State<CustomerOrderDetailScreen> {
     if (maxDiff > 0.5) zoomLevel = 9;
 
     return Container(
-      height: 220,
+      height: 360,
       width: double.infinity,
       decoration: BoxDecoration(
         color: Colors.white,
@@ -315,10 +402,17 @@ class _CustomerOrderDetailScreenState extends State<CustomerOrderDetailScreen> {
       child: ClipRRect(
         borderRadius: BorderRadius.circular(24),
         child: FlutterMap(
+          mapController: _mapController,
           options: MapOptions(
             initialCenter: center,
             initialZoom: zoomLevel,
-            interactionOptions: const InteractionOptions(flags: InteractiveFlag.all),
+            interactionOptions: const InteractionOptions(
+              flags: InteractiveFlag.all,
+            ),
+            onMapReady: () {
+              _mapReady = true;
+              _fitLiveMap();
+            },
           ),
           children: [
             TileLayer(
@@ -327,7 +421,11 @@ class _CustomerOrderDetailScreenState extends State<CustomerOrderDetailScreen> {
             ),
             PolylineLayer(
               polylines: [
-                Polyline(points: _routePoints, color: AppColors.blue, strokeWidth: 4),
+                Polyline(
+                  points: _routePoints,
+                  color: AppColors.blue,
+                  strokeWidth: 4,
+                ),
               ],
             ),
             MarkerLayer(
@@ -356,6 +454,31 @@ class _CustomerOrderDetailScreenState extends State<CustomerOrderDetailScreen> {
                     size: 30,
                   ),
                 ),
+                if (_currentOrder.simulatedDriverLocation != null)
+                  Marker(
+                    point: _currentOrder.simulatedDriverLocation!,
+                    width: 54,
+                    height: 54,
+                    child: Container(
+                      padding: const EdgeInsets.all(5),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.2),
+                            blurRadius: 8,
+                          ),
+                        ],
+                      ),
+                      child: Image.asset(
+                        _currentOrder.vehicleType == VehicleType.tuktuk
+                            ? 'assets/images/rickshaw_topview.png'
+                            : 'assets/images/motorbike_topview.png',
+                        fit: BoxFit.contain,
+                      ),
+                    ),
+                  ),
               ],
             ),
           ],
@@ -403,7 +526,9 @@ class _CustomerOrderDetailScreenState extends State<CustomerOrderDetailScreen> {
       const order = [
         OrderStatus.searching,
         OrderStatus.accepted,
-        OrderStatus.pickedUp,
+        OrderStatus.arrivedAtPickup,
+        OrderStatus.inTransit,
+        OrderStatus.arrivedAtDropoff,
         OrderStatus.delivered,
       ];
       final si = order.indexOf(s);
@@ -412,24 +537,21 @@ class _CustomerOrderDetailScreenState extends State<CustomerOrderDetailScreen> {
     }
 
     final createdStr = _formatTime(_currentOrder.createdAt);
-    
+
     String? acceptedTime;
     if (done(OrderStatus.accepted)) {
       acceptedTime = s == OrderStatus.accepted
           ? _formatTime(_currentOrder.updatedAt ?? _currentOrder.createdAt)
-          : _formatTime(_currentOrder.createdAt.add(const Duration(minutes: 2)));
-    }
-
-    String? pickedUpTime;
-    if (done(OrderStatus.pickedUp)) {
-      pickedUpTime = s == OrderStatus.pickedUp
-          ? _formatTime(_currentOrder.updatedAt ?? _currentOrder.createdAt)
-          : _formatTime(_currentOrder.createdAt.add(const Duration(minutes: 10)));
+          : _formatTime(
+              _currentOrder.createdAt.add(const Duration(minutes: 2)),
+            );
     }
 
     String? deliveredTime;
     if (done(OrderStatus.delivered)) {
-      deliveredTime = _formatTime(_currentOrder.updatedAt ?? _currentOrder.createdAt);
+      deliveredTime = _formatTime(
+        _currentOrder.updatedAt ?? _currentOrder.createdAt,
+      );
     }
 
     return [
@@ -463,20 +585,40 @@ class _CustomerOrderDetailScreenState extends State<CustomerOrderDetailScreen> {
         timeString: acceptedTime,
       ),
       _CheckpointStep(
-        label: 'Package Picked Up',
-        sublabel: 'Package collected from sender',
-        isCompleted: done(OrderStatus.pickedUp),
-        isActive: s == OrderStatus.pickedUp,
+        label: 'Driver at Pickup',
+        sublabel: 'Show the sender QR to start delivery',
+        isCompleted: done(OrderStatus.arrivedAtPickup),
+        isActive: s == OrderStatus.arrivedAtPickup,
+        icon: Icons.qr_code_rounded,
+        color: const Color(0xFFFF9800),
+        timeString: null,
+      ),
+      _CheckpointStep(
+        label: 'Package in Transit',
+        sublabel: 'Driver is following the suggested route',
+        isCompleted: done(OrderStatus.inTransit),
+        isActive: s == OrderStatus.inTransit,
         icon: Icons.inventory_2_rounded,
         color: const Color(0xFFFF9800),
-        timeString: pickedUpTime,
+        timeString: null,
+      ),
+      _CheckpointStep(
+        label: 'Driver at Recipient',
+        sublabel: 'Recipient QR confirmation is required',
+        isCompleted: done(OrderStatus.arrivedAtDropoff),
+        isActive: s == OrderStatus.arrivedAtDropoff,
+        icon: Icons.qr_code_scanner_rounded,
+        color: AppColors.danger,
+        timeString: null,
       ),
       _CheckpointStep(
         label: 'Drop-off',
         sublabel: _currentOrder.dropoffAddress,
         isCompleted: done(OrderStatus.delivered),
         isActive: s == OrderStatus.delivered,
-        icon: s == OrderStatus.delivered ? Icons.check_circle_rounded : Icons.location_on,
+        icon: s == OrderStatus.delivered
+            ? Icons.check_circle_rounded
+            : Icons.location_on,
         color: s == OrderStatus.delivered ? AppColors.blue : AppColors.danger,
         timeString: deliveredTime,
       ),
@@ -484,7 +626,6 @@ class _CustomerOrderDetailScreenState extends State<CustomerOrderDetailScreen> {
   }
 
   Widget _buildTimelineRow(_CheckpointStep step, {required bool isLast}) {
-    final dotColor = step.isCompleted ? step.color : AppColors.line;
     return IntrinsicHeight(
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -513,7 +654,9 @@ class _CustomerOrderDetailScreenState extends State<CustomerOrderDetailScreen> {
                     child: Container(
                       width: 2,
                       margin: const EdgeInsets.symmetric(vertical: 4),
-                      color: step.isCompleted ? step.color.withValues(alpha: 0.4) : AppColors.line,
+                      color: step.isCompleted
+                          ? step.color.withValues(alpha: 0.4)
+                          : AppColors.line,
                     ),
                   ),
               ],
@@ -532,9 +675,13 @@ class _CustomerOrderDetailScreenState extends State<CustomerOrderDetailScreen> {
                         child: Text(
                           step.label,
                           style: TextStyle(
-                            fontWeight: step.isActive ? FontWeight.bold : FontWeight.w600,
+                            fontWeight: step.isActive
+                                ? FontWeight.bold
+                                : FontWeight.w600,
                             fontSize: 14,
-                            color: step.isCompleted ? AppColors.text : AppColors.muted,
+                            color: step.isCompleted
+                                ? AppColors.text
+                                : AppColors.muted,
                           ),
                         ),
                       ),
@@ -551,7 +698,10 @@ class _CustomerOrderDetailScreenState extends State<CustomerOrderDetailScreen> {
                       ],
                       if (step.isActive)
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 2,
+                          ),
                           decoration: BoxDecoration(
                             color: step.color.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(8),
@@ -570,7 +720,10 @@ class _CustomerOrderDetailScreenState extends State<CustomerOrderDetailScreen> {
                   const SizedBox(height: 2),
                   Text(
                     step.sublabel,
-                    style: const TextStyle(fontSize: 12, color: AppColors.muted),
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: AppColors.muted,
+                    ),
                   ),
                 ],
               ),
@@ -582,67 +735,104 @@ class _CustomerOrderDetailScreenState extends State<CustomerOrderDetailScreen> {
   }
 
   Widget _buildShareCard() {
-    final trackingId = _currentOrderNullable?.id ?? widget.packageId ?? '';
+    final token = _currentOrder.recipientTrackingToken;
     return AppSurfaceCard(
-      child: Row(
+      child: Column(
         children: [
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: AppColors.blue.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: const Icon(Icons.link_rounded, color: AppColors.blue),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text('Share Tracking Link',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                Text(
-                  'chonhchoun.app/track/${trackingId.length > 12 ? trackingId.substring(0, 12) : trackingId}...',
-                  style: const TextStyle(fontSize: 11, color: AppColors.muted),
-                ),
-              ],
-            ),
-          ),
           Row(
             children: [
-              IconButton(
-                icon: const Icon(Icons.copy_rounded, size: 18),
-                color: AppColors.muted,
-                tooltip: 'Copy link',
-                onPressed: _copyTrackingLink,
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: AppColors.blue.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(Icons.link_rounded, color: AppColors.blue),
               ),
-              IconButton(
-                icon: const Icon(Icons.share_rounded, size: 18),
-                color: AppColors.blue,
-                tooltip: 'Share',
-                onPressed: _shareTrackingLink,
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Share with Recipient',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                      ),
+                    ),
+                    Text(
+                      token == null
+                          ? 'Recipient tracking is being prepared'
+                          : 'Tracking unlocks after pickup verification',
+                      style: const TextStyle(
+                        fontSize: 11,
+                        color: AppColors.muted,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Row(
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.copy_rounded, size: 18),
+                    color: AppColors.muted,
+                    tooltip: 'Copy link',
+                    onPressed: token == null ? null : _copyTrackingLink,
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.share_rounded, size: 18),
+                    color: AppColors.blue,
+                    tooltip: 'Share',
+                    onPressed: token == null ? null : _shareTrackingLink,
+                  ),
+                ],
               ),
             ],
           ),
+          if (token != null) ...[
+            const SizedBox(height: 14),
+            const Divider(),
+            const SizedBox(height: 8),
+            const Text(
+              'Recipient can scan this code in the Chonhchoun app',
+              style: TextStyle(color: AppColors.muted, fontSize: 12),
+            ),
+            const SizedBox(height: 10),
+            QrImageView(data: 'chonhchoun:recipient:$token', size: 150),
+          ],
         ],
       ),
     );
   }
 
   Widget _buildQRCode() {
-    if (_currentOrder.id.isEmpty) return const SizedBox.shrink();
+    final token = _currentOrder.pickupQrToken;
+    if (token == null || _currentOrder.status != OrderStatus.arrivedAtPickup) {
+      return const SizedBox.shrink();
+    }
     return AppSurfaceCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          const Text("Tracking QR Code",
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+          Text(
+            "Pickup Verification QR",
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+          ),
           const SizedBox(height: 8),
-          const Text("Scan to view live status",
-              style: TextStyle(color: AppColors.muted, fontSize: 12)),
+          Text(
+            "Show this code to the assigned driver to start delivery.",
+            textAlign: TextAlign.center,
+            style: const TextStyle(color: AppColors.muted, fontSize: 12),
+          ),
           const SizedBox(height: 16),
           Center(
-            child: QrImageView(data: _currentOrder.id, version: QrVersions.auto, size: 200.0),
+            child: QrImageView(
+              data: 'chonhchoun:pickup:$token',
+              version: QrVersions.auto,
+              size: 200.0,
+            ),
           ),
         ],
       ),
@@ -654,18 +844,25 @@ class _CustomerOrderDetailScreenState extends State<CustomerOrderDetailScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text("Package Information",
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+          const Text(
+            "Package Information",
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+          ),
           const Divider(height: 24),
           _buildInfoItem("Item Name", _currentOrder.itemName),
-          _buildInfoItem("Details",
-              "${_currentOrder.typeText} • Size ${_currentOrder.size.name} • ${_currentOrder.weight}kg"),
           _buildInfoItem(
-              "Service",
-              _currentOrder.serviceType == DeliveryServiceType.warehouse
-                  ? _currentOrder.serviceName
-                  : _currentOrder.vehicleText),
-          if (_currentOrder.itemHandling) _buildInfoItem("Add-ons", "Careful Item Handling"),
+            "Details",
+            "${_currentOrder.typeText} • ${_currentOrder.quantity} package(s) • "
+                "Size ${_currentOrder.size.name} • ${_currentOrder.weight}kg",
+          ),
+          _buildInfoItem(
+            "Service",
+            _currentOrder.serviceType == DeliveryServiceType.warehouse
+                ? _currentOrder.serviceName
+                : _currentOrder.vehicleText,
+          ),
+          if (_currentOrder.itemHandling)
+            _buildInfoItem("Add-ons", "Careful Item Handling"),
         ],
       ),
     );
@@ -676,11 +873,23 @@ class _CustomerOrderDetailScreenState extends State<CustomerOrderDetailScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text("Dropoff Details", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+          const Text(
+            "Dropoff Details",
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+          ),
           const Divider(height: 24),
-          _buildInfoItem("Contact Name", _currentOrder.dropoffContactName ?? "N/A"),
-          _buildInfoItem("Contact Number", _currentOrder.dropoffContactNumber ?? "N/A"),
-          _buildInfoItem("Note to Driver", _currentOrder.noteToDriver ?? "No note"),
+          _buildInfoItem(
+            "Contact Name",
+            _currentOrder.dropoffContactName ?? "N/A",
+          ),
+          _buildInfoItem(
+            "Contact Number",
+            _currentOrder.dropoffContactNumber ?? "N/A",
+          ),
+          _buildInfoItem(
+            "Note to Driver",
+            _currentOrder.noteToDriver ?? "No note",
+          ),
         ],
       ),
     );
@@ -695,13 +904,17 @@ class _CustomerOrderDetailScreenState extends State<CustomerOrderDetailScreen> {
           Row(
             children: [
               const Expanded(
-                child: Text("Assigned Driver",
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                child: Text(
+                  "Assigned Driver",
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                ),
               ),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: (isOnline ? Colors.green : Colors.grey).withValues(alpha: 0.15),
+                  color: (isOnline ? Colors.green : Colors.grey).withValues(
+                    alpha: 0.15,
+                  ),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
@@ -728,25 +941,36 @@ class _CustomerOrderDetailScreenState extends State<CustomerOrderDetailScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text("Billing Details", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+          const Text(
+            "Billing Details",
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+          ),
           const Divider(height: 24),
           _buildInfoItem(
             "Payment Method",
             _currentOrder.serviceType == DeliveryServiceType.warehouse
-                ? (_currentOrder.paymentMethod == PaymentMethod.cash ? "Sender Pay" : "Receiver Pay")
+                ? (_currentOrder.paymentMethod == PaymentMethod.cash
+                      ? "Sender Pay"
+                      : "Receiver Pay")
                 : (_currentOrder.paymentMethod == PaymentMethod.cash
-                    ? "Cash on Delivery"
-                    : "Online Payment"),
+                      ? "Cash on Delivery"
+                      : "Online Payment"),
           ),
           const SizedBox(height: 8),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text("Total Amount", style: TextStyle(fontWeight: FontWeight.bold)),
+              const Text(
+                "Total Amount",
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
               Text(
                 "\$${_currentOrder.price.toStringAsFixed(2)}",
                 style: const TextStyle(
-                    fontWeight: FontWeight.w900, color: AppColors.blue, fontSize: 20),
+                  fontWeight: FontWeight.w900,
+                  color: AppColors.blue,
+                  fontSize: 20,
+                ),
               ),
             ],
           ),
@@ -771,8 +995,10 @@ class _CustomerOrderDetailScreenState extends State<CustomerOrderDetailScreen> {
         children: [
           Icon(Icons.close_rounded, size: 20),
           SizedBox(width: 10),
-          Text("Cancel Delivery",
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+          Text(
+            "Cancel Delivery",
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+          ),
         ],
       ),
     );
@@ -785,7 +1011,7 @@ class _CustomerOrderDetailScreenState extends State<CustomerOrderDetailScreen> {
       "Item not ready",
       "Too expensive",
       "Found another provider",
-      "Others"
+      "Others",
     ];
     showModalBottomSheet(
       context: context,
@@ -800,35 +1026,59 @@ class _CustomerOrderDetailScreenState extends State<CustomerOrderDetailScreen> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text("Cancel Delivery",
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+            const Text(
+              "Cancel Delivery",
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            ),
             const SizedBox(height: 8),
-            const Text("Please select a reason for cancellation",
-                style: TextStyle(color: AppColors.muted)),
+            const Text(
+              "Please select a reason for cancellation",
+              style: TextStyle(color: AppColors.muted),
+            ),
             const SizedBox(height: 16),
             ...reasons.map(
               (reason) => ListTile(
-                title: Text(reason, style: const TextStyle(fontWeight: FontWeight.w500)),
-                leading: const Icon(Icons.radio_button_off, size: 20, color: AppColors.muted),
+                title: Text(
+                  reason,
+                  style: const TextStyle(fontWeight: FontWeight.w500),
+                ),
+                leading: const Icon(
+                  Icons.radio_button_off,
+                  size: 20,
+                  color: AppColors.muted,
+                ),
                 onTap: () async {
                   final token = await TokenStorage.getAccessToken();
-                  final url = Uri.parse('$baseUrl/packages/${_currentOrder.id}/cancel');
+                  final url = Uri.parse(
+                    '$baseUrl/packages/${_currentOrder.id}/cancel',
+                  );
                   try {
-                    final response = await http.patch(url, headers: {
-                      'Content-Type': 'application/json',
-                      if (token != null) 'Authorization': 'Bearer $token',
-                    });
+                    final response = await http.patch(
+                      url,
+                      headers: {
+                        'Content-Type': 'application/json',
+                        if (token != null) 'Authorization': 'Bearer $token',
+                      },
+                    );
                     if (response.statusCode == 200) {
-                      setState(() => _currentOrder.status = OrderStatus.canceled);
+                      setState(
+                        () => _currentOrder.status = OrderStatus.canceled,
+                      );
                       if (mounted) {
                         Navigator.pop(context);
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text("Order has been canceled")),
+                          const SnackBar(
+                            content: Text("Order has been canceled"),
+                          ),
                         );
                       }
                     } else if (mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text("Failed to cancel order: ${response.body}")),
+                        SnackBar(
+                          content: Text(
+                            "Failed to cancel order: ${response.body}",
+                          ),
+                        ),
                       );
                     }
                   } catch (e) {

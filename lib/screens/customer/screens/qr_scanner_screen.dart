@@ -12,6 +12,7 @@ import '../../../shared/models/home_models.dart';
 import '../../../global/base_url.dart';
 import '../../../features/auth/tokens/token_storage.dart';
 import 'customer_order_detail_screen.dart';
+import 'recipient_express_tracking_screen.dart';
 
 class QRScannerScreen extends StatefulWidget {
   const QRScannerScreen({super.key});
@@ -26,7 +27,9 @@ class _QRScannerScreenState extends State<QRScannerScreen>
   late AnimationController _animationController;
   bool _isProcessing = false;
 
-  bool get _isUnsupportedPlatform => kIsWeb ? true : (io.Platform.isWindows || io.Platform.isMacOS || io.Platform.isLinux);
+  bool get _isUnsupportedPlatform => kIsWeb
+      ? true
+      : (io.Platform.isWindows || io.Platform.isMacOS || io.Platform.isLinux);
 
   @override
   void initState() {
@@ -46,6 +49,29 @@ class _QRScannerScreenState extends State<QRScannerScreen>
   }
 
   Future<void> _fetchTrackingInfo(String id) async {
+    const recipientPrefix = 'chonhchoun:recipient:';
+    if (id.startsWith(recipientPrefix)) {
+      final recipientToken = id.substring(recipientPrefix.length).trim();
+      if (recipientToken.isNotEmpty && mounted) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (_) =>
+                RecipientExpressTrackingScreen(token: recipientToken),
+          ),
+        );
+      }
+      return;
+    }
+    if (id.startsWith('chonhchoun:pickup:') ||
+        id.startsWith('chonhchoun:dropoff:')) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('This verification QR must be scanned by the driver.'),
+        ),
+      );
+      return;
+    }
     setState(() => _isProcessing = true);
     try {
       final token = await TokenStorage.getAccessToken();
@@ -69,7 +95,10 @@ class _QRScannerScreenState extends State<QRScannerScreen>
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(
-              builder: (_) => CustomerOrderDetailScreen(packageId: item.id, allowCancel: false),
+              builder: (_) => CustomerOrderDetailScreen(
+                packageId: item.id,
+                allowCancel: false,
+              ),
             ),
           );
         }
