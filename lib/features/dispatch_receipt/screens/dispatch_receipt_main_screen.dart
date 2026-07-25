@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/dispatch_receipt_models.dart';
 import '../services/dispatch_receipt_service.dart';
+import '../widgets/auto_plan_progress_dialog.dart';
 import 'create_dispatch_receipt_screen.dart';
 import 'dispatch_receipt_detail_screen.dart';
 
@@ -20,6 +21,8 @@ class _DispatchReceiptMainScreenState extends State<DispatchReceiptMainScreen>
   List<DispatchReceipt> _outboundReceipts = [];
   List<DispatchReceipt> _inboundReceipts = [];
   bool _loading = true;
+  bool _refreshing = false;
+  bool _autoPlanning = false;
 
   @override
   void initState() {
@@ -48,12 +51,36 @@ class _DispatchReceiptMainScreenState extends State<DispatchReceiptMainScreen>
       });
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error loading receipts: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error loading receipts: $e')));
       }
     } finally {
       if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  Future<void> _refreshData() async {
+    if (_refreshing) return;
+    setState(() => _refreshing = true);
+    try {
+      final results = await Future.wait([
+        _service.listOutboundReceipts(),
+        _service.listInboundReceipts(),
+      ]);
+      if (!mounted) return;
+      setState(() {
+        _outboundReceipts = results[0];
+        _inboundReceipts = results[1];
+      });
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Unable to refresh receipts: $error')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _refreshing = false);
     }
   }
 
@@ -72,6 +99,130 @@ class _DispatchReceiptMainScreenState extends State<DispatchReceiptMainScreen>
     }
   }
 
+  Future<void> _runAutoPlan() async {
+    var durationSeconds = 120;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: const Text('Optimize branch dispatch'),
+          content: SizedBox(
+            width: 440,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'The planner will group all unassigned shipments by destination, select available company truck drivers, and create the fewest practical multi-stop receipts.',
+                ),
+                const SizedBox(height: 20),
+                DropdownButtonFormField<int>(
+                  initialValue: durationSeconds,
+                  decoration: const InputDecoration(
+                    labelText: 'Map simulation duration',
+                    border: OutlineInputBorder(),
+                  ),
+                  items: const [
+                    DropdownMenuItem(value: 60, child: Text('1 minute')),
+                    DropdownMenuItem(value: 120, child: Text('2 minutes')),
+                    DropdownMenuItem(value: 180, child: Text('3 minutes')),
+                    DropdownMenuItem(value: 300, child: Text('5 minutes')),
+                  ],
+                  onChanged: (value) {
+                    if (value != null) {
+                      setDialogState(() => durationSeconds = value);
+                    }
+                  },
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: const Text('Cancel'),
+            ),
+            FilledButton.icon(
+              onPressed: () => Navigator.pop(dialogContext, true),
+              icon: const Icon(Icons.auto_awesome_rounded),
+              label: const Text('Create optimized receipts'),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+
+    setState(() => _autoPlanning = true);
+    try {
+      final result = await showDialog<AutoPlanDispatchResult>(
+        context: context,
+        barrierDismissible: false,
+        builder: (_) => AutoPlanProgressDialog(
+          operation: () =>
+              _service.autoPlan(simulationDurationSeconds: durationSeconds),
+        ),
+      );
+      if (result == null || !mounted) return;
+      await _loadData();
+      if (!mounted) return;
+      await showDialog<void>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: Row(
+            children: [
+              Icon(
+                result.unassignedShipments == 0
+                    ? Icons.check_circle_rounded
+                    : Icons.info_rounded,
+                color: result.unassignedShipments == 0
+                    ? Colors.green
+                    : Colors.orange,
+              ),
+              const SizedBox(width: 10),
+              const Text('Dispatch plan created'),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('${result.assignedShipments} shipments assigned'),
+              Text(
+                '${result.trucksUsed} of '
+                '${result.availableTruckDrivers} available trucks used',
+              ),
+              if (result.unassignedShipments > 0)
+                Text(
+                  '${result.unassignedShipments} shipments remain unassigned',
+                  style: const TextStyle(color: Colors.orange),
+                ),
+              const SizedBox(height: 12),
+              ...result.receipts.map(
+                (receipt) => ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: const Icon(Icons.route_rounded),
+                  title: Text(receipt.receiptNumber),
+                  subtitle: Text(
+                    '${receipt.driver.name} • ${receipt.stops.length} stops',
+                  ),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            FilledButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: const Text('Done'),
+            ),
+          ],
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _autoPlanning = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_loading) {
@@ -87,8 +238,10 @@ class _DispatchReceiptMainScreenState extends State<DispatchReceiptMainScreen>
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        Wrap(
+          alignment: WrapAlignment.spaceBetween,
+          runSpacing: 12,
+          spacing: 12,
           children: [
             const Text(
               'Dispatch Receipts',
@@ -98,20 +251,50 @@ class _DispatchReceiptMainScreenState extends State<DispatchReceiptMainScreen>
                 color: Color(0xFF1E293B),
               ),
             ),
-            ElevatedButton.icon(
-              onPressed: () async {
-                final result = await Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => const CreateDispatchReceiptScreen(),
+            Wrap(
+              spacing: 10,
+              runSpacing: 10,
+              children: [
+                OutlinedButton.icon(
+                  onPressed: _refreshing ? null : _refreshData,
+                  icon: _refreshing
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.refresh_rounded),
+                  label: Text(_refreshing ? 'Refreshing…' : 'Refresh'),
+                ),
+                OutlinedButton.icon(
+                  onPressed: () async {
+                    final result = await Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const CreateDispatchReceiptScreen(),
+                      ),
+                    );
+                    if (result == true) {
+                      _loadData();
+                    }
+                  },
+                  icon: const Icon(Icons.tune_rounded),
+                  label: const Text('Manual receipt'),
+                ),
+                FilledButton.icon(
+                  onPressed: _autoPlanning ? null : _runAutoPlan,
+                  icon: _autoPlanning
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.auto_awesome_rounded),
+                  label: Text(
+                    _autoPlanning ? 'Optimizing…' : 'Auto plan dispatch',
                   ),
-                );
-                if (result == true) {
-                  _loadData();
-                }
-              },
-              icon: const Icon(Icons.add),
-              label: const Text('Create Receipt'),
+                ),
+              ],
             ),
           ],
         ),
@@ -156,8 +339,13 @@ class _DispatchReceiptMainScreenState extends State<DispatchReceiptMainScreen>
                 ),
                 child: ListTile(
                   contentPadding: const EdgeInsets.all(16),
-                  title: Text(r.receiptNumber,
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                  title: Text(
+                    r.receiptNumber,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
+                  ),
                   subtitle: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [

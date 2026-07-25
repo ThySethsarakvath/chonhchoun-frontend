@@ -1,6 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import '../models/dispatch_receipt_models.dart';
 import '../services/dispatch_receipt_service.dart';
+import '../widgets/optimized_dispatch_map.dart';
 import 'confirm_stop_screen.dart';
 
 class DispatchReceiptDetailScreen extends StatefulWidget {
@@ -23,26 +26,53 @@ class _DispatchReceiptDetailScreenState
   final _service = DispatchReceiptService();
   DispatchReceipt? _receipt;
   bool _loading = true;
+  bool _arrivalUpdateInProgress = false;
+  bool _startingSimulation = false;
+  Timer? _pollTimer;
 
   @override
   void initState() {
     super.initState();
     _loadReceipt();
+    _pollTimer = Timer.periodic(const Duration(seconds: 5), (_) {
+      if (_receipt?.status == DispatchReceiptStatus.inTransit) {
+        if (_receipt?.isOptimized == true) {
+          _syncSimulation();
+        } else {
+          _loadReceipt(showLoading: false);
+        }
+      }
+    });
   }
 
-  Future<void> _loadReceipt() async {
-    setState(() => _loading = true);
+  @override
+  void dispose() {
+    _pollTimer?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _loadReceipt({bool showLoading = true}) async {
+    if (showLoading) setState(() => _loading = true);
     try {
       final receipt = await _service.getReceipt(widget.receiptId);
       if (mounted) setState(() => _receipt = receipt);
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error: $e')));
       }
     } finally {
-      if (mounted) setState(() => _loading = false);
+      if (mounted && showLoading) setState(() => _loading = false);
+    }
+  }
+
+  Future<void> _syncSimulation() async {
+    try {
+      final receipt = await _service.syncSimulation(widget.receiptId);
+      if (mounted) setState(() => _receipt = receipt);
+    } catch (_) {
+      await _loadReceipt(showLoading: false);
     }
   }
 
@@ -51,9 +81,11 @@ class _DispatchReceiptDetailScreenState
       await _service.departReceipt(widget.receiptId);
       _loadReceipt();
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $e')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error: $e')));
+      }
     }
   }
 
@@ -62,9 +94,11 @@ class _DispatchReceiptDetailScreenState
       await _service.cancelReceipt(widget.receiptId);
       _loadReceipt();
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $e')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error: $e')));
+      }
     }
   }
 
@@ -73,9 +107,54 @@ class _DispatchReceiptDetailScreenState
       await _service.simulateArrival(widget.receiptId, stopOrder);
       _loadReceipt();
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $e')),
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error: $e')));
+      }
+    }
+  }
+
+  Future<void> _startSimulation() async {
+    setState(() => _startingSimulation = true);
+    try {
+      final receipt = await _service.startSimulation(widget.receiptId);
+      if (mounted) setState(() => _receipt = receipt);
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Unable to start simulation: $error')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _startingSimulation = false);
+    }
+  }
+
+  Future<void> _handleStopReached(int stopOrder) async {
+    if (widget.isInbound || _arrivalUpdateInProgress) return;
+    final receipt = _receipt;
+    if (receipt == null) return;
+    final pendingStops =
+        receipt.stops
+            .where((stop) => stop.status == DispatchReceiptStopStatus.pending)
+            .toList()
+          ..sort((left, right) => left.stopOrder.compareTo(right.stopOrder));
+    if (pendingStops.isEmpty || pendingStops.first.stopOrder != stopOrder) {
+      return;
+    }
+
+    _arrivalUpdateInProgress = true;
+    try {
+      final updated = await _service.simulateArrival(
+        widget.receiptId,
+        stopOrder,
       );
+      if (mounted) setState(() => _receipt = updated);
+    } catch (_) {
+      await _loadReceipt(showLoading: false);
+    } finally {
+      _arrivalUpdateInProgress = false;
     }
   }
 
@@ -89,18 +168,39 @@ class _DispatchReceiptDetailScreenState
     }
 
     final r = _receipt!;
+    final screenWidth = MediaQuery.sizeOf(context).width;
+    final mapHeight = screenWidth >= 1200
+        ? 680.0
+        : screenWidth >= 800
+        ? 560.0
+        : 440.0;
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(r.receiptNumber),
-      ),
+      appBar: AppBar(title: Text(r.receiptNumber)),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
           _buildInfoCard(r),
+          if (r.isOptimized) ...[
+            const SizedBox(height: 16),
+            SizedBox(
+              height: mapHeight,
+              child: OptimizedDispatchMap(
+                receipt: r,
+                onStopReached: widget.isInbound ? null : _handleStopReached,
+              ),
+            ),
+            const SizedBox(height: 10),
+            const Text(
+              'The animation is a shared time-based simulation, not live GPS.',
+              style: TextStyle(color: Colors.grey, fontSize: 12),
+            ),
+          ],
           const SizedBox(height: 16),
-          const Text('Stops Timeline',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          const Text(
+            'Stops Timeline',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
           const SizedBox(height: 8),
           ...r.stops.map((stop) => _buildStopCard(r, stop)),
         ],
@@ -116,11 +216,29 @@ class _DispatchReceiptDetailScreenState
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Status: ${r.status.name}',
-                style: const TextStyle(fontWeight: FontWeight.bold)),
+            Text(
+              'Status: ${r.status.name}',
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
             const SizedBox(height: 8),
             Text('Driver: ${r.driver.name}'),
             Text('Source: ${r.sourceBranch.name}'),
+            if (r.isOptimized) ...[
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 16,
+                runSpacing: 6,
+                children: [
+                  Text(
+                    'Distance: ${((r.totalDistanceMeters ?? 0) / 1000).toStringAsFixed(1)} km',
+                  ),
+                  Text(
+                    'Estimated: ${((r.estimatedDurationSeconds ?? 0) / 60).round()} min',
+                  ),
+                  Text('Load: ${r.totalWeightKg.toStringAsFixed(1)} kg'),
+                ],
+              ),
+            ],
             if (r.notes != null) ...[
               const SizedBox(height: 8),
               Text('Notes: ${r.notes}'),
@@ -142,20 +260,26 @@ class _DispatchReceiptDetailScreenState
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('Stop ${stop.stopOrder}: ${stop.destinationBranch.name}',
-                    style: const TextStyle(fontWeight: FontWeight.bold)),
+                Text(
+                  'Stop ${stop.stopOrder}: ${stop.destinationBranch.name}',
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
                 Chip(label: Text(stop.status.name)),
               ],
             ),
             const SizedBox(height: 8),
             Text('Packages: ${stop.shipments.length}'),
             if (stop.missingShipments.isNotEmpty)
-              Text('Missing: ${stop.missingShipments.length}',
-                  style: const TextStyle(color: Colors.red)),
+              Text(
+                'Missing: ${stop.missingShipments.length}',
+                style: const TextStyle(color: Colors.red),
+              ),
             if (stop.damagedShipments.isNotEmpty)
-              Text('Damaged: ${stop.damagedShipments.length}',
-                  style: const TextStyle(color: Colors.orange)),
-            
+              Text(
+                'Damaged: ${stop.damagedShipments.length}',
+                style: const TextStyle(color: Colors.orange),
+              ),
+
             // Actions for the stop
             const SizedBox(height: 8),
             Row(
@@ -163,7 +287,8 @@ class _DispatchReceiptDetailScreenState
               children: [
                 if (!widget.isInbound &&
                     r.status == DispatchReceiptStatus.inTransit &&
-                    stop.status == DispatchReceiptStopStatus.pending)
+                    stop.status == DispatchReceiptStopStatus.pending &&
+                    !r.isOptimized)
                   ElevatedButton(
                     onPressed: () => _simulateArrival(stop.stopOrder),
                     child: const Text('Simulate Arrival'),
@@ -175,10 +300,8 @@ class _DispatchReceiptDetailScreenState
                       final result = await Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (_) => ConfirmStopScreen(
-                            receiptId: r.id,
-                            stop: stop,
-                          ),
+                          builder: (_) =>
+                              ConfirmStopScreen(receiptId: r.id, stop: stop),
                         ),
                       );
                       if (result == true) _loadReceipt();
@@ -210,6 +333,27 @@ class _DispatchReceiptDetailScreenState
               child: const Text('Depart'),
             ),
           ],
+        ),
+      );
+    }
+    if (r.status == DispatchReceiptStatus.inTransit &&
+        r.isOptimized &&
+        r.simulationStartedAt == null) {
+      return BottomAppBar(
+        child: FilledButton.icon(
+          onPressed: _startingSimulation ? null : _startSimulation,
+          icon: _startingSimulation
+              ? const SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Icon(Icons.play_arrow_rounded),
+          label: Text(
+            _startingSimulation
+                ? 'Starting simulation…'
+                : 'Start route simulation',
+          ),
         ),
       );
     }

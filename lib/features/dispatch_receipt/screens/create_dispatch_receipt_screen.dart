@@ -101,7 +101,7 @@ class _CreateDispatchReceiptScreenState
                   children: [
                     DropdownButtonFormField<String>(
                       decoration: const InputDecoration(labelText: 'Destination Branch'),
-                      value: selectedBranchId,
+                      initialValue: selectedBranchId,
                       items: _allBranches
                           .map((b) => DropdownMenuItem(
                                 value: b.id,
@@ -242,7 +242,7 @@ class _CreateDispatchReceiptScreenState
               labelText: 'Select Driver',
               border: OutlineInputBorder(),
             ),
-            value: _selectedDriverId,
+            initialValue: _selectedDriverId,
             items: _availableDrivers
                 .map((d) => DropdownMenuItem(
                       value: d.id,
