@@ -17,7 +17,9 @@ class AuthHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final screenHeight = MediaQuery.of(context).size.height;
-    final panelHeight = screenHeight * 0.25;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final panelHeight = (screenHeight * 0.25).clamp(160.0, 220.0);
+    final contentLeft = screenWidth > 576 ? (screenWidth - 520) / 2 : 28.0;
     const logoSize = 72.0;
     const logoOverlap = logoSize / 2; // how far it dips below the panel
 
@@ -44,28 +46,21 @@ class AuthHeader extends StatelessWidget {
           ),
 
           // ── City silhouette at bottom of blue panel ─────────────────────
-          Positioned(
+          const Positioned(
             bottom: logoOverlap,
             left: 0,
             right: 0,
-            child: Image.asset(
-              'assets/images/footer.png',
-              fit: BoxFit.fitWidth,
-              alignment: Alignment.bottomCenter,
-            ),
+            height: 103,
+            child: AuthFooterSilhouette(),
           ),
 
           // ── Logo overlapping the boundary ───────────────────────────────
           Positioned(
             bottom: 0,
-            left: logoAlignment == LogoAlignment.left ? 28 : null,
-            right: logoAlignment == LogoAlignment.left ? null : null,
-            // center: handled via Align when alignment == center
+            left: logoAlignment == LogoAlignment.left ? contentLeft : 0,
+            right: logoAlignment == LogoAlignment.left ? null : 0,
             child: logoAlignment == LogoAlignment.center
-                ? Align(
-                    alignment: Alignment.bottomCenter,
-                    child: _logo(logoSize),
-                  )
+                ? Center(child: _logo(logoSize))
                 : _logo(logoSize),
           ),
         ],
@@ -93,6 +88,20 @@ class AuthHeader extends StatelessWidget {
         'assets/images/logo.png',
         fit: BoxFit.contain,
       ),
+    );
+  }
+}
+
+class AuthFooterSilhouette extends StatelessWidget {
+  const AuthFooterSilhouette({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Image.asset(
+      'assets/images/footer.png',
+      fit: BoxFit.none,
+      repeat: ImageRepeat.repeatX,
+      alignment: Alignment.bottomLeft,
     );
   }
 }

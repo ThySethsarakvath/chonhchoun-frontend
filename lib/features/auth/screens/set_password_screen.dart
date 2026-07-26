@@ -101,8 +101,7 @@ class _SetPasswordScreenState extends State<SetPasswordScreen> {
         child: Column(
           children: [
             AuthHeaderWithBack(onBack: () => Navigator.pop(context)),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 28),
+            AuthContentContainer(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [

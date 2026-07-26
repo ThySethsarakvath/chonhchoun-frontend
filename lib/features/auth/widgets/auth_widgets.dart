@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'auth_header.dart';
 
 class AuthTextField extends StatelessWidget {
   final String label;
@@ -146,7 +147,7 @@ class AuthHeaderWithBack extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final screenHeight = MediaQuery.of(context).size.height;
-    final panelHeight = screenHeight * 0.25;
+    final panelHeight = (screenHeight * 0.25).clamp(160.0, 220.0);
     const logoSize = 72.0;
     const logoOverlap = logoSize / 2;
 
@@ -167,13 +168,10 @@ class AuthHeaderWithBack extends StatelessWidget {
               ),
             ),
           ),
-          Positioned(
+          const Positioned(
             bottom: logoOverlap, left: 0, right: 0,
-            child: Image.asset(
-              'assets/images/footer.png',
-              fit: BoxFit.fitWidth,
-              alignment: Alignment.bottomCenter,
-            ),
+            height: 103,
+            child: AuthFooterSilhouette(),
           ),
           Positioned(
             top: MediaQuery.of(context).padding.top + 8,

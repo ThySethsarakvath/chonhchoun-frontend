@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../router/app_router.dart';
+import '../widgets/auth_scaffold.dart';
 import '../widgets/auth_widgets.dart';
 
 class ValidateEmailScreen extends StatelessWidget {
@@ -27,8 +28,7 @@ class ValidateEmailScreen extends StatelessWidget {
         child: Column(
           children: [
             AuthHeaderWithBack(onBack: () => Navigator.pop(context)),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 28),
+            AuthContentContainer(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [

@@ -23,12 +23,36 @@ class AuthScaffold extends StatelessWidget {
           children: [
             AuthHeader(logoAlignment: logoAlignment),
             const SizedBox(height: 24),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 28),
-              child: body,
-            ),
+            AuthContentContainer(child: body),
             const SizedBox(height: 40),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Keeps authentication forms readable on desktop while retaining the
+/// existing edge-to-edge mobile layout.
+class AuthContentContainer extends StatelessWidget {
+  final Widget child;
+  final double maxWidth;
+
+  const AuthContentContainer({
+    super.key,
+    required this.child,
+    this.maxWidth = 520,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 28),
+      child: Align(
+        alignment: Alignment.topCenter,
+        child: ConstrainedBox(
+          constraints: BoxConstraints(maxWidth: maxWidth),
+          child: SizedBox(width: double.infinity, child: child),
         ),
       ),
     );

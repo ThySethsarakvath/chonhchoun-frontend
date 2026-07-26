@@ -968,16 +968,15 @@ class _ActionButtons extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      width: 116,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
+      width: 220,
+      child: Row(
         children: [
-          SizedBox(
-            width: double.infinity,
+          Expanded(
             child: OutlinedButton(
               onPressed: onPrimary,
               style: OutlinedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 10),
+                minimumSize: const Size(0, 42),
+                padding: const EdgeInsets.symmetric(horizontal: 12),
                 textStyle: const TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w700,
@@ -985,16 +984,20 @@ class _ActionButtons extends StatelessWidget {
                 side: const BorderSide(color: Color(0xFFBFDBFE)),
                 foregroundColor: const Color(0xFF1D4ED8),
               ),
-              child: Text(primaryLabel),
+              child: Text(
+                primaryLabel,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
           ),
-          const SizedBox(height: 8),
-          SizedBox(
-            width: double.infinity,
+          const SizedBox(width: 8),
+          Expanded(
             child: OutlinedButton(
               onPressed: onSecondary,
               style: OutlinedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 10),
+                minimumSize: const Size(0, 42),
+                padding: const EdgeInsets.symmetric(horizontal: 12),
                 textStyle: const TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w700,
@@ -1008,7 +1011,11 @@ class _ActionButtons extends StatelessWidget {
                     ? const Color(0xFFDC2626)
                     : const Color(0xFF334155),
               ),
-              child: Text(secondaryLabel),
+              child: Text(
+                secondaryLabel,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
           ),
         ],
