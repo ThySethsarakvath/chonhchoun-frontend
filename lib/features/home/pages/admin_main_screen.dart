@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../../admin_management/screens/admin_overview_screen.dart';
+import '../../admin_management/screens/admin_driver_requests_screen.dart';
+import '../../admin_management/screens/admin_vehicle_management_screen.dart';
 import '../../admin_management/screens/branch_screen.dart';
 import '../../admin_management/screens/admin_user_screen.dart';
 import '../../auth/services/auth_service.dart';
@@ -77,6 +79,8 @@ class _AdminMainScreenState extends State<AdminMainScreen> {
       const AdminOverviewScreen(),
       const BranchScreen(),
       const AdminUserScreen(),
+      const AdminDriverRequestsScreen(),
+      const AdminVehicleManagementScreen(),
     ];
 
     return Scaffold(

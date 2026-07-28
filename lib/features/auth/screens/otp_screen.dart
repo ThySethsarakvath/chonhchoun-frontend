@@ -21,10 +21,14 @@ class _OtpScreenState extends State<OtpScreen> {
   static const int _timerSeconds = 60;
 
   final _service = AuthService();
-  final List<TextEditingController> _controllers =
-      List.generate(_pinLength, (_) => TextEditingController());
-  final List<FocusNode> _focusNodes =
-      List.generate(_pinLength, (_) => FocusNode());
+  final List<TextEditingController> _controllers = List.generate(
+    _pinLength,
+    (_) => TextEditingController(),
+  );
+  final List<FocusNode> _focusNodes = List.generate(
+    _pinLength,
+    (_) => FocusNode(),
+  );
 
   int _secondsLeft = _timerSeconds;
   Timer? _timer;
@@ -39,8 +43,12 @@ class _OtpScreenState extends State<OtpScreen> {
   @override
   void dispose() {
     _timer?.cancel();
-    for (final c in _controllers) c.dispose();
-    for (final f in _focusNodes) f.dispose();
+    for (final c in _controllers) {
+      c.dispose();
+    }
+    for (final f in _focusNodes) {
+      f.dispose();
+    }
     super.dispose();
   }
 
@@ -60,7 +68,7 @@ class _OtpScreenState extends State<OtpScreen> {
   String get _timerLabel {
     final m = (_secondsLeft ~/ 60).toString().padLeft(2, '0');
     final s = (_secondsLeft % 60).toString().padLeft(2, '0');
-    return '$m:$s s';
+    return '$m:$s វិ.';
   }
 
   String get _otp => _controllers.map((c) => c.text).join();
@@ -91,13 +99,17 @@ class _OtpScreenState extends State<OtpScreen> {
   Future<void> _resend() async {
     try {
       if (widget.args.flow == AuthFlow.register) {
-        await _service.initiateRegister(InitiateRegisterRequest(
-          name: widget.args.name ?? '',
-          email: widget.args.email, phone: '',
-        ));
+        await _service.initiateRegister(
+          InitiateRegisterRequest(
+            name: widget.args.name ?? '',
+            email: widget.args.email,
+            phone: '',
+          ),
+        );
       } else {
         await _service.forgotPassword(
-            ForgotPasswordRequest(email: widget.args.email));
+          ForgotPasswordRequest(email: widget.args.email),
+        );
       }
       _startTimer();
       if (mounted) showSuccessSnack(context, 'លេខកូដថ្មីត្រូវបានផ្ញើ');
@@ -108,7 +120,7 @@ class _OtpScreenState extends State<OtpScreen> {
 
   Future<void> _submit() async {
     if (_otp.length < _pinLength) {
-      showErrorDialog(context, 'សូមបញ្ចូលលេខកូដ ${ _pinLength} ខ្ទង់ឱ្យបានពេញ');
+      showErrorDialog(context, 'សូមបញ្ចូលលេខកូដ $_pinLength ខ្ទង់ឱ្យបានពេញ');
       return;
     }
 
@@ -116,7 +128,8 @@ class _OtpScreenState extends State<OtpScreen> {
     try {
       if (widget.args.flow == AuthFlow.register) {
         final res = await _service.verifyEmail(
-            VerifyEmailRequest(email: widget.args.email, otp: _otp));
+          VerifyEmailRequest(email: widget.args.email, otp: _otp),
+        );
         if (mounted) {
           Navigator.pushNamed(
             context,
@@ -130,7 +143,8 @@ class _OtpScreenState extends State<OtpScreen> {
         }
       } else {
         final res = await _service.verifyOtp(
-            VerifyOtpRequest(email: widget.args.email, otp: _otp));
+          VerifyOtpRequest(email: widget.args.email, otp: _otp),
+        );
         if (mounted) {
           Navigator.pushNamed(
             context,
@@ -220,18 +234,22 @@ class _OtpScreenState extends State<OtpScreen> {
                               contentPadding: EdgeInsets.zero,
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(10),
-                                borderSide:
-                                    const BorderSide(color: Color(0xFFDDE3EE)),
+                                borderSide: const BorderSide(
+                                  color: Color(0xFFDDE3EE),
+                                ),
                               ),
                               enabledBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(10),
-                                borderSide:
-                                    const BorderSide(color: Color(0xFFDDE3EE)),
+                                borderSide: const BorderSide(
+                                  color: Color(0xFFDDE3EE),
+                                ),
                               ),
                               focusedBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(10),
                                 borderSide: const BorderSide(
-                                    color: Color(0xFF4A8DDB), width: 2),
+                                  color: Color(0xFF4A8DDB),
+                                  width: 2,
+                                ),
                               ),
                             ),
                           ),
@@ -244,7 +262,9 @@ class _OtpScreenState extends State<OtpScreen> {
                       ? RichText(
                           text: TextSpan(
                             style: const TextStyle(
-                                fontSize: 13, color: Color(0xFF6B7A8D)),
+                              fontSize: 13,
+                              color: Color(0xFF6B7A8D),
+                            ),
                             children: [
                               const TextSpan(text: 'កំណត់លេខកូដម្តងទៀត: '),
                               TextSpan(

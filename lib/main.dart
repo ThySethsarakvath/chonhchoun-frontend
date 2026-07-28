@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 import 'router/app_router.dart';
+import 'shared/theme/app_theme.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -23,10 +24,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'ជញ្ជូន',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        useMaterial3: true,
-        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF2C5F8A)),
-      ),
+      theme: AppTheme.light,
       initialRoute: AppRoutes.landing,
       onGenerateRoute: AppRouter.onGenerateRoute,
     );

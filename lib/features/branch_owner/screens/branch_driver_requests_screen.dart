@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../driver_registration/models/driver_application_model.dart';
+import '../../driver_registration/models/vehicle_type.dart';
 import '../widgets/branch_owner_content_widgets.dart';
 
 class BranchDriverRequestsScreen extends StatelessWidget {
@@ -9,7 +10,11 @@ class BranchDriverRequestsScreen extends StatelessWidget {
   final String? error;
   final List<DriverApplication> applications;
   final Future<void> Function() onRefresh;
-  final Future<void> Function(DriverApplication application) onApprove;
+  final Future<void> Function(
+    DriverApplication application,
+    String? vehicleType, {
+    String? assignedVehicleCode,
+  }) onApprove;
   final Future<void> Function(DriverApplication application, String? reason)
       onReject;
 
@@ -25,27 +30,34 @@ class BranchDriverRequestsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final branchApprovalApplications = applications.where((application) {
+      return application.vehicleType == null ||
+          application.vehicleType == driverBranchTruckChoice ||
+          application.vehicleType == driverTruckType ||
+          application.vehicleType == driverLargeTruckType;
+    }).toList();
+
     if (loading) {
       return const BranchOwnerLoadingCard(
-        message: 'កំពុងផ្ទុកពាក្យស្នើសុំអ្នកបើកបរ...',
+        message: 'Loading driver requests...',
       );
     }
 
     if (error != null) {
       return BranchOwnerMessageCard(
-        title: 'មិនអាចផ្ទុកសំណើអ្នកបើកបរបានទេ',
+        title: 'Unable to load driver requests',
         description: error!,
-        actionLabel: 'ព្យាយាមម្តងទៀត',
+        actionLabel: 'Try again',
         onAction: onRefresh,
       );
     }
 
-    if (applications.isEmpty) {
+    if (branchApprovalApplications.isEmpty) {
       return BranchOwnerMessageCard(
-        title: 'មិនទាន់មានសំណើអ្នកបើកបរនៅឡើយទេ',
+        title: 'No branch driver requests yet',
         description:
-            'ពាក្យស្នើសុំអ្នកបើកបរថ្មីៗដែលផ្ញើមកសាខារបស់អ្នកនឹងបង្ហាញនៅទីនេះ។',
-        actionLabel: 'ផ្ទុកឡើងវិញ',
+            'Branch truck and branch-logistics driver applications will appear here for approval.',
+        actionLabel: 'Refresh',
         onAction: onRefresh,
       );
     }
@@ -54,17 +66,21 @@ class BranchDriverRequestsScreen extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const BranchOwnerSectionCard(
-          title: 'ពិនិត្យពាក្យស្នើសុំអ្នកបើកបរ',
+          title: 'Branch Driver Requests',
           description:
-              'ពិនិត្យឯកសារដែលអ្នកបើកបរបានបង្ហោះ ហើយអនុម័ត ឬបដិសេធពាក្យស្នើសុំនីមួយៗ។',
+              'Review only branch logistics truck-driver requests here. City Express motorbike riders use their own vehicle and are not part of branch-owner approval.',
         ),
         const SizedBox(height: 14),
-        ...applications.map(
+        ...branchApprovalApplications.map(
           (application) => Padding(
             padding: const EdgeInsets.only(bottom: 14),
             child: _DriverApplicationCard(
               application: application,
-              onApprove: () => onApprove(application),
+              onApprove: (vehicleType, {assignedVehicleCode}) => onApprove(
+                application,
+                vehicleType,
+                assignedVehicleCode: assignedVehicleCode,
+              ),
               onReject: (reason) => onReject(application, reason),
             ),
           ),
@@ -74,9 +90,12 @@ class BranchDriverRequestsScreen extends StatelessWidget {
   }
 }
 
-class _DriverApplicationCard extends StatelessWidget {
+class _DriverApplicationCard extends StatefulWidget {
   final DriverApplication application;
-  final Future<void> Function() onApprove;
+  final Future<void> Function(
+    String? vehicleType, {
+    String? assignedVehicleCode,
+  }) onApprove;
   final Future<void> Function(String? reason) onReject;
 
   const _DriverApplicationCard({
@@ -85,43 +104,59 @@ class _DriverApplicationCard extends StatelessWidget {
     required this.onReject,
   });
 
+  @override
+  State<_DriverApplicationCard> createState() => _DriverApplicationCardState();
+}
+
+class _DriverApplicationCardState extends State<_DriverApplicationCard> {
   Future<void> _promptReject(BuildContext context) async {
     final controller = TextEditingController();
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('បដិសេធពាក្យស្នើសុំ'),
+        title: const Text('Reject Driver Request'),
         content: TextField(
           controller: controller,
           maxLines: 3,
           decoration: const InputDecoration(
-            hintText: 'មូលហេតុបដិសេធ (បើមាន)',
+            hintText: 'Optional rejection reason',
           ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext, false),
-            child: const Text('បោះបង់'),
+            child: const Text('Cancel'),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(dialogContext, true),
             style: FilledButton.styleFrom(
               backgroundColor: const Color(0xFFD32F2F),
             ),
-            child: const Text('បដិសេធ'),
+            child: const Text('Reject'),
           ),
         ],
       ),
     );
 
     if (confirmed == true) {
-      await onReject(controller.text.trim().isEmpty ? null : controller.text);
+      await widget.onReject(
+        controller.text.trim().isEmpty ? null : controller.text.trim(),
+      );
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final application = widget.application;
     final isPending = application.status == 'pending';
+    final effectiveVehicleType = application.vehicleType == null
+        ? driverBranchTruckChoice
+        : application.vehicleType;
+    final isBranchVehicleRequest =
+        effectiveVehicleType == driverBranchTruckChoice ||
+        effectiveVehicleType == driverTruckType ||
+        effectiveVehicleType == driverLargeTruckType;
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(18),
@@ -150,30 +185,54 @@ class _DriverApplicationCard extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            '${application.email} • ${application.phone}',
+            '${application.email} | ${application.phone}',
             style: const TextStyle(fontSize: 13, color: Color(0xFF475569)),
           ),
           const SizedBox(height: 8),
           Text(
-            'សាខា: ${application.branch?.name ?? '-'}',
+            'Branch: ${application.branch?.name ?? '-'}',
             style: const TextStyle(fontSize: 13, color: Color(0xFF475569)),
           ),
+          const SizedBox(height: 8),
+          _VehicleTypeBadge(
+            vehicleType: effectiveVehicleType,
+            assignedVehicleCode: application.assignedVehicleCode,
+          ),
+          if (application.plateNumber?.isNotEmpty == true) ...[
+            const SizedBox(height: 10),
+            _InfoChip(label: 'Plate: ${application.plateNumber!}'),
+          ],
+          if (isPending && isBranchVehicleRequest) ...[
+            const SizedBox(height: 12),
+            Text(
+              effectiveVehicleType == driverLargeTruckType
+                  ? 'This applicant wants to work as a branch large-truck driver. Approve here first, then assign the branch vehicle from Driver Management.'
+                  : 'This applicant wants to work as a branch truck driver. Approve here first, then assign the branch vehicle from Driver Management.',
+              style: const TextStyle(
+                fontSize: 12,
+                color: Color(0xFF64748B),
+              ),
+            ),
+          ],
           const SizedBox(height: 12),
           Wrap(
             spacing: 10,
             runSpacing: 10,
             children: [
-              _LinkChip(label: 'រូបភាព', url: application.avatarUrl),
+              _LinkChip(label: 'Photo', url: application.avatarUrl),
               _LinkChip(label: 'CV', url: application.cvUrl),
-              _LinkChip(label: 'អត្តសញ្ញាណប័ណ្ណ', url: application.nationalIdUrl),
-              _LinkChip(label: 'ប័ណ្ណបើកបរ', url: application.drivingLicenseUrl),
+              _LinkChip(label: 'National ID', url: application.nationalIdUrl),
+              _LinkChip(
+                label: 'Driving License',
+                url: application.drivingLicenseUrl,
+              ),
             ],
           ),
           if (application.rejectionReason != null &&
               application.rejectionReason!.isNotEmpty) ...[
             const SizedBox(height: 12),
             Text(
-              'មូលហេតុ: ${application.rejectionReason}',
+              'Reason: ${application.rejectionReason}',
               style: const TextStyle(fontSize: 13, color: Color(0xFFB45309)),
             ),
           ],
@@ -182,15 +241,20 @@ class _DriverApplicationCard extends StatelessWidget {
             Row(
               children: [
                 FilledButton.icon(
-                  onPressed: onApprove,
+                  onPressed: () => widget.onApprove(
+                    effectiveVehicleType == driverLargeTruckType
+                        ? driverLargeTruckType
+                        : driverTruckType,
+                    assignedVehicleCode: null,
+                  ),
                   icon: const Icon(Icons.check_circle_outline_rounded),
-                  label: const Text('អនុម័ត'),
+                  label: const Text('Approve Branch Driver'),
                 ),
                 const SizedBox(width: 10),
                 OutlinedButton.icon(
                   onPressed: () => _promptReject(context),
                   icon: const Icon(Icons.close_rounded),
-                  label: const Text('បដិសេធ'),
+                  label: const Text('Reject'),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: const Color(0xFFD32F2F),
                   ),
@@ -225,10 +289,10 @@ class _StatusChip extends StatelessWidget {
             ? const Color(0xFFB91C1C)
             : const Color(0xFF92400E);
     final statusLabel = isApproved
-        ? 'អនុម័ត'
+        ? 'Approved'
         : isRejected
-            ? 'បដិសេធ'
-            : 'កំពុងរង់ចាំ';
+            ? 'Rejected'
+            : 'Pending';
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -243,6 +307,52 @@ class _StatusChip extends StatelessWidget {
           fontWeight: FontWeight.w700,
           color: foregroundColor,
         ),
+      ),
+    );
+  }
+}
+
+class _VehicleTypeBadge extends StatelessWidget {
+  final String? vehicleType;
+  final String? assignedVehicleCode;
+
+  const _VehicleTypeBadge({
+    required this.vehicleType,
+    this.assignedVehicleCode,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final label = assignedVehicleCode?.isNotEmpty == true
+        ? 'Branch Vehicle - ${assignedVehicleCode!}'
+        : vehicleType == driverBranchTruckChoice
+            ? 'Branch Vehicle'
+            : reviewVehicleTypeLabel(vehicleType);
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: const Color(0xFFE0F2FE),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            vehicleTypeIcon(vehicleType),
+            size: 16,
+            color: const Color(0xFF075985),
+          ),
+          const SizedBox(width: 8),
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+              color: Color(0xFF075985),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -272,12 +382,38 @@ class _LinkChip extends StatelessWidget {
             : () => launchUrl(Uri.parse(url!)),
         borderRadius: BorderRadius.circular(999),
         child: Text(
-          url == null || url!.isEmpty ? '$label មិនមាន' : 'បើក $label',
+          url == null || url!.isEmpty ? '$label missing' : 'Open $label',
           style: const TextStyle(
             fontSize: 12,
             fontWeight: FontWeight.w600,
             color: Color(0xFF1E3A5F),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _InfoChip extends StatelessWidget {
+  final String label;
+
+  const _InfoChip({required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8FAFC),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+      ),
+      child: Text(
+        label,
+        style: const TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+          color: Color(0xFF334155),
         ),
       ),
     );

@@ -115,7 +115,7 @@ class AppDrawer extends StatelessWidget {
                         child: Image.asset(
                           'assets/images/logo.png',
                           fit: BoxFit.contain,
-                          errorBuilder: (_, __, ___) => const Icon(
+                          errorBuilder: (_, _, _) => const Icon(
                             Icons.local_shipping_rounded,
                             color: Colors.white,
                             size: 28,
@@ -184,7 +184,10 @@ class AppDrawer extends StatelessWidget {
                           height: 40,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            border: Border.all(color: Colors.white54, width: 1.5),
+                            border: Border.all(
+                              color: Colors.white54,
+                              width: 1.5,
+                            ),
                             color: const Color(0xFF4A8DDB),
                           ),
                           child: ClipOval(
@@ -192,7 +195,7 @@ class AppDrawer extends StatelessWidget {
                                 ? Image.network(
                                     avatarUrl!,
                                     fit: BoxFit.cover,
-                                    errorBuilder: (_, __, ___) => const Icon(
+                                    errorBuilder: (_, _, _) => const Icon(
                                       Icons.person_rounded,
                                       color: Colors.white,
                                       size: 22,
@@ -201,7 +204,7 @@ class AppDrawer extends StatelessWidget {
                                 : Image.asset(
                                     'assets/images/avatar.png',
                                     fit: BoxFit.cover,
-                                    errorBuilder: (_, __, ___) => const Icon(
+                                    errorBuilder: (_, _, _) => const Icon(
                                       Icons.person_rounded,
                                       color: Colors.white,
                                       size: 22,

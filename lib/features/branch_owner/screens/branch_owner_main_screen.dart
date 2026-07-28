@@ -6,12 +6,15 @@ import '../../admin_management/services/branch_service.dart';
 import '../../auth/services/auth_service.dart';
 import '../../auth/tokens/token_storage.dart';
 import '../../driver_registration/models/driver_application_model.dart';
+import '../../driver_registration/models/driver_management_model.dart';
 import '../../driver_registration/services/driver_application_service.dart';
 import 'branch_driver_agents_screen.dart';
-import 'branch_driver_requests_screen.dart';
 import 'branch_information_screen.dart';
+import 'branch_logistics_list_screen.dart';
 import 'branch_owner_overview_screen.dart';
 import 'branch_sales_screen.dart';
+import 'branch_wallet_screen.dart';
+import '../../dispatch_receipt/screens/dispatch_receipt_main_screen.dart';
 import '../widgets/branch_owner_content_widgets.dart';
 import '../widgets/branch_owner_sidebar.dart';
 
@@ -33,7 +36,11 @@ class _BranchOwnerMainScreenState extends State<BranchOwnerMainScreen> {
   bool _branchInfoLoading = true;
   String? _branchInfoError;
   Branch? _ownedBranch;
-  List<BranchDriver> _branchDrivers = const [];
+  bool _driverManagementLoading = true;
+  String? _driverManagementError;
+  BranchDriverManagementOverview? _driverManagementOverview;
+  bool _driverRequestsLoading = true;
+  String? _driverRequestsError;
   List<DriverApplication> _driverApplications = const [];
 
   @override
@@ -46,30 +53,41 @@ class _BranchOwnerMainScreenState extends State<BranchOwnerMainScreen> {
     setState(() {
       _branchInfoLoading = true;
       _branchInfoError = null;
+      _driverManagementLoading = true;
+      _driverManagementError = null;
+      _driverRequestsLoading = true;
+      _driverRequestsError = null;
     });
 
     try {
       final results = await Future.wait([
         _branchService.getMyBranch(),
-        _driverApplicationService.getBranchDrivers(),
+        _driverApplicationService.getBranchOwnerManagementOverview(),
         _driverApplicationService.getBranchOwnerApplications(),
       ]);
       final ownedBranch = results[0] as Branch;
-      final branchDrivers = results[1] as List<BranchDriver>;
+      final driverManagement =
+          results[1] as BranchDriverManagementOverview;
       final driverApplications = results[2] as List<DriverApplication>;
 
       if (!mounted) return;
       setState(() {
         _ownedBranch = ownedBranch;
-        _branchDrivers = branchDrivers;
-        _driverApplications = driverApplications;
         _branchInfoLoading = false;
+        _driverManagementOverview = driverManagement;
+        _driverManagementLoading = false;
+        _driverApplications = driverApplications;
+        _driverRequestsLoading = false;
       });
     } catch (e) {
       if (!mounted) return;
       setState(() {
         _branchInfoLoading = false;
         _branchInfoError = e.toString().replaceFirst('Exception: ', '');
+        _driverManagementLoading = false;
+        _driverManagementError = e.toString().replaceFirst('Exception: ', '');
+        _driverRequestsLoading = false;
+        _driverRequestsError = e.toString().replaceFirst('Exception: ', '');
       });
     }
   }
@@ -130,14 +148,11 @@ class _BranchOwnerMainScreenState extends State<BranchOwnerMainScreen> {
   String get _salesTodayLabel => _ownedBranch == null ? '-' : '\$0';
 
   String get _driverAgentCountLabel =>
-      _ownedBranch == null ? '-' : _branchDrivers.length.toString();
+      _ownedBranch == null ? '-' : 'Handled in logistics';
 
   String get _pendingRequestsLabel => _ownedBranch == null
       ? '-'
-      : _driverApplications
-          .where((application) => application.status == 'pending')
-          .length
-          .toString();
+      : '${_driverApplications.where((application) => application.status == 'pending').length} pending';
 
   @override
   Widget build(BuildContext context) {
@@ -157,28 +172,37 @@ class _BranchOwnerMainScreenState extends State<BranchOwnerMainScreen> {
         ),
       ),
       _BranchOwnerSectionData(
-        title: 'Sales Performance',
-        content: const BranchSalesScreen(),
-      ),
-      _BranchOwnerSectionData(
-        title: 'Driver Agents',
+        title: 'Driver Management',
         content: BranchDriverAgentsScreen(
-          loading: _branchInfoLoading,
-          error: _branchInfoError,
-          drivers: _branchDrivers,
+          loading: _driverManagementLoading,
+          error: _driverManagementError,
+          overview: _driverManagementOverview,
           onRefresh: _loadBranchOwnerData,
+          onUpdateDriverManagement: _updateDriverManagement,
+          onAssignVehicle: _assignVehicleToDriver,
+          onUnassignVehicle: _unassignVehicleFromDriver,
+          onDeactivateDriver: _deactivateDriver,
         ),
       ),
       _BranchOwnerSectionData(
-        title: 'Driver Requests',
-        content: BranchDriverRequestsScreen(
-          loading: _branchInfoLoading,
-          error: _branchInfoError,
-          applications: _driverApplications,
-          onRefresh: _loadBranchOwnerData,
-          onApprove: _approveApplication,
-          onReject: _rejectApplication,
+        title: 'Package Management',
+        content: BranchSalesScreen(
+          ownedBranch: _ownedBranch,
         ),
+      ),
+      _BranchOwnerSectionData(
+        title: 'Branch Logistics',
+        content: BranchLogisticsListScreen(
+          ownedBranch: _ownedBranch,
+        ),
+      ),
+      _BranchOwnerSectionData(
+        title: 'Branch Wallet',
+        content: const BranchWalletScreen(),
+      ),
+      _BranchOwnerSectionData(
+        title: 'Dispatch Receipts',
+        content: const DispatchReceiptMainScreen(),
       ),
     ];
 
@@ -279,12 +303,24 @@ class _BranchOwnerMainScreenState extends State<BranchOwnerMainScreen> {
     return trimmed;
   }
 
-  Future<void> _approveApplication(DriverApplication application) async {
+  Future<void> _updateDriverManagement(
+    ManagedDriver driver, {
+    required String availabilityStatus,
+    String? licenseNumber,
+    double? maxLoadWeightKg,
+    int? maxPackageCount,
+  }) async {
     try {
-      await _driverApplicationService.approveApplication(application.id);
+      await _driverApplicationService.updateBranchDriverManagement(
+        driver.id,
+        availabilityStatus: availabilityStatus,
+        licenseNumber: licenseNumber,
+        maxLoadWeightKg: maxLoadWeightKg,
+        maxPackageCount: maxPackageCount,
+      );
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('${application.name} has been approved.')),
+        SnackBar(content: Text('${driver.name} updated successfully.')),
       );
       await _loadBranchOwnerData();
     } catch (e) {
@@ -298,18 +334,56 @@ class _BranchOwnerMainScreenState extends State<BranchOwnerMainScreen> {
     }
   }
 
-  Future<void> _rejectApplication(
-    DriverApplication application,
-    String? reason,
+  Future<void> _assignVehicleToDriver(
+    ManagedDriver driver,
+    ManagedVehicle vehicle,
   ) async {
     try {
-      await _driverApplicationService.rejectApplication(
-        application.id,
-        reason: reason,
+      await _driverApplicationService.assignVehicleToDriver(
+        driver.id,
+        vehicleId: vehicle.id,
       );
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('${application.name} has been rejected.')),
+        SnackBar(content: Text('${vehicle.code} assigned to ${driver.name}.')),
+      );
+      await _loadBranchOwnerData();
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(e.toString().replaceFirst('Exception: ', '')),
+          backgroundColor: const Color(0xFFD32F2F),
+        ),
+      );
+    }
+  }
+
+  Future<void> _unassignVehicleFromDriver(ManagedDriver driver) async {
+    try {
+      await _driverApplicationService.unassignVehicleFromDriver(driver.id);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Vehicle unassigned from ${driver.name}.')),
+      );
+      await _loadBranchOwnerData();
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(e.toString().replaceFirst('Exception: ', '')),
+          backgroundColor: const Color(0xFFD32F2F),
+        ),
+      );
+    }
+  }
+
+  Future<void> _deactivateDriver(ManagedDriver driver) async {
+    try {
+      await _driverApplicationService.deactivateBranchDriver(driver.id);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('${driver.name} removed from active roster.')),
       );
       await _loadBranchOwnerData();
     } catch (e) {

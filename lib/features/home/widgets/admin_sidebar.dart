@@ -42,6 +42,14 @@ class AdminSidebar extends StatelessWidget {
           icon: Icon(Icons.manage_accounts_outlined),
           label: Text('Users'),
         ),
+        NavigationRailDestination(
+          icon: Icon(Icons.assignment_outlined),
+          label: Text('Driver Requests'),
+        ),
+        NavigationRailDestination(
+          icon: Icon(Icons.local_shipping_outlined),
+          label: Text('Vehicles'),
+        ),
       ],
     );
   }

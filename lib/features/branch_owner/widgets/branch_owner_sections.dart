@@ -22,7 +22,7 @@ class BranchOwnerOverviewSection extends StatelessWidget {
         const BranchOwnerSectionHero(
           title: 'Welcome to your branch workspace',
           description:
-              'Use this portal to monitor branch operations, review performance, manage drivers, and approve branch-level driver requests.',
+              'Use this portal to monitor branch operations, handle branch-to-branch shipments, and track wallet activity clearly.',
           icon: Icons.storefront_rounded,
         ),
         const SizedBox(height: 20),
@@ -37,13 +37,13 @@ class BranchOwnerOverviewSection extends StatelessWidget {
               color: const Color(0xFF15803D),
             ),
             BranchOwnerStatCard(
-              label: 'Driver Agents',
+              label: 'Driver Handling',
               value: driverAgentCountLabel,
               icon: Icons.local_shipping_rounded,
               color: const Color(0xFF1D4ED8),
             ),
             BranchOwnerStatCard(
-              label: 'Pending Requests',
+              label: 'Driver Requests',
               value: pendingRequestsLabel,
               icon: Icons.assignment_late_rounded,
               color: const Color(0xFFB45309),
@@ -54,7 +54,7 @@ class BranchOwnerOverviewSection extends StatelessWidget {
         const BranchOwnerSectionCard(
           title: 'What this portal is for',
           description:
-              'This workspace is focused on branch-owner operations. Branch identity and profile control stay under admin, while branch owners focus on branch performance, driver visibility, and request approvals.',
+              'This workspace is focused on branch-owner operations. Branch identity and profile control stay under admin, while branch owners focus on logistics tickets, payments, and daily branch performance.',
         ),
       ],
     );
@@ -122,18 +122,18 @@ class BranchOwnerDriverAgentsSection extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const BranchOwnerSectionCard(
-          title: 'Driver Agent List',
+          title: 'Driver Management',
           description:
-              'This section should show the driver agents connected to the branch so branch owners can monitor who is active and who belongs to the branch.',
+              'This section should show branch drivers, vehicle readiness, and assignment capacity so branch owners can decide who is ready for warehouse-to-warehouse work.',
         ),
         const SizedBox(height: 14),
         BranchOwnerFeatureListCard(
           title: 'Planned tools',
           items: const [
-            'List all branch driver agents',
-            'View driver contact and status',
-            'Check active and inactive driver availability',
-            'Review branch-driver operational visibility',
+            'List all branch drivers and live availability',
+            'View vehicle assignments and owned-vehicle registrations',
+            'Store carrying capacity on each branch vehicle',
+            'Review driver readiness for dispatch',
           ],
         ),
       ],

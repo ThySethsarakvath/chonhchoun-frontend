@@ -67,7 +67,7 @@ class _AdminBranchScreenState extends State<AdminBranchScreen> {
               DataColumn(label: Text('សកម្មភាព (Actions)')),
             ],
             rows: _branches.map((branch) => DataRow(cells: [
-              DataCell(Text(branch.code, style: const TextStyle(fontWeight: FontWeight.bold))),
+              DataCell(Text(branch.code ?? '—', style: const TextStyle(fontWeight: FontWeight.bold))),
               DataCell(Text(branch.name)),
               DataCell(Text(branch.address ?? 'N/A')),
               DataCell(Icon(
@@ -83,7 +83,7 @@ class _AdminBranchScreenState extends State<AdminBranchScreen> {
       floatingActionButton: FloatingActionButton(
         backgroundColor: const Color(0xFF1E3A5F),
         onPressed: () {
-          // TODO: Implement Create Branch Dialog
+         
         },
         child: const Icon(Icons.add_rounded, color: Colors.white),
       ),
